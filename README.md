@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/LhRv3Ky9dGiSzMlkfMnjZ), so it can be opened in
+Snack](https://snack.expo.dev/YCUOrOh1pquLo2i2mryO3), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -127,7 +127,8 @@ pair of integer indices and window maths is pure index arithmetic.
   than 10 observations report a return but no risk figure, since annualising a
   σ from a handful of points produces a number that looks authoritative and
   means very little.
-- **Return ÷ σ** — a Sharpe-style ratio with no risk-free rate subtracted.
+- **Return ÷ σ** — a Sharpe-style ratio with no risk-free rate subtracted. The
+  divisor is floored at **12.5%** annualised; see below.
 
 One judgement call worth flagging: **both halves of that ratio are
 annualised.** Dividing a raw window return by an annualised σ mixes units, so
@@ -139,6 +140,38 @@ underneath the table.
 Sanity check on the current snapshot — 1-year annualised σ runs 18% at the 5th
 percentile, 31% median, 71% at the 95th, with `JNJ` and `KO` at 18% and `TSLA`
 at 47%.
+
+### The volatility floor
+
+The ratio's divisor is floored at 12.5% annualised (`VOL_FLOOR`). A genuinely
+quiet name divides by a small number and scores enormously for reasons that
+have nothing to do with skill.
+
+The floor applies to the **divisor only**. The σ column keeps showing the true
+measurement, marked with `*` where the floor bound, because a displayed risk
+figure that silently read high would be worse than the problem being solved.
+
+It binds rarely, and it is worth knowing on what. In the current snapshot it
+touches exactly one name — `EA`, trading in a tight band near an announced
+acquisition price, so its realised vol collapses because the price tracks a deal
+rather than a business:
+
+| Window | EA σ | Ratio before | Ratio after |
+| --- | --- | --- | --- |
+| 1M | 3.8% | +7.74 | +2.37 |
+| 3M | 3.7% | +4.59 | +1.36 |
+| 6M | 6.3% | +1.02 | +0.52 |
+
+At 1Y and Max, **no name in the universe** falls below 12.5% — the quietest is
+`FTS` at 13.6% — so the floor is inert on the longer windows.
+
+**It does not cap large ratios in general.** The biggest values come from the
+annualised *numerator*, not a small denominator: annualising a one-month move
+scales it by roughly 12, so the largest 1M ratio is around 54 with a perfectly
+ordinary σ, and the floor leaves it untouched. Damping that would mean not
+annualising the return on short windows, which is a different trade-off — it
+would break comparability across window lengths, the property the annualisation
+exists to provide.
 
 ### Skipping the recent tail
 

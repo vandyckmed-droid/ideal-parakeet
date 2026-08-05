@@ -6,7 +6,7 @@ import { PriceChart, SegmentedControl, haptic } from './ui';
 import { useColors, mono, radius, space, type } from './theme';
 import {
   PRESETS, computeWindowStats, formatBigNumber, formatDate, formatPercent,
-  formatPercentPlain, formatPrice, formatRatio, slice, windowForPreset, withSkip,
+  formatPercentPlain, formatPrice, formatRatio, slice, windowForPreset, withSkip, VOL_FLOOR,
 } from './stats';
 
 function Page({ ticker, dates, initialPreset, width, skipEnabled, sessionsStale }) {
@@ -120,6 +120,7 @@ function Page({ ticker, dates, initialPreset, width, skipEnabled, sessionsStale 
                 <Text style={[type.caption, mono, s.td, { color: rowTone }]}>{formatPercent(rt, 1)}</Text>
                 <Text style={[type.caption, mono, s.td, { color: colors.textMuted }]}>
                   {formatPercentPlain(r.stats ? r.stats.annualizedVol : null)}
+                  {r.stats && r.stats.volFloored ? '*' : ''}
                 </Text>
                 <Text style={[type.caption, mono, s.td, { color: colors.text }]}>
                   {formatRatio(r.stats ? r.stats.ratio : null)}
@@ -134,6 +135,11 @@ function Page({ ticker, dates, initialPreset, width, skipEnabled, sessionsStale 
           {range.skip > 0
             ? ' Each window stops short of the newest close by the days marked against it,' +
               ' so recent reversal is left out of the measurement.'
+            : ''}
+          {table.some((r) => r.stats && r.stats.volFloored)
+            ? ` A starred σ sits below the ${(VOL_FLOOR * 100).toFixed(1)}% floor applied to the` +
+              ' divisor, so the ratio beside it is held back from the very large value a' +
+              ' near-zero σ would otherwise produce. The σ shown is the real measurement.'
             : ''}
         </Text>
       </View>

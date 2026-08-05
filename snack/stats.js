@@ -7,6 +7,20 @@ export const TRADING_DAYS_PER_YEAR = 252;
 // and it would look authoritative while meaning very little.
 export const MIN_VOL_OBSERVATIONS = 10;
 
+/**
+ * Floor on the sigma used as the ratio's divisor.
+ *
+ * A genuinely quiet name divides by a small number and scores enormously for
+ * reasons unrelated to skill - the clearest case being a stock pinned near an
+ * announced acquisition price, whose realised vol collapses because the price
+ * tracks a deal rather than a business.
+ *
+ * Floors the divisor only. The sigma shown in the interface stays the true
+ * measurement; a displayed risk figure that silently read high would be worse
+ * than the problem being solved.
+ */
+export const VOL_FLOOR = 0.125;
+
 /** Close on a master-calendar index, or null if the name had not listed yet. */
 export function closeAt(t, index) {
   const local = index - t.o;
@@ -63,12 +77,23 @@ export function computeWindowStats(ticker, startIndex, endIndex) {
     annualizedVol = Math.sqrt(variance * TRADING_DAYS_PER_YEAR);
   }
 
+  // Divisor is floored; `annualizedVol` stays the honest measurement.
+  const divisor = annualizedVol === null ? null : Math.max(annualizedVol, VOL_FLOOR);
   const ratio =
-    annualizedReturn !== null && annualizedVol !== null && annualizedVol > 1e-9
-      ? annualizedReturn / annualizedVol
+    annualizedReturn !== null && divisor !== null && divisor > 1e-9
+      ? annualizedReturn / divisor
       : null;
 
-  return { startPrice, endPrice, totalReturn, annualizedReturn, annualizedVol, ratio, observations };
+  return {
+    startPrice,
+    endPrice,
+    totalReturn,
+    annualizedReturn,
+    annualizedVol,
+    volFloored: annualizedVol !== null && annualizedVol < VOL_FLOOR,
+    ratio,
+    observations,
+  };
 }
 
 export function metricValue(stats, metric) {

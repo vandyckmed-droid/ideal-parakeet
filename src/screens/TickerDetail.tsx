@@ -11,6 +11,7 @@ import {
   formatPercentPlain,
   formatPrice,
   formatRatio,
+  VOL_FLOOR,
 } from '../data/stats';
 import { PRESETS, PresetKey, windowForPreset, withSkip } from '../data/windows';
 import { useColors } from '../theme/ThemeProvider';
@@ -185,6 +186,7 @@ export function TickerDetail({
                 </Text>
                 <Text style={[type.caption, mono, styles.td, { color: colors.textMuted }]}>
                   {formatPercentPlain(row.stats?.annualizedVol ?? null)}
+                  {row.stats?.volFloored ? '*' : ''}
                 </Text>
                 <Text style={[type.caption, mono, styles.td, { color: colors.text }]}>
                   {formatRatio(row.stats?.ratio ?? null)}
@@ -199,6 +201,12 @@ export function TickerDetail({
           {range.skip > 0
             ? ' Each window stops short of the newest close by the days marked' +
               ' against it, so recent reversal is left out of the measurement.'
+            : ''}
+          {table.some((r) => r.stats?.volFloored)
+            ? ` A starred σ sits below the ${(VOL_FLOOR * 100).toFixed(1)}% floor` +
+              ' applied to the divisor, so the ratio beside it is held back from' +
+              ' the very large value a near-zero σ would otherwise produce. The σ' +
+              ' shown is the real measurement.'
             : ''}
         </Text>
       </View>
