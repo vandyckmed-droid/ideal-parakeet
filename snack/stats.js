@@ -121,16 +121,62 @@ export function skipForLength(sessions) {
 const MIN_SESSIONS_AFTER_SKIP = 10;
 
 /**
- * Resolve a window to the range the maths should use. The skip is clamped so a
- * short custom window cannot be shortened into a degenerate one; the clamped
- * figure comes back so the UI can label the control with what is really applied.
+ * Trading sessions between the newest bar in the snapshot and today.
+ *
+ * Windows track the calendar, not the refresh time. With a 20-session skip a
+ * snapshot three days stale still holds every price a 12-1 measurement needs,
+ * so there is no reason to surrender those three days of lookback.
+ *
+ * Weekend-aware only; a holiday in the gap overcounts by one session, which
+ * moves the measurement date a day and barely touches a multi-month return.
  */
-export function withSkip(win, enabled) {
-  if (!enabled) return { startIndex: win.startIndex, endIndex: win.endIndex, skip: 0 };
+export function sessionsSinceSnapshot(dates, today) {
+  const now = today || new Date();
+  const cursor = new Date(`${dates[dates.length - 1]}T00:00:00Z`);
+  const end = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  let sessions = 0;
+  for (;;) {
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+    if (cursor.getTime() > end) break;
+    const d = cursor.getUTCDay();
+    if (d !== 0 && d !== 6) sessions++;
+    if (sessions > 500) break; // a wrong device clock must not spin
+  }
+  return sessions;
+}
+
+/**
+ * Resolve a window to the range the maths should use.
+ *
+ * The target end is `skip` sessions before *today*, not before the newest bar,
+ * so an ageing snapshot does not quietly drag the whole window backwards. When
+ * staleness exceeds the skip that target is unreachable: the end clamps to the
+ * newest bar and the start follows so the window keeps its intended length, and
+ * `shortfall` reports the gap so the UI can say so.
+ *
+ * The skip is clamped so a short custom window cannot become degenerate, and
+ * the clamped figure comes back so the control shows what is really applied.
+ */
+export function withSkip(win, enabled, sessionsStale, lastIndex) {
+  if (!enabled) {
+    return { startIndex: win.startIndex, endIndex: win.endIndex, skip: 0, shortfall: 0 };
+  }
   const sessions = win.endIndex - win.startIndex;
   const room = Math.max(0, sessions - MIN_SESSIONS_AFTER_SKIP);
   const skip = Math.min(skipForLength(sessions), room);
-  return { startIndex: win.startIndex, endIndex: win.endIndex - skip, skip };
+
+  // A custom window names explicit days, so its own stop day is the anchor.
+  const anchor = win.preset === 'CUSTOM' ? 0 : sessionsStale || 0;
+  const targetEnd = win.endIndex + anchor - skip;
+  const endIndex = Math.min(lastIndex, targetEnd);
+  const length = sessions - skip;
+
+  return {
+    startIndex: Math.max(0, endIndex - length),
+    endIndex,
+    skip,
+    shortfall: Math.max(0, targetEnd - endIndex),
+  };
 }
 
 export function describeWindow(w) {

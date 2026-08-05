@@ -1,5 +1,38 @@
 import { DATES, LAST_INDEX } from './market';
 
+/**
+ * Trading sessions between the newest bar in the snapshot and today.
+ *
+ * Windows are anchored to the calendar, not to whenever the data was last
+ * refreshed. With a 20-session skip, a snapshot three days stale still holds
+ * every price a 12-1 measurement needs - the measurement ends 20 sessions back,
+ * far behind the last refresh - so there is no reason to give up those three
+ * days of lookback. Anchoring to the last bar instead would silently slide the
+ * whole window backwards every day the data ages.
+ *
+ * Weekend-aware only. A market holiday inside the gap makes this overcount by
+ * one session, which moves the measurement date by a day and changes a
+ * multi-month return negligibly; carrying a holiday calendar to fix that is not
+ * worth the maintenance.
+ */
+export function sessionsSinceSnapshot(today: Date = new Date()): number {
+  const last = DATES[LAST_INDEX];
+  // Parse as UTC midnight so a device in any timezone counts the same days.
+  const cursor = new Date(`${last}T00:00:00Z`);
+  const end = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+
+  let sessions = 0;
+  for (;;) {
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+    if (cursor.getTime() > end) break;
+    const day = cursor.getUTCDay();
+    if (day !== 0 && day !== 6) sessions++;
+    // A wildly wrong device clock should not spin here.
+    if (sessions > 500) break;
+  }
+  return sessions;
+}
+
 export type PresetKey = '1M' | '3M' | '6M' | 'YTD' | '1Y' | '2Y' | 'CUSTOM';
 
 /** Approximate trading-day counts; YTD and 2Y are resolved from the calendar. */
@@ -78,26 +111,60 @@ export type EffectiveWindow = {
   endIndex: number;
   /** Sessions actually dropped, after clamping. Zero when skip is off. */
   skip: number;
+  /**
+   * Sessions by which the snapshot fell short of the calendar-anchored target
+   * end. Zero whenever the data is fresh enough to honour the anchor, which is
+   * every case where staleness does not exceed the skip.
+   */
+  shortfall: number;
 };
 
 /**
  * Resolve a window to the range the maths should actually use.
  *
- * The skip is clamped so a short custom window cannot be shortened into a
- * degenerate one. The clamped figure is what gets returned, so the UI can label
- * the button with the number really in force rather than the one asked for.
+ * Anchoring: the target end is `skip` sessions before *today*, not before the
+ * newest bar. When the snapshot is fresher than the skip - the ordinary case -
+ * that target is already in the data and the full lookback is preserved even
+ * though the file is a few days old.
+ *
+ * When staleness exceeds the skip the target is unreachable, so the end clamps
+ * to the newest bar and the start moves with it to keep the window its intended
+ * length. That degrades to a correct-length window ending as close to the
+ * target as the data allows, and reports the gap in `shortfall` so the UI can
+ * say so rather than quietly measuring something shorter than its label.
+ *
+ * The skip itself is clamped so a short custom window cannot be reduced to a
+ * degenerate one, and the clamped figure is returned so the control can show
+ * the number really in force.
  */
-export function withSkip(win: DateWindow, enabled: boolean): EffectiveWindow {
+export function withSkip(
+  win: DateWindow,
+  enabled: boolean,
+  sessionsStale = 0
+): EffectiveWindow {
   if (!enabled) {
-    return { startIndex: win.startIndex, endIndex: win.endIndex, skip: 0 };
+    // With no skip there is no slack to spend: the newest bar is the best
+    // available end no matter what today's date is.
+    return { startIndex: win.startIndex, endIndex: win.endIndex, skip: 0, shortfall: 0 };
   }
+
   const sessions = win.endIndex - win.startIndex;
   const room = Math.max(0, sessions - MIN_SESSIONS_AFTER_SKIP);
   const skip = Math.min(skipForLength(sessions), room);
+
+  // A custom window names explicit days, so its stop day is the anchor and
+  // today is irrelevant; only presets track the calendar.
+  const anchor = win.preset === 'CUSTOM' ? 0 : sessionsStale;
+
+  const targetEnd = win.endIndex + anchor - skip;
+  const endIndex = Math.min(LAST_INDEX, targetEnd);
+  const length = sessions - skip;
+
   return {
-    startIndex: win.startIndex,
-    endIndex: win.endIndex - skip,
+    startIndex: Math.max(0, endIndex - length),
+    endIndex,
     skip,
+    shortfall: Math.max(0, targetEnd - endIndex),
   };
 }
 

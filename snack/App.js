@@ -14,7 +14,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { ThemeProvider, useTheme, radius, space, type } from './theme';
-import { windowForPreset } from './stats';
+import { sessionsSinceSnapshot, windowForPreset } from './stats';
 import { ListScreen } from './ListScreen';
 import { DetailScreen } from './DetailScreen';
 
@@ -37,6 +37,7 @@ function Shell() {
   const [win, setWin] = useState(null);
   const [metric, setMetric] = useState('return');
   const [skipEnabled, setSkipEnabledState] = useState(false);
+  const [sessionsStale, setSessionsStale] = useState(0);
   const [watchlist, setWatchlist] = useState([]);
   const [hydrated, setHydrated] = useState(false);
 
@@ -59,6 +60,8 @@ function Shell() {
           sectors: Array.from(new Set(tickers.map((t) => t.se))).sort(),
           generatedAt: json.generatedAt,
         });
+        // Read once per load: window maths must not depend on wall-clock time.
+        setSessionsStale(sessionsSinceSnapshot(json.dates));
         setWin(windowForPreset('1Y', json.dates));
       })
       .catch((e) => {
@@ -148,6 +151,7 @@ function Shell() {
           initialSymbol={detail}
           preset={win.preset}
           skipEnabled={skipEnabled}
+          sessionsStale={sessionsStale}
           isWatched={isWatched}
           toggleWatch={toggleWatch}
           onBack={() => setDetail(null)}
@@ -193,6 +197,7 @@ function Shell() {
         setMetric={setMetric}
         skipEnabled={skipEnabled}
         setSkipEnabled={setSkipEnabled}
+        sessionsStale={sessionsStale}
         isWatched={isWatched}
         toggleWatch={toggleWatch}
         onOpenDetail={setDetail}

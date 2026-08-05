@@ -24,11 +24,13 @@ export function TickerDetail({
   initialPreset,
   width,
   skipEnabled,
+  sessionsStale,
 }: {
   ticker: Ticker;
   initialPreset: PresetKey;
   width: number;
   skipEnabled: boolean;
+  sessionsStale: number;
 }) {
   const colors = useColors();
   const [preset, setPreset] = useState<PresetKey>(
@@ -45,7 +47,10 @@ export function TickerDetail({
     w.preset === '2Y' ? { ...w, startIndex: Math.max(w.startIndex, ticker.offset) } : w;
 
   const win = useMemo(() => clampStart(windowForPreset(preset)), [preset, ticker.offset]);
-  const range = useMemo(() => withSkip(win, skipEnabled), [win, skipEnabled]);
+  const range = useMemo(
+    () => withSkip(win, skipEnabled, sessionsStale),
+    [win, skipEnabled, sessionsStale]
+  );
 
   // Drawn out to the unskipped end so the excluded tail stays visible; the
   // chart dims it rather than hiding it.
@@ -89,7 +94,7 @@ export function TickerDetail({
       TABLE_ROWS.map((row) => {
         // Each row resolves its own skip, so a 1M row drops 5 days while the
         // 1Y row drops 20 - the ladder applies per window, not per screen.
-        const r = withSkip(clampStart(windowForPreset(row.key)), skipEnabled);
+        const r = withSkip(clampStart(windowForPreset(row.key)), skipEnabled, sessionsStale);
         return {
           key: row.key,
           label: row.label,
@@ -98,7 +103,7 @@ export function TickerDetail({
         };
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [ticker, skipEnabled]
+    [ticker, skipEnabled, sessionsStale]
   );
 
   return (

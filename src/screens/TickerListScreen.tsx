@@ -49,11 +49,15 @@ export function TickerListScreen({
   const { colors, scheme, preference, setPreference } = useTheme();
   const {
     window: win, setPreset, setCustomWindow, metric, setMetric,
-    skipEnabled, setSkipEnabled, isWatched, toggleWatch,
+    skipEnabled, setSkipEnabled, sessionsStale, isWatched, toggleWatch,
   } = useAppState();
 
-  // The range the maths actually uses, once the recent tail is dropped.
-  const range = useMemo(() => withSkip(win, skipEnabled), [win, skipEnabled]);
+  // The range the maths actually uses: recent tail dropped, and anchored to
+  // today rather than to whenever the snapshot was taken.
+  const range = useMemo(
+    () => withSkip(win, skipEnabled, sessionsStale),
+    [win, skipEnabled, sessionsStale]
+  );
 
   const [query, setQuery] = useState('');
   const [sector, setSector] = useState<string | null>(null);
@@ -263,6 +267,11 @@ export function TickerListScreen({
         {(win.preset === 'CUSTOM' || range.skip > 0) && (
           <Text style={[type.caption, mono, { color: colors.textMuted }]}>
             {DATES[range.startIndex]} → {DATES[range.endIndex]}
+            {range.shortfall > 0
+              ? `  ·  ${range.shortfall}d short`
+              : sessionsStale > 0 && range.skip > 0
+                ? `  ·  data ${sessionsStale}d behind`
+                : ''}
           </Text>
         )}
 

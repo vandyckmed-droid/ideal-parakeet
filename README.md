@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/_n5dRf0zbrNxslkJQ7vD2), so it can be opened in
+Snack](https://snack.expo.dev/LhRv3Ky9dGiSzMlkfMnjZ), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -179,6 +179,33 @@ a mean last-20-day return of +1.0%, against +2.4% without it — the ranking
 leans measurably less on the recent move that tends to unwind. Short windows
 reshuffle most, which is expected, since the dropped tail is a larger fraction
 of them.
+
+### Windows follow the calendar, not the refresh
+
+With the skip armed, windows are anchored to **today's date on the device**,
+not to the newest bar in the snapshot. The skip creates slack, and anchoring to
+the snapshot would throw it away: with 20 sessions skipped and data three days
+old, every price a 12-1 measurement needs is already present, because the
+measurement ends 20 sessions back — well behind the last refresh. Anchoring to
+the last bar instead would slide the whole window backwards a day for every day
+the data ages.
+
+So a snapshot three days stale still measures exactly `today − 252` to
+`today − 20`, with the full 232-session window intact. Staleness only costs
+anything once it exceeds the skip. Past that the target end is genuinely
+unreachable, so the end clamps to the newest bar and the start moves with it to
+preserve the window's length — a correct-length window ending as close to the
+target as the data allows — and the range line says `Nd short` rather than
+quietly measuring something shorter than its label.
+
+Two deliberate exclusions: with the skip **off** there is no slack to spend, so
+the newest bar is the best possible end regardless of today's date, and nothing
+changes. And a **custom** window names explicit days, so its own stop day is the
+anchor and today is irrelevant.
+
+Session counting is weekend-aware but has no holiday calendar. A market holiday
+inside the gap overcounts by one session, which moves the measurement date by a
+day and changes a multi-month return negligibly.
 
 ## Using it
 

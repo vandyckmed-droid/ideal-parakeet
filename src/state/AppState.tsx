@@ -9,7 +9,12 @@ import React, {
 } from 'react';
 
 import { MetricKey } from '../data/stats';
-import { DateWindow, PresetKey, windowForPreset } from '../data/windows';
+import {
+  DateWindow,
+  PresetKey,
+  sessionsSinceSnapshot,
+  windowForPreset,
+} from '../data/windows';
 
 type AppStateValue = {
   window: DateWindow;
@@ -22,6 +27,9 @@ type AppStateValue = {
   /** Drop the recent tail of every window; see `withSkip`. */
   skipEnabled: boolean;
   setSkipEnabled: (v: boolean) => void;
+
+  /** Trading sessions between the newest bar and today; see `withSkip`. */
+  sessionsStale: number;
 
   watchlist: string[];
   isWatched: (symbol: string) => boolean;
@@ -39,6 +47,10 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const [skipEnabled, setSkipEnabledState] = useState(false);
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [hydrated, setHydrated] = useState(false);
+
+  // Read once per launch. Re-reading on every render would make window maths
+  // depend on wall-clock time, and the value only moves at midnight anyway.
+  const [sessionsStale] = useState(() => sessionsSinceSnapshot());
 
   useEffect(() => {
     AsyncStorage.getItem(WATCHLIST_KEY)
@@ -106,6 +118,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       setMetric,
       skipEnabled,
       setSkipEnabled,
+      sessionsStale,
       watchlist,
       isWatched,
       toggleWatch,
@@ -113,7 +126,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     }),
     [
       window, setPreset, setCustomWindow, metric, skipEnabled, setSkipEnabled,
-      watchlist, isWatched, toggleWatch, clearWatchlist,
+      sessionsStale, watchlist, isWatched, toggleWatch, clearWatchlist,
     ]
   );
 

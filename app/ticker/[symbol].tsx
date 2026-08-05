@@ -24,7 +24,7 @@ export default function TickerRoute() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { window: win, skipEnabled, isWatched, toggleWatch } = useAppState();
+  const { window: win, skipEnabled, sessionsStale, isWatched, toggleWatch } = useAppState();
 
   // Frozen on mount. The list behind this screen keeps re-sorting as the
   // window and metric change, and a pager whose pages reorder underneath the
@@ -67,10 +67,11 @@ export default function TickerRoute() {
           initialPreset={win.preset}
           width={width}
           skipEnabled={skipEnabled}
+          sessionsStale={sessionsStale}
         />
       );
     },
-    [win.preset, width, skipEnabled]
+    [win.preset, width, skipEnabled, sessionsStale]
   );
 
   if (!current) {

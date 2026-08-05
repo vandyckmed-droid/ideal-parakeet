@@ -13,12 +13,15 @@ const METRICS = [
 
 export function ListScreen({
   title, universe, dates, sectors, win, setPreset, setCustomWindow,
-  metric, setMetric, skipEnabled, setSkipEnabled,
+  metric, setMetric, skipEnabled, setSkipEnabled, sessionsStale,
   isWatched, toggleWatch, onOpenDetail, onOrder, emptyState, tab,
 }) {
   const { colors, scheme, preference, setPreference } = useTheme();
   // The range the maths actually uses, once the recent tail is dropped.
-  const range = useMemo(() => withSkip(win, skipEnabled), [win, skipEnabled]);
+  const range = useMemo(
+    () => withSkip(win, skipEnabled, sessionsStale, dates.length - 1),
+    [win, skipEnabled, sessionsStale, dates.length]
+  );
   const [query, setQuery] = useState('');
   const [sector, setSector] = useState(null);
   const [sortKey, setSortKey] = useState('metric');
@@ -182,6 +185,11 @@ export function ListScreen({
         {(win.preset === 'CUSTOM' || range.skip > 0) && (
           <Text style={[type.caption, mono, { color: colors.textMuted }]}>
             {dates[range.startIndex]} → {dates[range.endIndex]}
+            {range.shortfall > 0
+              ? `  ·  ${range.shortfall}d short`
+              : sessionsStale > 0 && range.skip > 0
+                ? `  ·  data ${sessionsStale}d behind`
+                : ''}
           </Text>
         )}
 

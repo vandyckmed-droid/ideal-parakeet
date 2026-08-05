@@ -9,7 +9,7 @@ import {
   formatPercentPlain, formatPrice, formatRatio, slice, windowForPreset, withSkip,
 } from './stats';
 
-function Page({ ticker, dates, initialPreset, width, skipEnabled }) {
+function Page({ ticker, dates, initialPreset, width, skipEnabled, sessionsStale }) {
   const colors = useColors();
   const [preset, setPreset] = useState(initialPreset === 'CUSTOM' ? '1Y' : initialPreset);
   const [scrub, setScrub] = useState(null);
@@ -23,7 +23,10 @@ function Page({ ticker, dates, initialPreset, width, skipEnabled }) {
   );
 
   const win = useMemo(() => clamp(windowForPreset(preset, dates)), [preset, dates, clamp]);
-  const range = useMemo(() => withSkip(win, skipEnabled), [win, skipEnabled]);
+  const range = useMemo(
+    () => withSkip(win, skipEnabled, sessionsStale, dates.length - 1),
+    [win, skipEnabled, sessionsStale, dates.length]
+  );
 
   // Drawn out to the unskipped end so the excluded tail stays visible.
   const series = useMemo(() => slice(ticker, win.startIndex, win.endIndex), [ticker, win]);
@@ -54,7 +57,7 @@ function Page({ ticker, dates, initialPreset, width, skipEnabled }) {
     () =>
       PRESETS.map((r) => {
         // Each row resolves its own skip, so 1M drops 5 days while 1Y drops 20.
-        const w = withSkip(clamp(windowForPreset(r.key, dates)), skipEnabled);
+        const w = withSkip(clamp(windowForPreset(r.key, dates)), skipEnabled, sessionsStale, dates.length - 1);
         return {
           key: r.key,
           label: r.label,
@@ -62,7 +65,7 @@ function Page({ ticker, dates, initialPreset, width, skipEnabled }) {
           stats: computeWindowStats(ticker, w.startIndex, w.endIndex),
         };
       }),
-    [ticker, dates, clamp, skipEnabled]
+    [ticker, dates, clamp, skipEnabled, sessionsStale]
   );
 
   return (
@@ -160,7 +163,7 @@ function Page({ ticker, dates, initialPreset, width, skipEnabled }) {
   );
 }
 
-export function DetailScreen({ symbols, bySymbol, dates, initialSymbol, preset, skipEnabled, isWatched, toggleWatch, onBack }) {
+export function DetailScreen({ symbols, bySymbol, dates, initialSymbol, preset, skipEnabled, sessionsStale, isWatched, toggleWatch, onBack }) {
   const colors = useColors();
   const { width } = useWindowDimensions();
   const initialIndex = Math.max(0, symbols.indexOf(initialSymbol));
@@ -216,7 +219,7 @@ export function DetailScreen({ symbols, bySymbol, dates, initialSymbol, preset, 
         data={symbols}
         keyExtractor={(x) => x}
         renderItem={({ item }) => (
-          <Page ticker={bySymbol.get(item)} dates={dates} initialPreset={preset} width={width} skipEnabled={skipEnabled} />
+          <Page ticker={bySymbol.get(item)} dates={dates} initialPreset={preset} width={width} skipEnabled={skipEnabled} sessionsStale={sessionsStale} />
         )}
         horizontal
         pagingEnabled
