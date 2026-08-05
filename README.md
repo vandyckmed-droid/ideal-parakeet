@@ -18,6 +18,29 @@ npm start          # then scan the QR code with Expo Go
 `npm run web` opens the same app in a browser, which is handy for a quick look
 but not the target: the gestures are built for a touchscreen.
 
+### Without a computer
+
+`snack/` is a second build of the same app that runs on [Expo
+Snack](https://snack.expo.dev/Xf5mg4xJK2kuDpMTje_ui), so it can be opened in
+Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
+file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
+file-based routing unevenly — so that build differs in exactly two ways:
+
+- the dataset is fetched from this repository over the network instead of being
+  bundled, which means a few seconds of loading and no offline use;
+- navigation is plain component state instead of expo-router, and the chart
+  scrub uses `PanResponder` instead of `react-native-gesture-handler`, leaving
+  only dependencies that Snack preloads.
+
+The maths in `snack/stats.js` mirrors `src/data/stats.ts` and the palette
+mirrors `src/theme/theme.ts`. They are duplicated rather than shared because
+the two builds have different module systems; if they ever disagree, `src/` is
+the source of truth. Re-publish after editing with:
+
+```bash
+node tools/publish-snack.mjs
+```
+
 ## Refreshing the data
 
 The snapshot in `assets/data/market.json` is current as of its `generatedAt`
