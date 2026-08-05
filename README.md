@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/Xf5mg4xJK2kuDpMTje_ui), so it can be opened in
+Snack](https://snack.expo.dev/_n5dRf0zbrNxslkJQ7vD2), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -140,6 +140,46 @@ Sanity check on the current snapshot — 1-year annualised σ runs 18% at the 5t
 percentile, 31% median, 71% at the 95th, with `JNJ` and `KO` at 18% and `TSLA`
 at 47%.
 
+### Skipping the recent tail
+
+The **Skip** control drops the most recent trading days from every window.
+Whatever moved hardest in the last few weeks tends to give some of it back, so
+a ranking measured right up to the newest close partly ranks noise that is
+about to unwind. Dropping the tail is the standard fix; Fama-French's momentum
+factor is built from the prior 2-12 month return for the same reason.
+
+The skip is derived from the window's **length**, not its preset name, so a
+hand-picked custom window gets a sensible one too:
+
+| Window | Sessions | Skipped |
+| --- | --- | --- |
+| 1M | ≤ 21 | 5 |
+| 3M | ≤ 63 | 10 |
+| 6M | ≤ 126 | 15 |
+| 1Y and longer | > 126 | 20 |
+
+Deliberately sublinear: reversal is roughly a fixed one-month effect rather
+than a fixed fraction of the lookback, so a proportional skip would gut the
+short windows and under-correct the long ones.
+
+**It truncates the end; it does not shift the window.** "1Y" still starts a
+year ago, it just stops measuring 20 sessions early. Shifting instead would
+quietly make the start date mean something other than the label. On a short
+custom window the skip is clamped so at least 10 sessions survive, and the
+control shows the number actually in force rather than the one asked for.
+
+Two places make the exclusion visible rather than silent: the per-ticker chart
+draws the skipped days in grey past a dashed divider, so the excluded move is
+still on screen, and the per-window table tags each row with the days it drops.
+Sparklines end where the measurement ends, so a row's shape and its number
+always describe the same stretch of time.
+
+Effect on the current snapshot: the 1-year winners chosen with the skip carry
+a mean last-20-day return of +1.0%, against +2.4% without it — the ranking
+leans measurably less on the recent move that tends to unwind. Short windows
+reshuffle most, which is expected, since the dropped tail is a larger fraction
+of them.
+
 ## Using it
 
 **Tap a row to add it to your watchlist. Press and hold to open it.** That is
@@ -153,6 +193,8 @@ gestures fire different haptics.
   stop day. Days are picked from the trading calendar itself, so a weekend is
   never a selectable answer that silently snaps elsewhere.
 - **Return / Return ÷ σ** — switches what the list shows and ranks by.
+- **Skip** — drops the recent tail of every window, scaled to its length. See
+  *Skipping the recent tail* above. The setting persists across launches.
 - **Per-ticker** — a scrubbable chart (drag across it and the header figures
   follow your finger), every window's return, σ and ratio at once, and
   swipe left/right to move through the list you came from in the order you

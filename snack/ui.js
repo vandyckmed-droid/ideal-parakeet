@@ -93,10 +93,14 @@ export const Sparkline = React.memo(function Sparkline({ values, color, width = 
  * Snack build depends only on modules Snack preloads. The dashed baseline marks
  * the window's opening price, so up-or-down reads without parsing a number.
  */
-export function PriceChart({ values, height = 220, onScrub }) {
+export function PriceChart({ values, height = 220, onScrub, excludeTail = 0 }) {
   const colors = useColors();
   const [width, setWidth] = useState(0);
   const [scrub, setScrub] = useState(null);
+
+  // Last measured point. The excluded tail is still drawn, but dimmed and
+  // fenced off - cropping it would hide the very price action being skipped.
+  const cut = Math.max(0, values.length - 1 - Math.max(0, excludeTail));
 
   const widthRef = useRef(0);
   const lenRef = useRef(0);
@@ -138,7 +142,8 @@ export function PriceChart({ values, height = 220, onScrub }) {
     [update, onScrub]
   );
 
-  const rising = values.length >= 2 && values[values.length - 1] >= values[0];
+  // Judged on the measured stretch so the colour agrees with the reported return.
+  const rising = values.length >= 2 && values[cut] >= values[0];
   const line = rising ? colors.up : colors.down;
 
   const geo = useMemo(() => {
@@ -157,13 +162,28 @@ export function PriceChart({ values, height = 220, onScrub }) {
 
     const n = Math.min(values.length, Math.max(2, Math.floor(width)));
     const step = (values.length - 1) / (n - 1);
+    // Two paths sharing the vertex at `cut`, so the excluded tail can carry its
+    // own style with a seamless join.
     let path = '';
+    let tail = '';
     for (let i = 0; i < n; i++) {
       const idx = Math.round(i * step);
-      path += `${i === 0 ? 'M' : 'L'}${xAt(idx).toFixed(2)} ${yAt(values[idx]).toFixed(2)}`;
+      const cmd = `${xAt(idx).toFixed(2)} ${yAt(values[idx]).toFixed(2)}`;
+      if (idx <= cut) path += `${path === '' ? 'M' : 'L'}${cmd}`;
+      if (idx >= cut) tail += `${tail === '' ? 'M' : 'L'}${cmd}`;
     }
-    return { path, area: `${path}L${width.toFixed(2)} ${height}L0 ${height}Z`, xAt, yAt, baseY: yAt(values[0]) };
-  }, [values, width, height]);
+    const cutX = xAt(cut);
+    return {
+      path,
+      tail,
+      cutX,
+      // Fill stops at the cut so the shaded mass matches the measured window.
+      area: `${path}L${cutX.toFixed(2)} ${height}L0 ${height}Z`,
+      xAt,
+      yAt,
+      baseY: yAt(values[0]),
+    };
+  }, [values, width, height, cut]);
 
   return (
     <View
@@ -190,6 +210,27 @@ export function PriceChart({ values, height = 220, onScrub }) {
             strokeDasharray="3 4"
             opacity={0.6}
           />
+          {excludeTail > 0 && (
+            <>
+              <Path
+                d={geo.tail}
+                stroke={colors.textFaint}
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+              <SvgLine
+                x1={geo.cutX}
+                y1={0}
+                x2={geo.cutX}
+                y2={height}
+                stroke={colors.textFaint}
+                strokeWidth={1}
+                strokeDasharray="2 3"
+              />
+            </>
+          )}
           <Path d={geo.path} stroke={line} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
           {scrub !== null && scrub < values.length && (
             <>

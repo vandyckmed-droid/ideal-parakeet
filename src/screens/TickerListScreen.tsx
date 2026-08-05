@@ -22,7 +22,7 @@ import { SegmentedControl } from '../components/SegmentedControl';
 import { WindowPicker } from '../components/WindowPicker';
 import { DATES, SECTORS, Ticker, formatDateShort, slice } from '../data/market';
 import { MetricKey, computeWindowStats, metricValue } from '../data/stats';
-import { PRESETS, PresetKey } from '../data/windows';
+import { PRESETS, PresetKey, withSkip } from '../data/windows';
 import { useAppState } from '../state/AppState';
 import { setOrderedSymbols } from '../state/listContext';
 import { useTheme } from '../theme/ThemeProvider';
@@ -47,8 +47,13 @@ export function TickerListScreen({
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, scheme, preference, setPreference } = useTheme();
-  const { window: win, setPreset, setCustomWindow, metric, setMetric, isWatched, toggleWatch } =
-    useAppState();
+  const {
+    window: win, setPreset, setCustomWindow, metric, setMetric,
+    skipEnabled, setSkipEnabled, isWatched, toggleWatch,
+  } = useAppState();
+
+  // The range the maths actually uses, once the recent tail is dropped.
+  const range = useMemo(() => withSkip(win, skipEnabled), [win, skipEnabled]);
 
   const [query, setQuery] = useState('');
   const [sector, setSector] = useState<string | null>(null);
@@ -71,8 +76,10 @@ export function TickerListScreen({
       )
       .map((t) => ({
         ticker: t,
-        stats: computeWindowStats(t, win.startIndex, win.endIndex),
-        series: slice(t, win.startIndex, win.endIndex),
+        stats: computeWindowStats(t, range.startIndex, range.endIndex),
+        // Sparkline ends where the measurement ends, so the shape and the
+        // number next to it always describe the same stretch of time.
+        series: slice(t, range.startIndex, range.endIndex),
       }));
 
     const dir = descending ? -1 : 1;
@@ -94,7 +101,7 @@ export function TickerListScreen({
     });
 
     return built;
-  }, [universe, deferredQuery, sector, sortKey, descending, metric, win]);
+  }, [universe, deferredQuery, sector, sortKey, descending, metric, range]);
 
   // Publish the visible order so the detail view swipes through the same list.
   // Both tabs stay mounted, so this is gated on focus: without that the
@@ -152,7 +159,8 @@ export function TickerListScreen({
             <Text style={[type.hero, { color: colors.text }]}>{title}</Text>
             <Text style={[type.caption, { color: colors.textMuted }]}>
               {rows.length} {rows.length === 1 ? 'name' : 'names'} · through{' '}
-              {formatDateShort(DATES[win.endIndex])}
+              {formatDateShort(DATES[range.endIndex])}
+              {range.skip > 0 ? ` · ${range.skip}d skipped` : ''}
             </Text>
           </View>
           <Pressable
@@ -216,17 +224,47 @@ export function TickerListScreen({
           </Pressable>
         </View>
 
-        {win.preset === 'CUSTOM' && (
+        <View style={styles.windowRow}>
+          <View style={{ flex: 1 }}>
+            <SegmentedControl<MetricKey>
+              segments={METRIC_SEGMENTS}
+              value={metric}
+              onChange={setMetric}
+            />
+          </View>
+          <Pressable
+            onPress={() => setSkipEnabled(!skipEnabled)}
+            style={[
+              styles.customButton,
+              {
+                backgroundColor: skipEnabled ? colors.accentMuted : colors.surface,
+                borderColor: skipEnabled ? colors.accent : 'transparent',
+              },
+            ]}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: skipEnabled }}
+            accessibilityLabel={
+              skipEnabled
+                ? `Skipping the last ${range.skip} trading days`
+                : 'Include the most recent trading days'
+            }
+          >
+            <Text
+              style={[
+                type.caption,
+                { color: skipEnabled ? colors.accent : colors.textMuted },
+              ]}
+            >
+              {skipEnabled ? `Skip ${range.skip}d` : 'Skip'}
+            </Text>
+          </Pressable>
+        </View>
+
+        {(win.preset === 'CUSTOM' || range.skip > 0) && (
           <Text style={[type.caption, mono, { color: colors.textMuted }]}>
-            {DATES[win.startIndex]} → {DATES[win.endIndex]}
+            {DATES[range.startIndex]} → {DATES[range.endIndex]}
           </Text>
         )}
-
-        <SegmentedControl<MetricKey>
-          segments={METRIC_SEGMENTS}
-          value={metric}
-          onChange={setMetric}
-        />
 
         <ScrollView
           horizontal

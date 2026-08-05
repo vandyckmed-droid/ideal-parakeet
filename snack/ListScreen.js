@@ -4,7 +4,7 @@ import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } fr
 import { ROW_HEIGHT, SegmentedControl, TickerRow } from './ui';
 import { WindowPicker } from './WindowPicker';
 import { useTheme, radius, space, type, mono } from './theme';
-import { PRESETS, computeWindowStats, formatDateShort, metricValue, slice } from './stats';
+import { PRESETS, computeWindowStats, formatDateShort, metricValue, slice, withSkip } from './stats';
 
 const METRICS = [
   { key: 'return', label: 'Return' },
@@ -13,9 +13,12 @@ const METRICS = [
 
 export function ListScreen({
   title, universe, dates, sectors, win, setPreset, setCustomWindow,
-  metric, setMetric, isWatched, toggleWatch, onOpenDetail, onOrder, emptyState, tab,
+  metric, setMetric, skipEnabled, setSkipEnabled,
+  isWatched, toggleWatch, onOpenDetail, onOrder, emptyState, tab,
 }) {
   const { colors, scheme, preference, setPreference } = useTheme();
+  // The range the maths actually uses, once the recent tail is dropped.
+  const range = useMemo(() => withSkip(win, skipEnabled), [win, skipEnabled]);
   const [query, setQuery] = useState('');
   const [sector, setSector] = useState(null);
   const [sortKey, setSortKey] = useState('metric');
@@ -29,8 +32,10 @@ export function ListScreen({
       .filter((t) => (needle ? t.s.includes(needle) || t.n.toUpperCase().includes(needle) : true))
       .map((t) => ({
         ticker: t,
-        stats: computeWindowStats(t, win.startIndex, win.endIndex),
-        series: slice(t, win.startIndex, win.endIndex),
+        stats: computeWindowStats(t, range.startIndex, range.endIndex),
+        // Sparkline ends where the measurement ends, so the shape and the
+        // number beside it describe the same stretch of time.
+        series: slice(t, range.startIndex, range.endIndex),
       }));
 
     const dir = descending ? -1 : 1;
@@ -47,7 +52,7 @@ export function ListScreen({
       return (av - bv) * dir;
     });
     return built;
-  }, [universe, query, sector, sortKey, descending, metric, win]);
+  }, [universe, query, sector, sortKey, descending, metric, range]);
 
   // Publish the visible order so the detail view swipes through the same list.
   const symbols = useMemo(() => rows.map((r) => r.ticker.s), [rows]);
@@ -97,7 +102,9 @@ export function ListScreen({
           <View>
             <Text style={[type.hero, { color: colors.text }]}>{title}</Text>
             <Text style={[type.caption, { color: colors.textMuted }]}>
-              {rows.length} {rows.length === 1 ? 'name' : 'names'} · through {formatDateShort(dates[win.endIndex])}
+              {rows.length} {rows.length === 1 ? 'name' : 'names'} · through{' '}
+              {formatDateShort(dates[range.endIndex])}
+              {range.skip > 0 ? ` · ${range.skip}d skipped` : ''}
             </Text>
           </View>
           <Pressable
@@ -145,13 +152,38 @@ export function ListScreen({
           </Pressable>
         </View>
 
-        {win.preset === 'CUSTOM' && (
+        <View style={s.windowRow}>
+          <View style={{ flex: 1 }}>
+            <SegmentedControl segments={METRICS} value={metric} onChange={setMetric} />
+          </View>
+          <Pressable
+            onPress={() => setSkipEnabled(!skipEnabled)}
+            style={[
+              s.customButton,
+              {
+                backgroundColor: skipEnabled ? colors.accentMuted : colors.surface,
+                borderColor: skipEnabled ? colors.accent : 'transparent',
+              },
+            ]}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: skipEnabled }}
+            accessibilityLabel={
+              skipEnabled
+                ? `Skipping the last ${range.skip} trading days`
+                : 'Include the most recent trading days'
+            }
+          >
+            <Text style={[type.caption, { color: skipEnabled ? colors.accent : colors.textMuted }]}>
+              {skipEnabled ? `Skip ${range.skip}d` : 'Skip'}
+            </Text>
+          </Pressable>
+        </View>
+
+        {(win.preset === 'CUSTOM' || range.skip > 0) && (
           <Text style={[type.caption, mono, { color: colors.textMuted }]}>
-            {dates[win.startIndex]} → {dates[win.endIndex]}
+            {dates[range.startIndex]} → {dates[range.endIndex]}
           </Text>
         )}
-
-        <SegmentedControl segments={METRICS} value={metric} onChange={setMetric} />
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chipRow}>
           {sortChips.map((chip) => {

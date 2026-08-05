@@ -21,6 +21,7 @@ import { DetailScreen } from './DetailScreen';
 const DATA_URL =
   'https://raw.githubusercontent.com/vandyckmed-droid/ideal-parakeet/main/assets/data/market.json';
 const WATCHLIST_KEY = 'parakeet.watchlist';
+const SKIP_KEY = 'parakeet.skip';
 
 function Shell() {
   const { colors, scheme } = useTheme();
@@ -35,6 +36,7 @@ function Shell() {
 
   const [win, setWin] = useState(null);
   const [metric, setMetric] = useState('return');
+  const [skipEnabled, setSkipEnabledState] = useState(false);
   const [watchlist, setWatchlist] = useState([]);
   const [hydrated, setHydrated] = useState(false);
 
@@ -77,6 +79,15 @@ function Shell() {
       })
       .catch(() => {})
       .finally(() => setHydrated(true));
+
+    AsyncStorage.getItem(SKIP_KEY)
+      .then((v) => setSkipEnabledState(v === '1'))
+      .catch(() => {});
+  }, []);
+
+  const setSkipEnabled = useCallback((v) => {
+    setSkipEnabledState(v);
+    AsyncStorage.setItem(SKIP_KEY, v ? '1' : '0').catch(() => {});
   }, []);
 
   // Guarded on `hydrated` so the initial empty state cannot race ahead of the
@@ -136,6 +147,7 @@ function Shell() {
           dates={data.dates}
           initialSymbol={detail}
           preset={win.preset}
+          skipEnabled={skipEnabled}
           isWatched={isWatched}
           toggleWatch={toggleWatch}
           onBack={() => setDetail(null)}
@@ -179,6 +191,8 @@ function Shell() {
         setCustomWindow={setCustomWindow}
         metric={metric}
         setMetric={setMetric}
+        skipEnabled={skipEnabled}
+        setSkipEnabled={setSkipEnabled}
         isWatched={isWatched}
         toggleWatch={toggleWatch}
         onOpenDetail={setDetail}

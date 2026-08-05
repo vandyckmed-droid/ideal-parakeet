@@ -49,6 +49,58 @@ export function windowForPreset(preset: PresetKey): DateWindow {
   };
 }
 
+/**
+ * Trading days dropped from the recent end of a window.
+ *
+ * Short-horizon reversal is the reason: whatever moved hardest in the last few
+ * weeks tends to give some of it back, so a ranking measured right up to the
+ * newest close partly ranks noise that is about to unwind. Dropping the tail is
+ * the standard fix - Fama-French's momentum factor is built from the prior
+ * 2-12 month return for exactly this reason.
+ *
+ * Keyed off window *length* rather than the preset name so a hand-picked custom
+ * window gets a sensible skip too. Sublinear on purpose: reversal is roughly a
+ * fixed one-month effect rather than a fixed fraction of the lookback, so a
+ * proportional skip would gut the short windows and under-correct the long ones.
+ */
+export function skipForLength(sessions: number): number {
+  if (sessions <= 21) return 5; // ~1M
+  if (sessions <= 63) return 10; // ~3M
+  if (sessions <= 126) return 15; // ~6M
+  return 20; // 1Y and longer
+}
+
+/** Sessions that must survive the skip, matching the minimum for a sigma. */
+const MIN_SESSIONS_AFTER_SKIP = 10;
+
+export type EffectiveWindow = {
+  startIndex: number;
+  endIndex: number;
+  /** Sessions actually dropped, after clamping. Zero when skip is off. */
+  skip: number;
+};
+
+/**
+ * Resolve a window to the range the maths should actually use.
+ *
+ * The skip is clamped so a short custom window cannot be shortened into a
+ * degenerate one. The clamped figure is what gets returned, so the UI can label
+ * the button with the number really in force rather than the one asked for.
+ */
+export function withSkip(win: DateWindow, enabled: boolean): EffectiveWindow {
+  if (!enabled) {
+    return { startIndex: win.startIndex, endIndex: win.endIndex, skip: 0 };
+  }
+  const sessions = win.endIndex - win.startIndex;
+  const room = Math.max(0, sessions - MIN_SESSIONS_AFTER_SKIP);
+  const skip = Math.min(skipForLength(sessions), room);
+  return {
+    startIndex: win.startIndex,
+    endIndex: win.endIndex - skip,
+    skip,
+  };
+}
+
 export function describeWindow(w: DateWindow): string {
   const days = w.endIndex - w.startIndex;
   if (days >= 252) {

@@ -100,6 +100,39 @@ export function windowForPreset(preset, dates) {
   return { startIndex: Math.max(0, endIndex - LOOKBACK[preset]), endIndex, preset };
 }
 
+/**
+ * Trading days dropped from the recent end of a window.
+ *
+ * Short-horizon reversal is the reason: whatever moved hardest in the last few
+ * weeks tends to give some of it back, so a ranking measured up to the newest
+ * close partly ranks noise that is about to unwind.
+ *
+ * Keyed off window length rather than preset name so custom windows get a
+ * sensible skip too. Sublinear on purpose: reversal is roughly a fixed
+ * one-month effect, not a fixed fraction of the lookback.
+ */
+export function skipForLength(sessions) {
+  if (sessions <= 21) return 5;
+  if (sessions <= 63) return 10;
+  if (sessions <= 126) return 15;
+  return 20;
+}
+
+const MIN_SESSIONS_AFTER_SKIP = 10;
+
+/**
+ * Resolve a window to the range the maths should use. The skip is clamped so a
+ * short custom window cannot be shortened into a degenerate one; the clamped
+ * figure comes back so the UI can label the control with what is really applied.
+ */
+export function withSkip(win, enabled) {
+  if (!enabled) return { startIndex: win.startIndex, endIndex: win.endIndex, skip: 0 };
+  const sessions = win.endIndex - win.startIndex;
+  const room = Math.max(0, sessions - MIN_SESSIONS_AFTER_SKIP);
+  const skip = Math.min(skipForLength(sessions), room);
+  return { startIndex: win.startIndex, endIndex: win.endIndex - skip, skip };
+}
+
 export function describeWindow(w) {
   const days = w.endIndex - w.startIndex;
   if (days >= 252) {

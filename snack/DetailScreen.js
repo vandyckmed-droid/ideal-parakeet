@@ -6,10 +6,10 @@ import { PriceChart, SegmentedControl, haptic } from './ui';
 import { useColors, mono, radius, space, type } from './theme';
 import {
   PRESETS, computeWindowStats, formatBigNumber, formatDate, formatPercent,
-  formatPercentPlain, formatPrice, formatRatio, slice, windowForPreset,
+  formatPercentPlain, formatPrice, formatRatio, slice, windowForPreset, withSkip,
 } from './stats';
 
-function Page({ ticker, dates, initialPreset, width }) {
+function Page({ ticker, dates, initialPreset, width, skipEnabled }) {
   const colors = useColors();
   const [preset, setPreset] = useState(initialPreset === 'CUSTOM' ? '1Y' : initialPreset);
   const [scrub, setScrub] = useState(null);
@@ -23,8 +23,20 @@ function Page({ ticker, dates, initialPreset, width }) {
   );
 
   const win = useMemo(() => clamp(windowForPreset(preset, dates)), [preset, dates, clamp]);
+  const range = useMemo(() => withSkip(win, skipEnabled), [win, skipEnabled]);
+
+  // Drawn out to the unskipped end so the excluded tail stays visible.
   const series = useMemo(() => slice(ticker, win.startIndex, win.endIndex), [ticker, win]);
-  const stats = useMemo(() => computeWindowStats(ticker, win.startIndex, win.endIndex), [ticker, win]);
+  const measuredLength = useMemo(
+    () => slice(ticker, range.startIndex, range.endIndex).length,
+    [ticker, range]
+  );
+  const excludeTail = Math.max(0, series.length - measuredLength);
+
+  const stats = useMemo(
+    () => computeWindowStats(ticker, range.startIndex, range.endIndex),
+    [ticker, range]
+  );
 
   const scrubbing = scrub !== null && scrub < series.length;
   const price = scrubbing ? series[scrub] : ticker.last;
@@ -41,10 +53,16 @@ function Page({ ticker, dates, initialPreset, width }) {
   const table = useMemo(
     () =>
       PRESETS.map((r) => {
-        const w = clamp(windowForPreset(r.key, dates));
-        return { key: r.key, label: r.label, stats: computeWindowStats(ticker, w.startIndex, w.endIndex) };
+        // Each row resolves its own skip, so 1M drops 5 days while 1Y drops 20.
+        const w = withSkip(clamp(windowForPreset(r.key, dates)), skipEnabled);
+        return {
+          key: r.key,
+          label: r.label,
+          skip: w.skip,
+          stats: computeWindowStats(ticker, w.startIndex, w.endIndex),
+        };
       }),
-    [ticker, dates, clamp]
+    [ticker, dates, clamp, skipEnabled]
   );
 
   return (
@@ -57,12 +75,15 @@ function Page({ ticker, dates, initialPreset, width }) {
         <View style={s.changeLine}>
           <Text style={[type.bodyStrong, mono, { color: tone }]}>{formatPercent(ret)}</Text>
           <Text style={[type.caption, { color: colors.textMuted }]}>
-            {scrubbing ? formatDate(shownDate) : `over ${preset === '2Y' ? 'max' : preset}`}
+            {scrubbing
+              ? formatDate(shownDate)
+              : `over ${preset === '2Y' ? 'max' : preset}` +
+                (range.skip > 0 ? ` · ex last ${range.skip}d` : '')}
           </Text>
         </View>
       </View>
 
-      <PriceChart values={series} onScrub={setScrub} />
+      <PriceChart values={series} onScrub={setScrub} excludeTail={excludeTail} />
 
       <View style={s.section}>
         <SegmentedControl segments={PRESETS} value={preset} onChange={setPreset} compact />
@@ -89,7 +110,10 @@ function Page({ ticker, dates, initialPreset, width }) {
                   { borderBottomColor: colors.hairline, backgroundColor: active ? colors.surface : 'transparent' },
                 ]}
               >
-                <Text style={[type.bodyStrong, s.tdLabel, { color: colors.text }]}>{r.label}</Text>
+                <View style={s.tdLabel}>
+                  <Text style={[type.bodyStrong, { color: colors.text }]}>{r.label}</Text>
+                  {r.skip > 0 && <Text style={[type.micro, { color: colors.textFaint }]}>−{r.skip}d</Text>}
+                </View>
                 <Text style={[type.caption, mono, s.td, { color: rowTone }]}>{formatPercent(rt, 1)}</Text>
                 <Text style={[type.caption, mono, s.td, { color: colors.textMuted }]}>
                   {formatPercentPlain(r.stats ? r.stats.annualizedVol : null)}
@@ -104,6 +128,10 @@ function Page({ ticker, dates, initialPreset, width }) {
         <Text style={[type.caption, { color: colors.textFaint, marginTop: space(2) }]}>
           Ret ÷ σ is the annualised return over the annualised standard deviation of daily log returns in the same
           window.
+          {range.skip > 0
+            ? ' Each window stops short of the newest close by the days marked against it,' +
+              ' so recent reversal is left out of the measurement.'
+            : ''}
         </Text>
       </View>
 
@@ -132,7 +160,7 @@ function Page({ ticker, dates, initialPreset, width }) {
   );
 }
 
-export function DetailScreen({ symbols, bySymbol, dates, initialSymbol, preset, isWatched, toggleWatch, onBack }) {
+export function DetailScreen({ symbols, bySymbol, dates, initialSymbol, preset, skipEnabled, isWatched, toggleWatch, onBack }) {
   const colors = useColors();
   const { width } = useWindowDimensions();
   const initialIndex = Math.max(0, symbols.indexOf(initialSymbol));
@@ -188,7 +216,7 @@ export function DetailScreen({ symbols, bySymbol, dates, initialSymbol, preset, 
         data={symbols}
         keyExtractor={(x) => x}
         renderItem={({ item }) => (
-          <Page ticker={bySymbol.get(item)} dates={dates} initialPreset={preset} width={width} />
+          <Page ticker={bySymbol.get(item)} dates={dates} initialPreset={preset} width={width} skipEnabled={skipEnabled} />
         )}
         horizontal
         pagingEnabled
@@ -225,7 +253,7 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', paddingVertical: space(2.75),
     paddingHorizontal: space(3), borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  tdLabel: { width: 56 },
+  tdLabel: { width: 56, gap: 1 },
   td: { flex: 1, textAlign: 'right' },
   facts: { borderRadius: radius.md, paddingHorizontal: space(3.5), paddingVertical: space(1) },
   factRow: {
