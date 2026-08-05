@@ -42,16 +42,20 @@ export default function TickerRoute() {
   const current = BY_SYMBOL.get(symbols[index]);
   const watched = current ? isWatched(current.symbol) : false;
 
-  const onMomentumEnd = useCallback(
+  // Driven from onScroll rather than onMomentumScrollEnd: a slow drag-and-
+  // release carries no momentum, so waiting for that event leaves the header
+  // naming the previous ticker while a different one is on screen. Rounding to
+  // the nearest page means this only changes state once per page crossed.
+  const onScroll = useCallback(
     (e: { nativeEvent: { contentOffset: { x: number } } }) => {
       const next = Math.round(e.nativeEvent.contentOffset.x / width);
       setIndex((prev) => {
-        if (prev === next) return prev;
+        if (prev === next || next < 0 || next >= symbols.length) return prev;
         Haptics.selectionAsync().catch(() => {});
         return next;
       });
     },
-    [width]
+    [width, symbols.length]
   );
 
   const renderPage = useCallback(
@@ -126,7 +130,8 @@ export default function TickerRoute() {
         showsHorizontalScrollIndicator={false}
         initialScrollIndex={initialIndex}
         getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
-        onMomentumScrollEnd={onMomentumEnd}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         // Only the neighbours stay mounted; each page holds a chart and a full
         // stats table, so keeping 500 of them alive is not an option.
         initialNumToRender={1}
