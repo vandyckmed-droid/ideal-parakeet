@@ -1,0 +1,13 @@
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+*.log
+.DS_Store
+
+# Raw pull artifacts. These are large, regenerable with `npm run data`, and
+# only the packed assets/data/market.json is needed to run the app.
+data/prices/
+data/candidates.json
+data/fetch-failures.json
