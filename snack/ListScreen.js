@@ -5,6 +5,7 @@ import { ROW_HEIGHT, SegmentedControl, TickerRow } from './ui';
 import { WindowPicker } from './WindowPicker';
 import { useTheme, radius, space, type, mono } from './theme';
 import { PRESETS, computeWindowStats, formatDateShort, metricValue, slice, withSkip } from './stats';
+import { describeOverlap } from './overlap';
 
 const METRICS = [
   { key: 'return', label: 'Return' },
@@ -14,7 +15,7 @@ const METRICS = [
 export function ListScreen({
   title, universe, dates, sectors, win, setPreset, setCustomWindow,
   metric, setMetric, skipEnabled, setSkipEnabled, sessionsStale,
-  isWatched, toggleWatch, onOpenDetail, onOrder, emptyState, tab,
+  isWatched, toggleWatch, onOpenDetail, onOrder, emptyState, tab, overlap,
 }) {
   const { colors, scheme, preference, setPreference } = useTheme();
   // The range the maths actually uses, once the recent tail is dropped.
@@ -57,6 +58,18 @@ export function ListScreen({
     return built;
   }, [universe, query, sector, sortKey, descending, metric, range]);
 
+  // Flagged names only: unflagged rows pass undefined, matching what TickerRow
+  // already receives on the Market screen, so nothing else about a row
+  // changes because this prop exists.
+  const overlapScores = useMemo(() => {
+    if (!overlap) return null;
+    const m = new Map();
+    for (const s of overlap.scores) {
+      if (s.score !== null && overlap.flagged.has(s.symbol)) m.set(s.symbol, s.score);
+    }
+    return m;
+  }, [overlap]);
+
   // Publish the visible order so the detail view swipes through the same list.
   const symbols = useMemo(() => rows.map((r) => r.ticker.s), [rows]);
 
@@ -87,9 +100,10 @@ export function ListScreen({
         onToggleWatch={toggleWatch}
         onOpenDetail={openDetail}
         rank={sortKey === 'metric' ? index + 1 : undefined}
+        overlapScore={overlapScores?.get(item.ticker.s)}
       />
     ),
-    [metric, isWatched, toggleWatch, openDetail, sortKey]
+    [metric, isWatched, toggleWatch, openDetail, sortKey, overlapScores]
   );
 
   const sortChips = [
@@ -109,6 +123,16 @@ export function ListScreen({
               {formatDateShort(dates[range.endIndex])}
               {range.skip > 0 ? ` · ${range.skip}d skipped` : ''}
             </Text>
+            {overlap && universe.length > 0 && (
+              <Text
+                style={[
+                  type.caption,
+                  { color: overlap.flagged.size > 0 ? colors.warn : colors.textFaint, marginTop: 2 },
+                ]}
+              >
+                {describeOverlap(overlap, universe.length)}
+              </Text>
+            )}
           </View>
           <Pressable
             onPress={() =>

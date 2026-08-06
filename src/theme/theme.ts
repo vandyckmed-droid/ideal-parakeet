@@ -23,6 +23,9 @@ export type Palette = {
   flat: string;
   accent: string;
   accentMuted: string;
+  /** Reserved for overlap/concentration flags - never used for return sign. */
+  warn: string;
+  warnMuted: string;
   chartFillTop: string;
   chartFillBottom: string;
   scrim: string;
@@ -42,6 +45,8 @@ const dark: Palette = {
   flat: '#9A9AA6',
   accent: '#00C853',
   accentMuted: 'rgba(0, 200, 83, 0.16)',
+  warn: '#FFB020',
+  warnMuted: 'rgba(255, 176, 32, 0.16)',
   chartFillTop: 'rgba(0, 200, 83, 0.22)',
   chartFillBottom: 'rgba(0, 200, 83, 0)',
   scrim: 'rgba(0, 0, 0, 0.7)',
@@ -61,6 +66,8 @@ const light: Palette = {
   flat: '#5F6672',
   accent: '#00794A',
   accentMuted: 'rgba(0, 121, 74, 0.12)',
+  warn: '#A15C00',
+  warnMuted: 'rgba(161, 92, 0, 0.12)',
   chartFillTop: 'rgba(0, 121, 74, 0.16)',
   chartFillBottom: 'rgba(0, 121, 74, 0)',
   scrim: 'rgba(0, 0, 0, 0.35)',

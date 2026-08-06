@@ -253,7 +253,7 @@ export const ROW_HEIGHT = 64;
  * fire different haptics.
  */
 export const TickerRow = React.memo(function TickerRow({
-  ticker, stats, series, metric, watched, onToggleWatch, onOpenDetail, rank,
+  ticker, stats, series, metric, watched, onToggleWatch, onOpenDetail, rank, overlapScore,
 }) {
   const colors = useColors();
   const value = metricValue(stats, metric);
@@ -277,7 +277,10 @@ export const TickerRow = React.memo(function TickerRow({
         { backgroundColor: pressed ? colors.surface : 'transparent', borderBottomColor: colors.hairline },
       ]}
       accessibilityRole="button"
-      accessibilityLabel={`${ticker.s}, ${ticker.n}`}
+      accessibilityLabel={
+        `${ticker.s}, ${ticker.n}` +
+        (overlapScore != null ? ', overlaps the rest of your list' : '')
+      }
       accessibilityHint="Tap to toggle watchlist, long press to open details"
     >
       <View style={[row.marker, { backgroundColor: watched ? colors.accent : 'transparent' }]} />
@@ -288,6 +291,13 @@ export const TickerRow = React.memo(function TickerRow({
             {ticker.s}
           </Text>
           {watched && <View style={[row.dot, { backgroundColor: colors.accent }]} />}
+          {overlapScore != null && (
+            <View style={[row.overlapBadge, { backgroundColor: colors.warnMuted }]}>
+              <Text style={[type.micro, mono, { color: colors.warn }]}>
+                ⇄ {Math.round(overlapScore * 100)}%
+              </Text>
+            </View>
+          )}
         </View>
         <Text style={[type.caption, { color: colors.textMuted }]} numberOfLines={1}>
           {ticker.n}
@@ -316,6 +326,7 @@ const row = StyleSheet.create({
   identity: { flex: 1, justifyContent: 'center', gap: 2 },
   symbolLine: { flexDirection: 'row', alignItems: 'center', gap: space(1.5) },
   dot: { width: 5, height: 5, borderRadius: 3 },
+  overlapBadge: { paddingHorizontal: space(1.5), paddingVertical: 1, borderRadius: radius.sm },
   spark: { width: 64, marginHorizontal: space(3) },
   figures: { minWidth: 84, alignItems: 'flex-end', gap: 2 },
 });

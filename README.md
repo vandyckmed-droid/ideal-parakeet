@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/4N1dP-D6Am0BsyxyrURIa), so it can be opened in
+Snack](https://snack.expo.dev/Bf9ItIlj-m-KeAMHtOVTq), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -32,10 +32,11 @@ file-based routing unevenly — so that build differs in exactly two ways:
   scrub uses `PanResponder` instead of `react-native-gesture-handler`, leaving
   only dependencies that Snack preloads.
 
-The maths in `snack/stats.js` mirrors `src/data/stats.ts` and the palette
-mirrors `src/theme/theme.ts`. They are duplicated rather than shared because
-the two builds have different module systems; if they ever disagree, `src/` is
-the source of truth. Re-publish after editing with:
+The maths in `snack/stats.js` mirrors `src/data/stats.ts`, `snack/overlap.js`
+mirrors `src/data/overlap.ts`, and the palette mirrors `src/theme/theme.ts`.
+They are duplicated rather than shared because the two builds have different
+module systems; if they ever disagree, `src/` is the source of truth.
+Re-publish after editing with:
 
 ```bash
 node tools/publish-snack.mjs
@@ -244,6 +245,58 @@ Session counting is weekend-aware but has no holiday calendar. A market holiday
 inside the gap overcounts by one session, which moves the measurement date by a
 day and changes a multi-month return negligibly.
 
+## Watchlist overlap
+
+The Watchlist screen flags names that are redundant with the rest of the list:
+each one adds little a portfolio doesn't already have from the others.
+
+For every name in the watchlist, its own daily returns are correlated (Pearson
+r) against the equal-weighted average daily return of every *other* name in
+the list, over the same days. A high score means the name moves like the
+basket as a whole - it does **not** mean it is correlated with any single other
+name in it. Two names can each score high without being correlated with each
+other, if each independently tracks the group. The summary line is worded to
+match that: "Most overlap: AMD 93%, INTC 91%" names two names that are each
+redundant with the group, not a claim that the two move together.
+
+The top two names scoring **70% or higher** are flagged, shown as a badge on
+their row and named in the header. Requiring the threshold as well as ranking
+top two means a diversified list can flag nothing at all, which is correct -
+"the two least-diversified names" is not a useful alert when none of them are
+concentrated. `OVERLAP_THRESHOLD` and `MAX_OVERLAP_FLAGS` in
+`src/data/overlap.ts` are the two numbers to change if you'd rather have that
+apply unconditionally.
+
+**It uses the full selected window, not the skip-adjusted one.** The skip
+exists to exclude short-term reversal from a *return* measurement; it has no
+bearing on how two return series co-move across the window as a whole, so
+switching Skip on does not change the overlap computed here.
+
+**Window length matters more than you'd expect.** Correlation this way is
+naturally quite strict: on the default 1Y window (252 daily returns),
+idiosyncratic day-to-day noise dominates enough that even a concentrated
+same-sector cluster rarely clears 70% - six major semiconductor names
+(`NVDA` `AMD` `MU` `AVGO` `INTC` `QCOM`) top out at 68% on 1Y. The same set
+on a 1M window (21 sessions, where a shared macro or sector move is a much
+larger share of the total) flags `AMD` at 93% and `INTC` at 91%. Shorter
+windows are where this actually catches something; on the 1Y default, expect
+it to stay quiet for all but the most extreme concentration.
+
+At least 3 names are needed to run the calculation at all - "the rest of the
+list" isn't meaningful for one comparison - and at least 20 aligned daily
+returns, below which a correlation is mostly sampling noise. A recently listed
+name in the watchlist shortens the comparison for everyone: every name needs a
+close on every day measured, so the window clamps to whichever member listed
+most recently rather than dropping that name or measuring it against a
+shorter series than the rest. The header explains whichever of these applies
+instead of showing a blank result.
+
+Computed with a leave-one-out identity rather than literally excluding each
+name and re-averaging: the per-day sum across all names is taken once, and
+each name's "rest of the list" average return on a given day is
+`(daySum - ownReturn) / (n - 1)`. Verified bit-identical against a brute-force
+implementation that does perform the literal exclusion.
+
 ## Using it
 
 **Tap a row to add it to your watchlist. Press and hold to open it.** That is
@@ -259,6 +312,9 @@ gestures fire different haptics.
 - **Return / Return ÷ σ** — switches what the list shows and ranks by.
 - **Skip** — drops the recent tail of every window, scaled to its length. See
   *Skipping the recent tail* above. The setting persists across launches.
+- **Watchlist overlap** — an amber `⇄` badge on a row means that name is
+  redundant with the rest of your list; the header names the flagged names
+  together. See *Watchlist overlap* above for what that does and doesn't mean.
 - **Per-ticker** — a scrubbable chart (drag across it and the header figures
   follow your finger), every window's return, σ and ratio at once, and
   swipe left/right to move through the list you came from in the order you

@@ -21,6 +21,7 @@ import { ROW_HEIGHT, TickerRow } from '../components/TickerRow';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { WindowPicker } from '../components/WindowPicker';
 import { DATES, SECTORS, Ticker, formatDateShort, slice } from '../data/market';
+import { OverlapSummary, describeOverlap } from '../data/overlap';
 import { MetricKey, computeWindowStats, metricValue } from '../data/stats';
 import { PRESETS, PresetKey, withSkip } from '../data/windows';
 import { useAppState } from '../state/AppState';
@@ -39,10 +40,13 @@ export function TickerListScreen({
   title,
   universe,
   emptyState,
+  overlap,
 }: {
   title: string;
   universe: Ticker[];
   emptyState?: React.ReactNode;
+  /** Only ever supplied by the Watchlist screen. */
+  overlap?: OverlapSummary;
 }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -107,6 +111,18 @@ export function TickerListScreen({
     return built;
   }, [universe, deferredQuery, sector, sortKey, descending, metric, range]);
 
+  // Flagged names only: unflagged rows pass `undefined`, which is the same
+  // value TickerRow already receives on the Market screen, so nothing else
+  // about a row's rendering changes because this prop exists.
+  const overlapScores = useMemo(() => {
+    if (!overlap) return null;
+    const m = new Map<string, number>();
+    for (const s of overlap.scores) {
+      if (s.score !== null && overlap.flagged.has(s.symbol)) m.set(s.symbol, s.score);
+    }
+    return m;
+  }, [overlap]);
+
   // Publish the visible order so the detail view swipes through the same list.
   // Both tabs stay mounted, so this is gated on focus: without that the
   // Watchlist's handful of names would overwrite the Market tab's 500 and a
@@ -144,9 +160,10 @@ export function TickerListScreen({
         onToggleWatch={toggleWatch}
         onOpenDetail={openDetail}
         rank={sortKey === 'metric' ? index + 1 : undefined}
+        overlapScore={overlapScores?.get(item.ticker.symbol)}
       />
     ),
-    [metric, isWatched, toggleWatch, openDetail, sortKey]
+    [metric, isWatched, toggleWatch, openDetail, sortKey, overlapScores]
   );
 
   const sortChips: { key: SortKey; label: string }[] = [
@@ -166,6 +183,19 @@ export function TickerListScreen({
               {formatDateShort(DATES[range.endIndex])}
               {range.skip > 0 ? ` · ${range.skip}d skipped` : ''}
             </Text>
+            {overlap && universe.length > 0 && (
+              <Text
+                style={[
+                  type.caption,
+                  {
+                    color: overlap.flagged.size > 0 ? colors.warn : colors.textFaint,
+                    marginTop: 2,
+                  },
+                ]}
+              >
+                {describeOverlap(overlap, universe.length)}
+              </Text>
+            )}
           </View>
           <Pressable
             onPress={() =>

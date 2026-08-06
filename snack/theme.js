@@ -18,6 +18,7 @@ export const palettes = {
     text: '#FFFFFF', textMuted: '#9A9AA6', textFaint: '#5C5C68',
     up: '#00C853', down: '#FF4E3A', flat: '#9A9AA6',
     accent: '#00C853', accentMuted: 'rgba(0, 200, 83, 0.16)',
+    warn: '#FFB020', warnMuted: 'rgba(255, 176, 32, 0.16)',
     scrim: 'rgba(0, 0, 0, 0.7)', fillOpacity: 0.22,
   },
   light: {
@@ -26,6 +27,7 @@ export const palettes = {
     text: '#0B0B0F', textMuted: '#5F6672', textFaint: '#9AA1AD',
     up: '#00794A', down: '#C6301C', flat: '#5F6672',
     accent: '#00794A', accentMuted: 'rgba(0, 121, 74, 0.12)',
+    warn: '#A15C00', warnMuted: 'rgba(161, 92, 0, 0.12)',
     scrim: 'rgba(0, 0, 0, 0.35)', fillOpacity: 0.16,
   },
 };

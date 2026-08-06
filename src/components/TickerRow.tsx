@@ -25,6 +25,11 @@ type Props = {
   onToggleWatch: (symbol: string) => void;
   onOpenDetail: (symbol: string) => void;
   rank?: number;
+  /**
+   * Set only when this row scores at or above the overlap threshold against
+   * the rest of the current list; only ever passed on the Watchlist screen.
+   */
+  overlapScore?: number | null;
 };
 
 /**
@@ -44,6 +49,7 @@ export const TickerRow = React.memo(function TickerRow({
   onToggleWatch,
   onOpenDetail,
   rank,
+  overlapScore,
 }: Props) {
   const colors = useColors();
 
@@ -78,7 +84,10 @@ export const TickerRow = React.memo(function TickerRow({
         },
       ]}
       accessibilityRole="button"
-      accessibilityLabel={`${ticker.symbol}, ${ticker.name}`}
+      accessibilityLabel={
+        `${ticker.symbol}, ${ticker.name}` +
+        (overlapScore != null ? `, overlaps the rest of your list` : '')
+      }
       accessibilityHint="Tap to toggle watchlist, long press to open details"
     >
       <View
@@ -106,6 +115,13 @@ export const TickerRow = React.memo(function TickerRow({
           </Text>
           {watched && (
             <View style={[styles.dot, { backgroundColor: colors.accent }]} />
+          )}
+          {overlapScore != null && (
+            <View style={[styles.overlapBadge, { backgroundColor: colors.warnMuted }]}>
+              <Text style={[type.micro, mono, { color: colors.warn }]}>
+                ⇄ {Math.round(overlapScore * 100)}%
+              </Text>
+            </View>
           )}
         </View>
         <Text style={[type.caption, { color: colors.textMuted }]} numberOfLines={1}>
@@ -147,6 +163,11 @@ const styles = StyleSheet.create({
   identity: { flex: 1, justifyContent: 'center', gap: 2 },
   symbolLine: { flexDirection: 'row', alignItems: 'center', gap: space(1.5) },
   dot: { width: 5, height: 5, borderRadius: 3 },
+  overlapBadge: {
+    paddingHorizontal: space(1.5),
+    paddingVertical: 1,
+    borderRadius: radius.sm,
+  },
   spark: { width: 64, marginHorizontal: space(3) },
   figures: { minWidth: 84, alignItems: 'flex-end', gap: 2 },
 });

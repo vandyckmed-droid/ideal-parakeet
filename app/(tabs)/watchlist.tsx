@@ -2,13 +2,14 @@ import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { BY_SYMBOL, Ticker } from '../../src/data/market';
+import { computeOverlap } from '../../src/data/overlap';
 import { TickerListScreen } from '../../src/screens/TickerListScreen';
 import { useAppState } from '../../src/state/AppState';
 import { useColors } from '../../src/theme/ThemeProvider';
 import { space, type } from '../../src/theme/theme';
 
 export default function WatchlistScreen() {
-  const { watchlist } = useAppState();
+  const { watchlist, window: win } = useAppState();
   const colors = useColors();
 
   const universe = useMemo(
@@ -19,10 +20,19 @@ export default function WatchlistScreen() {
     [watchlist]
   );
 
+  // The full selected window, not the skip-adjusted range: the skip exists to
+  // exclude short-term reversal from a *return* measurement, which has no
+  // bearing on how two return series co-move across the window as a whole.
+  const overlap = useMemo(
+    () => computeOverlap(universe, win.startIndex, win.endIndex),
+    [universe, win.startIndex, win.endIndex]
+  );
+
   return (
     <TickerListScreen
       title="Watchlist"
       universe={universe}
+      overlap={overlap}
       emptyState={
         <View style={styles.empty}>
           <Text style={[type.title, { color: colors.text }]}>Nothing watched yet</Text>

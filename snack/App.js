@@ -15,6 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { ThemeProvider, useTheme, radius, space, type } from './theme';
 import { sessionsSinceSnapshot, windowForPreset } from './stats';
+import { computeOverlap } from './overlap';
 import { ListScreen } from './ListScreen';
 import { DetailScreen } from './DetailScreen';
 
@@ -162,6 +163,13 @@ function Shell() {
 
   const watched = watchlist.map((sym) => data.bySymbol.get(sym)).filter(Boolean);
 
+  // The full selected window, not the skip-adjusted range: the skip exists to
+  // exclude short-term reversal from a return measurement, which has no
+  // bearing on how two return series co-move across the window as a whole.
+  // Only computed for the Watchlist tab - the Market tab never shows it.
+  const overlap =
+    tab === 'watchlist' ? computeOverlap(watched, win.startIndex, win.endIndex) : null;
+
   const tabBar = (
     <View style={[s.tabs, { backgroundColor: colors.bg, borderTopColor: colors.hairline }]}>
       {[
@@ -203,6 +211,7 @@ function Shell() {
         onOpenDetail={setDetail}
         onOrder={setOrder}
         tab={tabBar}
+        overlap={overlap}
         emptyState={
           tab === 'watchlist' ? (
             <View style={{ alignItems: 'center', gap: space(2) }}>
