@@ -135,6 +135,7 @@ export function skipForLength(sessions) {
   if (sessions <= 21) return 5;
   if (sessions <= 63) return 10;
   if (sessions <= 126) return 15;
+  if (sessions <= 189) return 17; // ~9M, interpolated between 6M and 1Y
   return 20;
 }
 
