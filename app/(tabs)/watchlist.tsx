@@ -41,6 +41,7 @@ export default function WatchlistScreen() {
       universe={universe}
       overlap={overlap}
       overlapCaption={overlapCaption}
+      showPortfolioSummary
       emptyState={
         <View style={styles.empty}>
           <Text style={[type.title, { color: colors.text }]}>Nothing watched yet</Text>

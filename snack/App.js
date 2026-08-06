@@ -229,6 +229,7 @@ function Shell() {
         tab={tabBar}
         overlap={overlap}
         overlapCaption={overlapCaption}
+        showPortfolioSummary={tab === 'watchlist'}
         emptyState={
           tab === 'watchlist' ? (
             <View style={{ alignItems: 'center', gap: space(2) }}>

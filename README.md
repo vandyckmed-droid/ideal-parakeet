@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/Fl7xT_0poVRojac1-2ido), so it can be opened in
+Snack](https://snack.expo.dev/fi3cy5CDne513Kwo6bfCa), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -33,9 +33,10 @@ file-based routing unevenly — so that build differs in exactly two ways:
   only dependencies that Snack preloads.
 
 The maths in `snack/stats.js` mirrors `src/data/stats.ts`, `snack/overlap.js`
-mirrors `src/data/overlap.ts`, and the palette mirrors `src/theme/theme.ts`.
-They are duplicated rather than shared because the two builds have different
-module systems; if they ever disagree, `src/` is the source of truth.
+mirrors `src/data/overlap.ts`, `snack/portfolio.js` mirrors
+`src/data/portfolio.ts`, and the palette mirrors `src/theme/theme.ts`. They are
+duplicated rather than shared because the two builds have different module
+systems; if they ever disagree, `src/` is the source of truth.
 Re-publish after editing with:
 
 ```bash
@@ -326,6 +327,52 @@ giving both a holding's "rest of the basket" average
 outside it (`daySum / n`) directly. Verified bit-identical against a
 brute-force implementation that does perform the literal exclusion.
 
+## Portfolio summary
+
+The Watchlist screen leads with one card: the watchlist's own Return, Ann σ
+and Return ÷ σ, treated as a single equal-weighted position instead of N
+separate rows. It answers a question the row list can't: not "how did each
+holding do," but "how did the *combination* do" - which isn't the average of
+the row-level numbers, because volatility doesn't average linearly and
+correlation between holdings changes the real combined risk. A user eyeballing
+the individual rows and mentally averaging their σ figures would get a
+meaningfully wrong number for exactly that reason.
+
+Built by constructing a synthetic ticker - $1 invested equally across the
+watchlist, rebalanced daily - shaped exactly like any other ticker in the
+dataset, then running it through the *same* `computeWindowStats` every
+individual row already uses. That is a deliberate choice over a bespoke
+calculation: it guarantees the portfolio figure uses the same annualisation,
+the same Bessel correction, and the same 12.5% vol floor as every number
+already on screen, with no second implementation to keep in sync. Measured
+against the current snapshot:
+
+| Watchlist | Avg. individual σ | Portfolio σ | Portfolio Return ÷ σ |
+| --- | --- | --- | --- |
+| Diversified (7 sectors) | 23.3% | **9.6%*** | 2.68 |
+| Semiconductors (6, concentrated) | 60.4% | **45.5%** | 3.95 |
+| Utilities (6, concentrated) | 15.7% | **13.6%** | 0.69 |
+
+\* Floored - the diversified portfolio's raw σ is actually 9.6%, comfortably
+under 12.5%, so its ratio is held back from an unfloored 3.50 exactly as the
+floor is designed to do. This is worth knowing before reading the ratio
+column as a clean ranking: a well-diversified watchlist is exactly the case
+most likely to hit the floor, since diversification is what drives σ down in
+the first place.
+
+**Respects Skip; ignores nothing Overlap ignores.** Unlike Overlap, which
+deliberately uses the unskipped window because correlation structure isn't a
+return question, the portfolio card uses the skip-adjusted window - this *is*
+a return question, the same one every row below it is answering, so it should
+exclude the same reversal tail.
+
+The card needs at least 2 names to appear at all - a "portfolio" of one
+holding is just that holding, redundant with the row already showing it - and
+like any ticker, it can return "not enough shared history in this window" if
+the selected window starts before the watchlist's most-recently-added member
+existed. Never shown on the Market screen: `universe` there is the full 500,
+not something to treat as a position.
+
 ## Using it
 
 **Tap a row to add it to your watchlist. Press and hold to open it.** That is
@@ -346,6 +393,9 @@ gestures fire different haptics.
   the others don't already provide; on the Market screen, a candidate that
   wouldn't diversify anything if added. See *Overlap* above for what the
   score does and doesn't mean.
+- **Portfolio summary** — the card above the Watchlist row list: your holdings
+  as one equal-weighted position, not N separate numbers. See *Portfolio
+  summary* above.
 - **Per-ticker** — a scrubbable chart (drag across it and the header figures
   follow your finger), every window's return, σ and ratio at once, and
   swipe left/right to move through the list you came from in the order you

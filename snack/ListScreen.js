@@ -1,10 +1,11 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { ROW_HEIGHT, SegmentedControl, TickerRow } from './ui';
+import { PortfolioSummary, ROW_HEIGHT, SegmentedControl, TickerRow } from './ui';
 import { WindowPicker } from './WindowPicker';
 import { useTheme, radius, space, type, mono } from './theme';
 import { PRESETS, computeWindowStats, formatDateShort, metricValue, slice, withSkip } from './stats';
+import { buildPortfolioTicker } from './portfolio';
 
 const METRICS = [
   { key: 'return', label: 'Return' },
@@ -15,6 +16,7 @@ export function ListScreen({
   title, universe, dates, sectors, win, setPreset, setCustomWindow,
   metric, setMetric, skipEnabled, setSkipEnabled, sessionsStale,
   isWatched, toggleWatch, onOpenDetail, onOrder, emptyState, tab, overlap, overlapCaption,
+  showPortfolioSummary,
 }) {
   const { colors, scheme, preference, setPreference } = useTheme();
   // The range the maths actually uses, once the recent tail is dropped.
@@ -22,6 +24,21 @@ export function ListScreen({
     () => withSkip(win, skipEnabled, sessionsStale, dates.length - 1),
     [win, skipEnabled, sessionsStale, dates.length]
   );
+
+  // Skip applies here exactly as it does to every row below - this is a
+  // return measurement, unlike Overlap, which deliberately ignores skip
+  // because correlation structure isn't a return question.
+  const showPortfolio = showPortfolioSummary && universe.length >= 2;
+  const portfolioTicker = useMemo(
+    () => (showPortfolio ? buildPortfolioTicker(universe, dates.length - 1) : null),
+    [showPortfolio, universe, dates.length]
+  );
+  const portfolioStats = useMemo(
+    () =>
+      portfolioTicker ? computeWindowStats(portfolioTicker, range.startIndex, range.endIndex) : null,
+    [portfolioTicker, range]
+  );
+
   const [query, setQuery] = useState('');
   const [sector, setSector] = useState(null);
   const [sortKey, setSortKey] = useState('metric');
@@ -149,6 +166,8 @@ export function ListScreen({
             </Text>
           </Pressable>
         </View>
+
+        {showPortfolio && <PortfolioSummary stats={portfolioStats} />}
 
         <TextInput
           value={query}

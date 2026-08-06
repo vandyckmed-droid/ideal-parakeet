@@ -17,11 +17,13 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { PortfolioSummary } from '../components/PortfolioSummary';
 import { ROW_HEIGHT, TickerRow } from '../components/TickerRow';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { WindowPicker } from '../components/WindowPicker';
 import { DATES, SECTORS, Ticker, formatDateShort, slice } from '../data/market';
 import { OverlapSummary } from '../data/overlap';
+import { buildPortfolioTicker } from '../data/portfolio';
 import { MetricKey, computeWindowStats, metricValue } from '../data/stats';
 import { PRESETS, PresetKey, withSkip } from '../data/windows';
 import { useAppState } from '../state/AppState';
@@ -42,6 +44,7 @@ export function TickerListScreen({
   emptyState,
   overlap,
   overlapCaption,
+  showPortfolioSummary,
 }: {
   title: string;
   universe: Ticker[];
@@ -59,6 +62,13 @@ export function TickerListScreen({
    * computes the text rather than this component guessing which case applies.
    */
   overlapCaption?: string | null;
+  /**
+   * Shows `universe` treated as one equal-weighted position, using whatever
+   * window and skip setting the rest of the screen is using. Only meaningful
+   * when `universe` genuinely is "the portfolio" - the Watchlist screen's own
+   * holdings, not the Market screen's full 500.
+   */
+  showPortfolioSummary?: boolean;
 }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -73,6 +83,22 @@ export function TickerListScreen({
   const range = useMemo(
     () => withSkip(win, skipEnabled, sessionsStale),
     [win, skipEnabled, sessionsStale]
+  );
+
+  // Skip applies here exactly as it does to every row below: this is a
+  // return measurement, and the whole point of skip is excluding short-term
+  // reversal from a return measurement. That is the opposite of Overlap's
+  // window choice, which deliberately ignores skip because correlation
+  // structure isn't a return question.
+  const showPortfolio = showPortfolioSummary && universe.length >= 2;
+  const portfolioTicker = useMemo(
+    () => (showPortfolio ? buildPortfolioTicker(universe) : null),
+    [showPortfolio, universe]
+  );
+  const portfolioStats = useMemo(
+    () =>
+      portfolioTicker ? computeWindowStats(portfolioTicker, range.startIndex, range.endIndex) : null,
+    [portfolioTicker, range]
   );
 
   const [query, setQuery] = useState('');
@@ -224,6 +250,8 @@ export function TickerListScreen({
             </Text>
           </Pressable>
         </View>
+
+        {showPortfolio && <PortfolioSummary stats={portfolioStats} />}
 
         <TextInput
           value={query}
