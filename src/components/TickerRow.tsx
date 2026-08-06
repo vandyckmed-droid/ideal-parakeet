@@ -3,6 +3,7 @@ import React, { useCallback } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Ticker } from '../data/market';
+import { OVERLAP_THRESHOLD } from '../data/overlap';
 import {
   MetricKey,
   WindowStats,
@@ -26,8 +27,11 @@ type Props = {
   onOpenDetail: (symbol: string) => void;
   rank?: number;
   /**
-   * Set only when this row scores at or above the overlap threshold against
-   * the rest of the current list; only ever passed on the Watchlist screen.
+   * This row's correlation against the current watchlist. Ordinarily set only
+   * for names at or above the overlap threshold (Market and Watchlist both
+   * pass it that way); while sorted by Overlap, every scored row gets one so
+   * the ranking is legible, with tone marking whether it actually crosses the
+   * flag threshold.
    */
   overlapScore?: number | null;
 };
@@ -86,7 +90,9 @@ export const TickerRow = React.memo(function TickerRow({
       accessibilityRole="button"
       accessibilityLabel={
         `${ticker.symbol}, ${ticker.name}` +
-        (overlapScore != null ? ', overlaps your watchlist' : '')
+        (overlapScore != null && overlapScore >= OVERLAP_THRESHOLD
+          ? ', overlaps your watchlist'
+          : '')
       }
       accessibilityHint="Tap to toggle watchlist, long press to open details"
     >
@@ -117,8 +123,22 @@ export const TickerRow = React.memo(function TickerRow({
             <View style={[styles.dot, { backgroundColor: colors.accent }]} />
           )}
           {overlapScore != null && (
-            <View style={[styles.overlapBadge, { backgroundColor: colors.warnMuted }]}>
-              <Text style={[type.micro, mono, { color: colors.warn }]}>
+            <View
+              style={[
+                styles.overlapBadge,
+                {
+                  backgroundColor:
+                    overlapScore >= OVERLAP_THRESHOLD ? colors.warnMuted : colors.surface,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  type.micro,
+                  mono,
+                  { color: overlapScore >= OVERLAP_THRESHOLD ? colors.warn : colors.textMuted },
+                ]}
+              >
                 ⇄ {Math.round(overlapScore * 100)}%
               </Text>
             </View>

@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/Yas6JeV6mmCSkSoNqWjuF), so it can be opened in
+Snack](https://snack.expo.dev/jvxt31bzruVzqTjT2ON_M), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -326,6 +326,43 @@ giving both a holding's "rest of the basket" average
 (`(daySum - own) / (n - 1)`) and the full basket average for every candidate
 outside it (`daySum / n`) directly. Verified bit-identical against a
 brute-force implementation that does perform the literal exclusion.
+
+**Sorting by it.** Both screens carry an "Overlap" sort chip alongside
+Return, Size, and A-Z, once the watchlist itself qualifies for a score (the
+chip is absent under the same conditions the header explains - too few
+names, too short a window). It defaults to ascending, unlike Return and Size:
+the useful direction is lowest correlation first, so the top of the list is
+whichever name would add the most diversification - literally true on the
+Market screen (add this candidate, since it moves least like your basket),
+and the equivalent read on the Watchlist screen (this holding is the least
+redundant with the rest of what you own).
+
+While this sort is active every row shows its own number, not just the ones
+that clear the 65% flag threshold - a badge that only appeared on the
+*worst* names would leave the names at the top of an ascending sort with
+nothing to look at. Tone still marks the threshold: orange for a flagged
+name, neutral gray otherwise. A worked example, an 8-name semiconductor/tech
+watchlist (`SNDK` `MU` `LITE` `WDC` `BE` `STX` `RVMD` `INTC`) sorted by
+Overlap ascending on the default 1Y window:
+
+| Rank | Symbol | Overlap |
+| --- | --- | --- |
+| 1 | RVMD | 19% |
+| 2 | INTC | 56% |
+| 3 | BE | 62% |
+| 4 | LITE | 62% |
+| 5 | STX | 76% |
+| 6 | MU | 77% |
+| 7 | WDC | 79% |
+| 8 | SNDK | 79% |
+
+`RVMD` (a biotech) is the one name in this list not tracking the rest of it;
+`SNDK` and `WDC` (storage, same sub-industry as `MU` and `STX`) sit at the
+redundant end, matching the header's own "Most overlap" line for this basket.
+Re-sorting the full 500-name Market universe the same way surfaces
+`RSG` (waste management) at -47% - a real negative correlation to this
+particular basket, not just a low positive one, which is a stronger
+diversification signal than anything scoring near 0% would be.
 
 ## Portfolio summary
 

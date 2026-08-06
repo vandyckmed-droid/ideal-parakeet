@@ -8,6 +8,7 @@ import * as Haptics from 'expo-haptics';
 import { useColors } from './theme';
 import { mono, radius, space, type } from './theme';
 import { formatMetric, formatPercent, formatPercentPlain, formatPrice, formatRatio, metricValue } from './stats';
+import { OVERLAP_THRESHOLD } from './overlap';
 
 const haptic = (fn) => {
   try {
@@ -420,7 +421,7 @@ export const TickerRow = React.memo(function TickerRow({
       accessibilityRole="button"
       accessibilityLabel={
         `${ticker.s}, ${ticker.n}` +
-        (overlapScore != null ? ', overlaps your watchlist' : '')
+        (overlapScore != null && overlapScore >= OVERLAP_THRESHOLD ? ', overlaps your watchlist' : '')
       }
       accessibilityHint="Tap to toggle watchlist, long press to open details"
     >
@@ -433,8 +434,15 @@ export const TickerRow = React.memo(function TickerRow({
           </Text>
           {watched && <View style={[row.dot, { backgroundColor: colors.accent }]} />}
           {overlapScore != null && (
-            <View style={[row.overlapBadge, { backgroundColor: colors.warnMuted }]}>
-              <Text style={[type.micro, mono, { color: colors.warn }]}>
+            <View
+              style={[
+                row.overlapBadge,
+                { backgroundColor: overlapScore >= OVERLAP_THRESHOLD ? colors.warnMuted : colors.surface },
+              ]}
+            >
+              <Text
+                style={[type.micro, mono, { color: overlapScore >= OVERLAP_THRESHOLD ? colors.warn : colors.textMuted }]}
+              >
                 ⇄ {Math.round(overlapScore * 100)}%
               </Text>
             </View>

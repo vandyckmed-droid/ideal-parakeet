@@ -31,7 +31,7 @@ import { setOrderedSymbols } from '../state/listContext';
 import { useTheme } from '../theme/ThemeProvider';
 import { mono, radius, space, type } from '../theme/theme';
 
-type SortKey = 'metric' | 'cap' | 'symbol';
+type SortKey = 'metric' | 'cap' | 'symbol' | 'overlap';
 
 const METRIC_SEGMENTS: { key: MetricKey; label: string }[] = [
   { key: 'return', label: 'Return' },
@@ -127,6 +127,22 @@ export function TickerListScreen({
   // Typing should not block on re-ranking 500 rows on every keystroke.
   const deferredQuery = useDeferredValue(query);
 
+  // Every scored name, keyed by symbol. Sorting by Overlap needs every row's
+  // own number to rank against, not just the ones that clear the flag
+  // threshold - so while that sort is active this widens from "flagged only"
+  // to "every non-null score," and TickerRow shows the same distinction with
+  // colour (flagged = warn tone, everything else = neutral) rather than by
+  // only rendering a badge for some rows and not others.
+  const overlapScores = useMemo(() => {
+    if (!overlap) return null;
+    const m = new Map<string, number>();
+    for (const s of overlap.scores) {
+      if (s.score === null) continue;
+      if (sortKey === 'overlap' || overlap.flagged.has(s.symbol)) m.set(s.symbol, s.score);
+    }
+    return m;
+  }, [overlap, sortKey]);
+
   const rows = useMemo(() => {
     const needle = deferredQuery.trim().toUpperCase();
 
@@ -153,6 +169,16 @@ export function TickerListScreen({
       if (sortKey === 'cap') {
         return (a.ticker.marketCap - b.ticker.marketCap) * dir;
       }
+      if (sortKey === 'overlap') {
+        const av = overlapScores?.get(a.ticker.symbol) ?? null;
+        const bv = overlapScores?.get(b.ticker.symbol) ?? null;
+        // No comparable history sorts to the bottom either way, same as a
+        // metric a name has no history for.
+        if (av === null && bv === null) return 0;
+        if (av === null) return 1;
+        if (bv === null) return -1;
+        return (av - bv) * dir;
+      }
       const av = metricValue(a.stats, metric);
       const bv = metricValue(b.stats, metric);
       // Names with no history in the window sort to the bottom either way,
@@ -164,19 +190,7 @@ export function TickerListScreen({
     });
 
     return built;
-  }, [universe, deferredQuery, sector, sortKey, descending, metric, range]);
-
-  // Flagged names only: unflagged rows pass `undefined`, which is the same
-  // value TickerRow already receives on the Market screen, so nothing else
-  // about a row's rendering changes because this prop exists.
-  const overlapScores = useMemo(() => {
-    if (!overlap) return null;
-    const m = new Map<string, number>();
-    for (const s of overlap.scores) {
-      if (s.score !== null && overlap.flagged.has(s.symbol)) m.set(s.symbol, s.score);
-    }
-    return m;
-  }, [overlap]);
+  }, [universe, deferredQuery, sector, sortKey, descending, metric, range, overlapScores]);
 
   // Publish the visible order so the detail view swipes through the same list.
   // Both tabs stay mounted, so this is gated on focus: without that the
@@ -199,7 +213,10 @@ export function TickerListScreen({
         setDescending((d) => !d);
         return prev;
       }
-      setDescending(key !== 'symbol');
+      // Overlap's useful direction is ascending, same as Symbol: lowest
+      // correlation to the rest of the list first, so the top of the list is
+      // whichever name would add the most diversification.
+      setDescending(key !== 'symbol' && key !== 'overlap');
       return key;
     });
   }, []);
@@ -214,17 +231,23 @@ export function TickerListScreen({
         watched={isWatched(item.ticker.symbol)}
         onToggleWatch={toggleWatch}
         onOpenDetail={openDetail}
-        rank={sortKey === 'metric' ? index + 1 : undefined}
+        rank={sortKey === 'metric' || sortKey === 'overlap' ? index + 1 : undefined}
         overlapScore={overlapScores?.get(item.ticker.symbol)}
       />
     ),
     [metric, isWatched, toggleWatch, openDetail, sortKey, overlapScores]
   );
 
+  // Only offered once the basket itself qualifies for a score (see
+  // overlap.ts): with too few names or too short a window every score is
+  // null, and a sort with nothing to rank by is a control that does nothing.
   const sortChips: { key: SortKey; label: string }[] = [
     { key: 'metric', label: metric === 'return' ? 'Return' : 'Ratio' },
     { key: 'cap', label: 'Size' },
     { key: 'symbol', label: 'A–Z' },
+    ...(overlap && overlap.reason === 'ok'
+      ? [{ key: 'overlap' as const, label: 'Overlap' }]
+      : []),
   ];
 
   return (

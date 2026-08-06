@@ -60,6 +60,21 @@ export function ListScreen({
   const [descending, setDescending] = useState(true);
   const [pickerOpen, setPickerOpen] = useState(false);
 
+  // Every scored name, keyed by symbol. Sorting by Overlap needs every row's
+  // own number to rank against, not just the ones that clear the flag
+  // threshold - while that sort is active this widens from "flagged only" to
+  // "every non-null score," and TickerRow shows the distinction with colour
+  // instead of only rendering a badge for some rows.
+  const overlapScores = useMemo(() => {
+    if (!overlap) return null;
+    const m = new Map();
+    for (const s of overlap.scores) {
+      if (s.score === null) continue;
+      if (sortKey === 'overlap' || overlap.flagged.has(s.symbol)) m.set(s.symbol, s.score);
+    }
+    return m;
+  }, [overlap, sortKey]);
+
   const rows = useMemo(() => {
     const needle = query.trim().toUpperCase();
     const built = universe
@@ -77,6 +92,14 @@ export function ListScreen({
     built.sort((a, b) => {
       if (sortKey === 'symbol') return a.ticker.s.localeCompare(b.ticker.s) * dir;
       if (sortKey === 'cap') return (a.ticker.mc - b.ticker.mc) * dir;
+      if (sortKey === 'overlap') {
+        const av = overlapScores ? overlapScores.get(a.ticker.s) ?? null : null;
+        const bv = overlapScores ? overlapScores.get(b.ticker.s) ?? null : null;
+        if (av === null && bv === null) return 0;
+        if (av === null) return 1;
+        if (bv === null) return -1;
+        return (av - bv) * dir;
+      }
       const av = metricValue(a.stats, metric);
       const bv = metricValue(b.stats, metric);
       // Names with no history in the window sort to the bottom either way,
@@ -87,19 +110,7 @@ export function ListScreen({
       return (av - bv) * dir;
     });
     return built;
-  }, [universe, query, sector, sortKey, descending, metric, range]);
-
-  // Flagged names only: unflagged rows pass undefined, matching what TickerRow
-  // already receives on the Market screen, so nothing else about a row
-  // changes because this prop exists.
-  const overlapScores = useMemo(() => {
-    if (!overlap) return null;
-    const m = new Map();
-    for (const s of overlap.scores) {
-      if (s.score !== null && overlap.flagged.has(s.symbol)) m.set(s.symbol, s.score);
-    }
-    return m;
-  }, [overlap]);
+  }, [universe, query, sector, sortKey, descending, metric, range, overlapScores]);
 
   // Publish the visible order so the detail view swipes through the same list.
   const symbols = useMemo(() => rows.map((r) => r.ticker.s), [rows]);
@@ -116,7 +127,10 @@ export function ListScreen({
     if (sortKey === key) setDescending((d) => !d);
     else {
       setSortKey(key);
-      setDescending(key !== 'symbol');
+      // Overlap's useful direction is ascending, same as Symbol: lowest
+      // correlation to the rest of the list first, so the top of the list is
+      // whichever name would add the most diversification.
+      setDescending(key !== 'symbol' && key !== 'overlap');
     }
   };
 
@@ -130,17 +144,21 @@ export function ListScreen({
         watched={isWatched(item.ticker.s)}
         onToggleWatch={toggleWatch}
         onOpenDetail={openDetail}
-        rank={sortKey === 'metric' ? index + 1 : undefined}
+        rank={sortKey === 'metric' || sortKey === 'overlap' ? index + 1 : undefined}
         overlapScore={overlapScores?.get(item.ticker.s)}
       />
     ),
     [metric, isWatched, toggleWatch, openDetail, sortKey, overlapScores]
   );
 
+  // Only offered once the basket itself qualifies for a score: with too few
+  // names or too short a window every score is null, and a sort with nothing
+  // to rank by is a control that does nothing.
   const sortChips = [
     { key: 'metric', label: metric === 'return' ? 'Return' : 'Ratio' },
     { key: 'cap', label: 'Size' },
     { key: 'symbol', label: 'A–Z' },
+    ...(overlap && overlap.reason === 'ok' ? [{ key: 'overlap', label: 'Overlap' }] : []),
   ];
 
   return (
