@@ -21,7 +21,7 @@ import { ROW_HEIGHT, TickerRow } from '../components/TickerRow';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { WindowPicker } from '../components/WindowPicker';
 import { DATES, SECTORS, Ticker, formatDateShort, slice } from '../data/market';
-import { OverlapSummary, describeOverlap } from '../data/overlap';
+import { OverlapSummary } from '../data/overlap';
 import { MetricKey, computeWindowStats, metricValue } from '../data/stats';
 import { PRESETS, PresetKey, withSkip } from '../data/windows';
 import { useAppState } from '../state/AppState';
@@ -41,12 +41,24 @@ export function TickerListScreen({
   universe,
   emptyState,
   overlap,
+  overlapCaption,
 }: {
   title: string;
   universe: Ticker[];
   emptyState?: React.ReactNode;
-  /** Only ever supplied by the Watchlist screen. */
+  /**
+   * Drives the row badges on any screen that supplies it. The Market screen
+   * scores the full universe against the current watchlist; the Watchlist
+   * screen scores just its own members.
+   */
   overlap?: OverlapSummary;
+  /**
+   * Header line under the title, or omit for none. What it should say differs
+   * by screen (a Watchlist screen names its own redundant holdings; a Market
+   * screen counts candidates that would be redundant if added), so the caller
+   * computes the text rather than this component guessing which case applies.
+   */
+  overlapCaption?: string | null;
 }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -183,17 +195,17 @@ export function TickerListScreen({
               {formatDateShort(DATES[range.endIndex])}
               {range.skip > 0 ? ` · ${range.skip}d skipped` : ''}
             </Text>
-            {overlap && universe.length > 0 && (
+            {overlapCaption && (
               <Text
                 style={[
                   type.caption,
                   {
-                    color: overlap.flagged.size > 0 ? colors.warn : colors.textFaint,
+                    color: overlap && overlap.flagged.size > 0 ? colors.warn : colors.textFaint,
                     marginTop: 2,
                   },
                 ]}
               >
-                {describeOverlap(overlap, universe.length)}
+                {overlapCaption}
               </Text>
             )}
           </View>

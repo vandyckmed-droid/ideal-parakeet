@@ -15,7 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { ThemeProvider, useTheme, radius, space, type } from './theme';
 import { sessionsSinceSnapshot, windowForPreset } from './stats';
-import { computeOverlap } from './overlap';
+import { OVERLAP_THRESHOLD, computeOverlap, countCandidateFlags, describeOverlap } from './overlap';
 import { ListScreen } from './ListScreen';
 import { DetailScreen } from './DetailScreen';
 
@@ -166,9 +166,25 @@ function Shell() {
   // The full selected window, not the skip-adjusted range: the skip exists to
   // exclude short-term reversal from a return measurement, which has no
   // bearing on how two return series co-move across the window as a whole.
-  // Only computed for the Watchlist tab - the Market tab never shows it.
+  //
+  // Market scores the whole universe against the watchlist basket - a badge
+  // there means "adding this wouldn't diversify anything," whether or not
+  // it's already held. Watchlist scores only its own members (no reason to
+  // score 494 names it will never render).
   const overlap =
-    tab === 'watchlist' ? computeOverlap(watched, win.startIndex, win.endIndex) : null;
+    tab === 'market'
+      ? computeOverlap(watched, data.tickers, win.startIndex, win.endIndex)
+      : computeOverlap(watched, watched, win.startIndex, win.endIndex);
+
+  let overlapCaption = null;
+  if (tab === 'watchlist') {
+    if (watched.length > 0) overlapCaption = describeOverlap(overlap, watched.length);
+  } else if (overlap.reason === 'ok') {
+    const count = countCandidateFlags(overlap);
+    if (count > 0) {
+      overlapCaption = `${count} name${count === 1 ? '' : 's'} would overlap your watchlist by ${Math.round(OVERLAP_THRESHOLD * 100)}% or more`;
+    }
+  }
 
   const tabBar = (
     <View style={[s.tabs, { backgroundColor: colors.bg, borderTopColor: colors.hairline }]}>
@@ -212,6 +228,7 @@ function Shell() {
         onOrder={setOrder}
         tab={tabBar}
         overlap={overlap}
+        overlapCaption={overlapCaption}
         emptyState={
           tab === 'watchlist' ? (
             <View style={{ alignItems: 'center', gap: space(2) }}>

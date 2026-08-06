@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/Xk1vrVm37NoNAKFIBpFd6), so it can be opened in
+Snack](https://snack.expo.dev/Fl7xT_0poVRojac1-2ido), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -245,27 +245,33 @@ Session counting is weekend-aware but has no holiday calendar. A market holiday
 inside the gap overcounts by one session, which moves the measurement date by a
 day and changes a multi-month return negligibly.
 
-## Watchlist overlap
+## Overlap
 
-The Watchlist screen flags names that are redundant with the rest of the list:
-each one adds little a portfolio doesn't already have from the others.
+Both screens flag names that would add little a portfolio doesn't already
+have: the Watchlist screen flags redundant holdings, the Market screen flags
+redundant *candidates* - names not currently held that would be no more
+diversifying if added.
 
-For every name in the watchlist, its own daily returns are correlated (Pearson
-r) against the equal-weighted average daily return of every *other* name in
-the list, over the same days. A high score means the name moves like the
-basket as a whole - it does **not** mean it is correlated with any single other
-name in it. Two names can each score high without being correlated with each
-other, if each independently tracks the group. The summary line is worded to
-match that: "Most overlap: AMD 93%, INTC 91%" names two names that are each
-redundant with the group, not a claim that the two move together.
+Every name is scored against your watchlist as the comparison basket. A
+current holding's score is a leave-one-out correlation (Pearson r) - its own
+daily returns against the equal-weighted average daily return of every
+*other* holding, on the same days. A name you don't hold has nothing to leave
+out, so it is correlated directly against the full basket average instead.
+Both describe the same thing: how much a name's daily moves resemble the
+basket as a whole. That is **not** a claim that any two flagged names are
+correlated with each other - two names can each score high independently by
+each tracking the group, without moving together at all. "Most overlap: AMD
+68%, MU 67%" names two names that are each redundant with the group, not a
+pair that moves in lockstep.
 
-The top two names scoring **65% or higher** are flagged, shown as a badge on
-their row and named in the header. Requiring the threshold as well as ranking
-top two means a diversified list can flag nothing at all, which is correct -
-"the two least-diversified names" is not a useful alert when none of them are
-concentrated. `OVERLAP_THRESHOLD` and `MAX_OVERLAP_FLAGS` in
-`src/data/overlap.ts` are the two numbers to change if you'd rather have that
-apply unconditionally.
+Every name scoring **65% or higher** is flagged - on the Watchlist screen,
+shown as a badge and named in the header; on the Market screen, shown as a
+badge on every matching row among all 500, with a count in the header ("12
+names would overlap your watchlist by 65% or more"). There is no cap on how
+many can flag: a watchlist of 6 correlated names can flag all 6, and a search
+for a sector you're already concentrated in can turn up a dozen matches.
+`OVERLAP_THRESHOLD` in `src/data/overlap.ts` is the number to change if 65%
+flags more or less than you want.
 
 65% rather than a round 70%: on the default 1Y window, real watchlists fall
 into a natural gap. Loosely related sets - REITs, a mix of megacap tech
@@ -294,20 +300,31 @@ year-long picture says. The one set that stays quiet at every window length is
 a genuinely cross-sector one - the diversified example above tops out at 57%
 even on 1M, well short of the threshold.
 
-At least 3 names are needed to run the calculation at all - "the rest of the
-list" isn't meaningful for one comparison - and at least 20 aligned daily
-returns, below which a correlation is mostly sampling noise. A recently listed
-name in the watchlist shortens the comparison for everyone: every name needs a
-close on every day measured, so the window clamps to whichever member listed
-most recently rather than dropping that name or measuring it against a
-shorter series than the rest. The header explains whichever of these applies
-instead of showing a blank result.
+At least 3 names in the watchlist are needed to run the calculation at all -
+"the rest of the list" isn't meaningful for one comparison - and at least 20
+aligned daily returns, below which a correlation is mostly sampling noise.
+This 3-name minimum gates Market-screen candidate flags too, even though
+scoring a candidate against a smaller basket is mathematically no different:
+a basket that small barely qualifies as "a basket" to screen candidates
+against in the first place, not a limit of the maths. The Watchlist header
+explains whichever of these applies instead of showing a blank result; the
+Market screen just stays quiet, since that guidance belongs on the screen
+with the watchlist on it.
+
+A recently listed *holding* shortens the comparison window for everyone:
+every basket member needs a close on every day measured, so the window
+clamps to whichever one listed most recently. A recently listed *candidate*
+does not - it isn't part of the basket, so there is nothing to clamp for it.
+It simply cannot be scored over a window it doesn't fully cover, and gets no
+badge for that window rather than shortening the comparison for the other 499
+names. A longer window (or Max) makes more candidates eligible.
 
 Computed with a leave-one-out identity rather than literally excluding each
-name and re-averaging: the per-day sum across all names is taken once, and
-each name's "rest of the list" average return on a given day is
-`(daySum - ownReturn) / (n - 1)`. Verified bit-identical against a brute-force
-implementation that does perform the literal exclusion.
+holding and re-averaging: the per-day sum across the basket is taken once,
+giving both a holding's "rest of the basket" average
+(`(daySum - own) / (n - 1)`) and the full basket average for every candidate
+outside it (`daySum / n`) directly. Verified bit-identical against a
+brute-force implementation that does perform the literal exclusion.
 
 ## Using it
 
@@ -324,9 +341,11 @@ gestures fire different haptics.
 - **Return / Return ÷ σ** — switches what the list shows and ranks by.
 - **Skip** — drops the recent tail of every window, scaled to its length. See
   *Skipping the recent tail* above. The setting persists across launches.
-- **Watchlist overlap** — an amber `⇄` badge on a row means that name is
-  redundant with the rest of your list; the header names the flagged names
-  together. See *Watchlist overlap* above for what that does and doesn't mean.
+- **Overlap** — an amber `⇄` badge on a row means that name is redundant with
+  your watchlist: on the Watchlist screen, a current holding that adds little
+  the others don't already provide; on the Market screen, a candidate that
+  wouldn't diversify anything if added. See *Overlap* above for what the
+  score does and doesn't mean.
 - **Per-ticker** — a scrubbable chart (drag across it and the header figures
   follow your finger), every window's return, σ and ratio at once, and
   swipe left/right to move through the list you came from in the order you

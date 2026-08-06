@@ -1,13 +1,13 @@
 import { Ticker, closeAt } from './market';
 
-/** Below this many names, "the rest of the list" isn't a meaningful comparison. */
+/** Below this many basket names, "the rest of the list" isn't a meaningful comparison. */
 export const MIN_OVERLAP_NAMES = 3;
 
 /** Below this many aligned daily returns, a correlation is mostly sampling noise. */
 export const MIN_OVERLAP_OBSERVATIONS = 20;
 
 /**
- * A name scoring at or above this against the rest of the list is flagged.
+ * A name scoring at or above this against the basket is flagged.
  *
  * Set from the natural gap in how real watchlists score on the default 1Y
  * window: loosely related sets (REITs, diversified megacap tech) top out
@@ -17,22 +17,22 @@ export const MIN_OVERLAP_OBSERVATIONS = 20;
  */
 export const OVERLAP_THRESHOLD = 0.65;
 
-/** At most this many names are flagged, even if more names clear the threshold. */
-export const MAX_OVERLAP_FLAGS = 2;
-
-export type OverlapScore = {
+export type OverlapEntry = {
   symbol: string;
   /**
-   * Pearson r between this name's own daily returns and the equal-weighted
-   * average return of every *other* name in the set, over the same days.
-   * Null when the set is too small or the aligned history too short.
+   * Pearson r against the basket, on the same days. Null when the basket is
+   * too small or short, or when this name listed after the window's aligned
+   * start and so cannot be scored over it.
    */
   score: number | null;
+  /** True when this name is itself a member of the basket being compared against. */
+  inBasket: boolean;
 };
 
 export type OverlapSummary = {
-  /** One entry per input ticker, in input order. */
-  scores: OverlapScore[];
+  /** One entry per ticker in the scored `universe`, in that order. */
+  scores: OverlapEntry[];
+  /** Every symbol scoring at or above OVERLAP_THRESHOLD. Not capped in count. */
   flagged: Set<string>;
   /** Aligned daily-return count actually used. */
   observations: number;
@@ -40,12 +40,17 @@ export type OverlapSummary = {
 };
 
 function empty(
-  tickers: Ticker[],
+  universe: Ticker[],
+  basketSymbols: Set<string>,
   reason: OverlapSummary['reason'],
   observations = 0
 ): OverlapSummary {
   return {
-    scores: tickers.map((t) => ({ symbol: t.symbol, score: null })),
+    scores: universe.map((t) => ({
+      symbol: t.symbol,
+      score: null,
+      inBasket: basketSymbols.has(t.symbol),
+    })),
     flagged: new Set(),
     observations,
     reason,
@@ -53,73 +58,90 @@ function empty(
 }
 
 /**
- * Leave-one-out overlap for a set of names over one window.
+ * Score every ticker in `universe` against a fixed comparison basket (the
+ * watchlist), over one window.
  *
- * For each name, correlate its own daily returns against the equal-weighted
- * average return of every *other* name in the set, on the same days. A high
- * score means the name adds little the rest of the list doesn't already
- * provide - it moves like the basket, not necessarily like any single other
- * name in it. That distinction matters for how a result should be described:
- * two flagged names are each redundant with the group, which is a different
- * claim from saying the two are correlated with each other.
+ * A basket member's score is a leave-one-out correlation - its own daily
+ * returns against the equal-weighted average of every *other* basket member,
+ * on the same days - the definition the Watchlist screen has always used. A
+ * name outside the basket has nothing to leave out, so it is correlated
+ * directly against the full basket average instead. Both describe the same
+ * thing: how much a name's daily moves resemble the basket, whether or not
+ * the name is currently held. That is what makes it meaningful to pass the
+ * *entire tradable universe* as `universe` - the result screens candidates
+ * for whether adding them would actually diversify anything, not only names
+ * already on the list.
  *
- * Every name needs a close on every day measured, so the start of the window
- * clamps to whichever member of the set listed most recently - a newly listed
- * name in the watchlist shortens the comparison for everyone, rather than
- * being silently dropped or measured against a shorter series than the rest.
+ * The window's start clamps to whichever *basket* member listed most
+ * recently, exactly as when scoring the basket alone. A candidate outside the
+ * basket that listed even later than that simply cannot be scored over this
+ * exact window - it gets `score: null` rather than shortening the window for
+ * everyone else, which would make scores computed for different candidates
+ * refer to different stretches of time and no longer comparable to each
+ * other. A longer window (or Max) makes more candidates eligible.
  *
- * Computed in one pass rather than literally excluding each name and
- * re-averaging: the per-day sum across all names is taken once, and each
- * name's "rest of the list" average on a given day is
- * `(daySum - ownReturn) / (n - 1)`. Same result as the naive approach,
- * O(n) per name instead of O(n) per name per exclusion.
+ * Computed in one pass rather than literally excluding each basket member and
+ * re-averaging: the per-day sum across the basket is taken once, giving both
+ * the leave-one-out figure for members (`(daySum - own) / (n - 1)`) and the
+ * full basket average for everyone else (`daySum / n`) directly.
  */
 export function computeOverlap(
-  tickers: Ticker[],
+  basket: Ticker[],
+  universe: Ticker[],
   startIndex: number,
   endIndex: number
 ): OverlapSummary {
-  const n = tickers.length;
-  if (n < MIN_OVERLAP_NAMES) return empty(tickers, 'too_few_names');
+  const basketSymbols = new Set(basket.map((t) => t.symbol));
+  const n = basket.length;
+  if (n < MIN_OVERLAP_NAMES) return empty(universe, basketSymbols, 'too_few_names');
 
   let alignedStart = startIndex;
-  for (const t of tickers) alignedStart = Math.max(alignedStart, t.offset);
+  for (const t of basket) alignedStart = Math.max(alignedStart, t.offset);
   const observations = endIndex - alignedStart;
 
   if (observations < MIN_OVERLAP_OBSERVATIONS) {
-    return empty(tickers, 'insufficient_history', Math.max(0, observations));
+    return empty(universe, basketSymbols, 'insufficient_history', Math.max(0, observations));
   }
 
-  const returns = tickers.map((t) => {
-    const series = new Array<number>(observations);
+  const seriesOf = (t: Ticker): number[] => {
+    const out = new Array<number>(observations);
     for (let k = 0; k < observations; k++) {
       const i = alignedStart + k;
-      // Safe: alignedStart >= t.offset for every name, and every series in
-      // the bundled dataset extends through the newest date, so both closes
-      // are always present in range.
-      series[k] = closeAt(t, i + 1)! / closeAt(t, i)! - 1;
+      // Safe: i >= t.offset whenever this is called, and every series in the
+      // bundled dataset extends through the newest date.
+      out[k] = closeAt(t, i + 1)! / closeAt(t, i)! - 1;
     }
-    return series;
-  });
+    return out;
+  };
 
+  const basketReturns = new Map<string, number[]>();
   const daySum = new Array<number>(observations).fill(0);
-  for (const series of returns) {
+  for (const t of basket) {
+    const series = seriesOf(t);
+    basketReturns.set(t.symbol, series);
     for (let k = 0; k < observations; k++) daySum[k] += series[k];
   }
+  const basketAvg = daySum.map((v) => v / n);
 
-  const scores: OverlapScore[] = tickers.map((t, idx) => {
-    const own = returns[idx];
-    const rest = new Array<number>(observations);
-    for (let k = 0; k < observations; k++) rest[k] = (daySum[k] - own[k]) / (n - 1);
-    return { symbol: t.symbol, score: pearson(own, rest) };
+  const scores: OverlapEntry[] = universe.map((t) => {
+    const inBasket = basketSymbols.has(t.symbol);
+    if (t.offset > alignedStart) return { symbol: t.symbol, score: null, inBasket };
+
+    const own = basketReturns.get(t.symbol) ?? seriesOf(t);
+    let compare: number[];
+    if (inBasket) {
+      const rest = new Array<number>(observations);
+      for (let k = 0; k < observations; k++) rest[k] = (daySum[k] - own[k]) / (n - 1);
+      compare = rest;
+    } else {
+      compare = basketAvg;
+    }
+    return { symbol: t.symbol, score: pearson(own, compare), inBasket };
   });
 
   const flagged = new Set(
     scores
-      .filter((s): s is { symbol: string; score: number } => s.score !== null)
-      .sort((a, b) => b.score - a.score)
-      .filter((s) => s.score >= OVERLAP_THRESHOLD)
-      .slice(0, MAX_OVERLAP_FLAGS)
+      .filter((s): s is OverlapEntry & { score: number } => s.score !== null && s.score >= OVERLAP_THRESHOLD)
       .map((s) => s.symbol)
   );
 
@@ -152,7 +174,15 @@ function pearson(x: number[], y: number[]): number | null {
   return cov / Math.sqrt(vx * vy);
 }
 
-/** Header line summarising an overlap result for the watchlist screen. */
+/** Most names a header line names before falling back to "+N more". */
+const MAX_NAMED = 6;
+
+/**
+ * Header line for the Watchlist screen: describes flags among basket
+ * (watchlist) members only. A candidate flagged elsewhere in the universe
+ * belongs on the Market screen, not named here - "most overlap" on your own
+ * list should describe your own holdings.
+ */
 export function describeOverlap(overlap: OverlapSummary, n: number): string {
   if (overlap.reason === 'too_few_names') {
     const need = MIN_OVERLAP_NAMES - n;
@@ -161,13 +191,23 @@ export function describeOverlap(overlap: OverlapSummary, n: number): string {
   if (overlap.reason === 'insufficient_history') {
     return `Widen the window to see overlap · ${overlap.observations} of ${MIN_OVERLAP_OBSERVATIONS} days available`;
   }
-  if (overlap.flagged.size === 0) {
+  const flagged = overlap.scores
+    .filter((s) => s.inBasket && overlap.flagged.has(s.symbol))
+    .sort((a, b) => (b.score as number) - (a.score as number));
+  if (flagged.length === 0) {
     return `No name overlaps the rest of the list by ${Math.round(OVERLAP_THRESHOLD * 100)}% or more`;
   }
-  const named = overlap.scores
-    .filter((s) => overlap.flagged.has(s.symbol))
-    .sort((a, b) => (b.score as number) - (a.score as number))
+  const named = flagged
+    .slice(0, MAX_NAMED)
     .map((s) => `${s.symbol} ${Math.round((s.score as number) * 100)}%`)
     .join(', ');
-  return `Most overlap: ${named}`;
+  const extra = flagged.length > MAX_NAMED ? ` (+${flagged.length - MAX_NAMED} more)` : '';
+  return `Most overlap: ${named}${extra}`;
+}
+
+/** Count of flagged names that are candidates, not current holdings. */
+export function countCandidateFlags(overlap: OverlapSummary): number {
+  let count = 0;
+  for (const s of overlap.scores) if (!s.inBasket && overlap.flagged.has(s.symbol)) count++;
+  return count;
 }

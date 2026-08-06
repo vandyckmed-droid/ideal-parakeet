@@ -279,7 +279,7 @@ export const TickerRow = React.memo(function TickerRow({
       accessibilityRole="button"
       accessibilityLabel={
         `${ticker.s}, ${ticker.n}` +
-        (overlapScore != null ? ', overlaps the rest of your list' : '')
+        (overlapScore != null ? ', overlaps your watchlist' : '')
       }
       accessibilityHint="Tap to toggle watchlist, long press to open details"
     >
