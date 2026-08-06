@@ -5,7 +5,10 @@ import { closeAt } from './stats';
 
 export const MIN_OVERLAP_NAMES = 3;
 export const MIN_OVERLAP_OBSERVATIONS = 20;
-export const OVERLAP_THRESHOLD = 0.7;
+// Set from the natural gap in how real watchlists score on the default 1Y
+// window: loosely related sets top out around 55-58%, genuinely concentrated
+// ones sit at 68%+. 0.65 falls in that gap rather than on either edge.
+export const OVERLAP_THRESHOLD = 0.65;
 export const MAX_OVERLAP_FLAGS = 2;
 
 function empty(tickers, reason, observations) {

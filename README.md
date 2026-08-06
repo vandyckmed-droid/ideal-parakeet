@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/Bf9ItIlj-m-KeAMHtOVTq), so it can be opened in
+Snack](https://snack.expo.dev/Xk1vrVm37NoNAKFIBpFd6), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -259,7 +259,7 @@ other, if each independently tracks the group. The summary line is worded to
 match that: "Most overlap: AMD 93%, INTC 91%" names two names that are each
 redundant with the group, not a claim that the two move together.
 
-The top two names scoring **70% or higher** are flagged, shown as a badge on
+The top two names scoring **65% or higher** are flagged, shown as a badge on
 their row and named in the header. Requiring the threshold as well as ranking
 top two means a diversified list can flag nothing at all, which is correct -
 "the two least-diversified names" is not a useful alert when none of them are
@@ -267,20 +267,32 @@ concentrated. `OVERLAP_THRESHOLD` and `MAX_OVERLAP_FLAGS` in
 `src/data/overlap.ts` are the two numbers to change if you'd rather have that
 apply unconditionally.
 
+65% rather than a round 70%: on the default 1Y window, real watchlists fall
+into a natural gap. Loosely related sets - REITs, a mix of megacap tech
+business models - top out around 55-58%. Genuinely concentrated ones sit at
+68% and up: six major semiconductor names (`NVDA` `AMD` `MU` `AVGO` `INTC`
+`QCOM`) reach 68%, regional banks 86%, oil majors 89%, utilities 90%. 65%
+falls in that gap rather than on either edge, so it catches the semiconductor
+case without also catching REITs or diversified tech.
+
 **It uses the full selected window, not the skip-adjusted one.** The skip
 exists to exclude short-term reversal from a *return* measurement; it has no
 bearing on how two return series co-move across the window as a whole, so
 switching Skip on does not change the overlap computed here.
 
-**Window length matters more than you'd expect.** Correlation this way is
-naturally quite strict: on the default 1Y window (252 daily returns),
-idiosyncratic day-to-day noise dominates enough that even a concentrated
-same-sector cluster rarely clears 70% - six major semiconductor names
-(`NVDA` `AMD` `MU` `AVGO` `INTC` `QCOM`) top out at 68% on 1Y. The same set
-on a 1M window (21 sessions, where a shared macro or sector move is a much
-larger share of the total) flags `AMD` at 93% and `INTC` at 91%. Shorter
-windows are where this actually catches something; on the 1Y default, expect
-it to stay quiet for all but the most extreme concentration.
+**Shorter windows are more sensitive, for everything.** Correlation this way
+is naturally stricter over longer windows: idiosyncratic day-to-day noise
+dominates a 252-day correlation more than a 21-day one. The semiconductor set
+above flags two names (`AMD` 68%, `MU` 67%) on the 1Y default; the same set on
+a 1M window pushes those to `AMD` 93% and `INTC` 91%. That sensitivity isn't
+limited to genuinely concentrated sets, though - REITs (58% on 1Y) cross the
+threshold on a 1M window too (69%), and so does a mixed-business megacap tech
+set (54% on 1Y, 66% on 1M). A short window and a shared bad month can make
+almost any same-industry-ish list look concentrated, correctly: a REIT-heavy
+watchlist genuinely does move together in a real-estate selloff, whatever the
+year-long picture says. The one set that stays quiet at every window length is
+a genuinely cross-sector one - the diversified example above tops out at 57%
+even on 1M, well short of the threshold.
 
 At least 3 names are needed to run the calculation at all - "the rest of the
 list" isn't meaningful for one comparison - and at least 20 aligned daily

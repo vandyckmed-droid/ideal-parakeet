@@ -6,8 +6,16 @@ export const MIN_OVERLAP_NAMES = 3;
 /** Below this many aligned daily returns, a correlation is mostly sampling noise. */
 export const MIN_OVERLAP_OBSERVATIONS = 20;
 
-/** A name scoring at or above this against the rest of the list is flagged. */
-export const OVERLAP_THRESHOLD = 0.7;
+/**
+ * A name scoring at or above this against the rest of the list is flagged.
+ *
+ * Set from the natural gap in how real watchlists score on the default 1Y
+ * window: loosely related sets (REITs, diversified megacap tech) top out
+ * around 55-58%, while genuinely concentrated ones (semiconductors, regional
+ * banks, oil majors) sit at 68% and up. 0.65 falls in that gap rather than on
+ * either edge.
+ */
+export const OVERLAP_THRESHOLD = 0.65;
 
 /** At most this many names are flagged, even if more names clear the threshold. */
 export const MAX_OVERLAP_FLAGS = 2;
