@@ -107,21 +107,16 @@ export const PRESETS = [
   { key: '1M', label: '1M' },
   { key: '3M', label: '3M' },
   { key: '6M', label: '6M' },
-  { key: 'YTD', label: 'YTD' },
+  { key: '9M', label: '9M' },
   { key: '1Y', label: '1Y' },
   { key: '2Y', label: 'Max' },
 ];
 
-const LOOKBACK = { '1M': 21, '3M': 63, '6M': 126, '1Y': 252 };
+const LOOKBACK = { '1M': 21, '3M': 63, '6M': 126, '9M': 189, '1Y': 252 };
 
 export function windowForPreset(preset, dates) {
   const endIndex = dates.length - 1;
   if (preset === '2Y' || preset === 'CUSTOM') return { startIndex: 0, endIndex, preset };
-  if (preset === 'YTD') {
-    const year = dates[endIndex].slice(0, 4);
-    const i = dates.findIndex((d) => d.startsWith(year));
-    return { startIndex: i <= 0 ? 0 : i - 1, endIndex, preset };
-  }
   return { startIndex: Math.max(0, endIndex - LOOKBACK[preset]), endIndex, preset };
 }
 

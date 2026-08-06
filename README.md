@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/YCUOrOh1pquLo2i2mryO3), so it can be opened in
+Snack](https://snack.expo.dev/cLOiPkhywyr3Vdyp-Xlwg), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -189,7 +189,12 @@ hand-picked custom window gets a sensible one too:
 | 1M | ≤ 21 | 5 |
 | 3M | ≤ 63 | 10 |
 | 6M | ≤ 126 | 15 |
-| 1Y and longer | > 126 | 20 |
+| 9M, 1Y and longer | > 126 | 20 |
+
+`9M` is 189 sessions and lands in the top bucket, so it skips 20 rather than
+an interpolated 17. That follows the principle above rather than the shape of
+the table: reversal is a roughly fixed one-month effect, so every window past
+about six months should drop the same tail.
 
 Deliberately sublinear: reversal is roughly a fixed one-month effect rather
 than a fixed fraction of the lookback, so a proportional skip would gut the
