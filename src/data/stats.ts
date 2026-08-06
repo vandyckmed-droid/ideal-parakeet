@@ -58,7 +58,16 @@ export type WindowStats = {
 export function computeWindowStats(
   ticker: Ticker,
   startIndex: number,
-  endIndex: number
+  endIndex: number,
+  /**
+   * The floor exists to stop a single quiet *name* dominating a ranking for
+   * reasons unrelated to skill - the EA case, a price pinned near a deal.
+   * That reasoning does not carry over to a portfolio: a well-diversified
+   * basket routinely produces sigma below VOL_FLOOR as the ordinary,
+   * intended result of combining imperfectly-correlated holdings, not an
+   * anomaly to correct for. Portfolio-level callers pass false.
+   */
+  applyFloor = true
 ): WindowStats | null {
   if (endIndex <= startIndex) return null;
 
@@ -97,9 +106,10 @@ export function computeWindowStats(
     annualizedVol = Math.sqrt(variance * TRADING_DAYS_PER_YEAR);
   }
 
-  // Divisor is floored; `annualizedVol` above stays the honest measurement.
+  // Divisor is floored when asked; `annualizedVol` above always stays the
+  // honest measurement either way.
   const divisor =
-    annualizedVol === null ? null : Math.max(annualizedVol, VOL_FLOOR);
+    annualizedVol === null ? null : applyFloor ? Math.max(annualizedVol, VOL_FLOOR) : annualizedVol;
   const ratio =
     annualizedReturn !== null && divisor !== null && divisor > 1e-9
       ? annualizedReturn / divisor
@@ -111,7 +121,7 @@ export function computeWindowStats(
     totalReturn,
     annualizedReturn,
     annualizedVol,
-    volFloored: annualizedVol !== null && annualizedVol < VOL_FLOOR,
+    volFloored: applyFloor && annualizedVol !== null && annualizedVol < VOL_FLOOR,
     ratio,
     observations,
   };

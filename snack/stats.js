@@ -44,7 +44,12 @@ export function slice(t, from, to) {
  * differently over one month than over one year and the column could not be
  * ranked at all.
  */
-export function computeWindowStats(ticker, startIndex, endIndex) {
+// applyFloor: VOL_FLOOR exists to stop one quiet *name* dominating a ranking
+// for reasons unrelated to skill (the EA case - a price pinned near a deal).
+// That reasoning doesn't carry over to a portfolio, where sigma below
+// VOL_FLOOR is the ordinary, intended result of diversification, not an
+// anomaly. Portfolio-level callers pass false.
+export function computeWindowStats(ticker, startIndex, endIndex, applyFloor = true) {
   if (endIndex <= startIndex) return null;
 
   const startPrice = closeAt(ticker, startIndex);
@@ -77,8 +82,10 @@ export function computeWindowStats(ticker, startIndex, endIndex) {
     annualizedVol = Math.sqrt(variance * TRADING_DAYS_PER_YEAR);
   }
 
-  // Divisor is floored; `annualizedVol` stays the honest measurement.
-  const divisor = annualizedVol === null ? null : Math.max(annualizedVol, VOL_FLOOR);
+  // Divisor is floored when asked; `annualizedVol` always stays the honest
+  // measurement either way.
+  const divisor =
+    annualizedVol === null ? null : applyFloor ? Math.max(annualizedVol, VOL_FLOOR) : annualizedVol;
   const ratio =
     annualizedReturn !== null && divisor !== null && divisor > 1e-9
       ? annualizedReturn / divisor
@@ -90,7 +97,7 @@ export function computeWindowStats(ticker, startIndex, endIndex) {
     totalReturn,
     annualizedReturn,
     annualizedVol,
-    volFloored: annualizedVol !== null && annualizedVol < VOL_FLOOR,
+    volFloored: applyFloor && annualizedVol !== null && annualizedVol < VOL_FLOOR,
     ratio,
     observations,
   };

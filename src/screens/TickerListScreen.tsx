@@ -23,7 +23,7 @@ import { SegmentedControl } from '../components/SegmentedControl';
 import { WindowPicker } from '../components/WindowPicker';
 import { DATES, SECTORS, Ticker, formatDateShort, slice } from '../data/market';
 import { OverlapSummary } from '../data/overlap';
-import { buildPortfolioTicker } from '../data/portfolio';
+import { buildPortfolioTicker, computeDiversificationRatio } from '../data/portfolio';
 import { MetricKey, computeWindowStats, metricValue } from '../data/stats';
 import { PRESETS, PresetKey, withSkip } from '../data/windows';
 import { useAppState } from '../state/AppState';
@@ -95,10 +95,27 @@ export function TickerListScreen({
     () => (showPortfolio ? buildPortfolioTicker(universe) : null),
     [showPortfolio, universe]
   );
+  // applyFloor: false - VOL_FLOOR exists to stop one quiet name dominating a
+  // ranking for reasons unrelated to skill, which has nothing to do with a
+  // portfolio's own honestly-earned low sigma.
   const portfolioStats = useMemo(
     () =>
-      portfolioTicker ? computeWindowStats(portfolioTicker, range.startIndex, range.endIndex) : null,
+      portfolioTicker
+        ? computeWindowStats(portfolioTicker, range.startIndex, range.endIndex, false)
+        : null,
     [portfolioTicker, range]
+  );
+  const diversificationRatio = useMemo(
+    () =>
+      showPortfolio
+        ? computeDiversificationRatio(
+            universe,
+            range.startIndex,
+            range.endIndex,
+            portfolioStats?.annualizedVol ?? null
+          )
+        : null,
+    [showPortfolio, universe, range, portfolioStats]
   );
 
   const [query, setQuery] = useState('');
@@ -251,7 +268,9 @@ export function TickerListScreen({
           </Pressable>
         </View>
 
-        {showPortfolio && <PortfolioSummary stats={portfolioStats} />}
+        {showPortfolio && (
+          <PortfolioSummary stats={portfolioStats} diversificationRatio={diversificationRatio} />
+        )}
 
         <TextInput
           value={query}

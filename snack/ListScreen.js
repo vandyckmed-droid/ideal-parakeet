@@ -5,7 +5,7 @@ import { PortfolioSummary, ROW_HEIGHT, SegmentedControl, TickerRow } from './ui'
 import { WindowPicker } from './WindowPicker';
 import { useTheme, radius, space, type, mono } from './theme';
 import { PRESETS, computeWindowStats, formatDateShort, metricValue, slice, withSkip } from './stats';
-import { buildPortfolioTicker } from './portfolio';
+import { buildPortfolioTicker, computeDiversificationRatio } from './portfolio';
 
 const METRICS = [
   { key: 'return', label: 'Return' },
@@ -33,10 +33,25 @@ export function ListScreen({
     () => (showPortfolio ? buildPortfolioTicker(universe, dates.length - 1) : null),
     [showPortfolio, universe, dates.length]
   );
+  // applyFloor: false - see the comment on computeWindowStats in stats.js.
   const portfolioStats = useMemo(
     () =>
-      portfolioTicker ? computeWindowStats(portfolioTicker, range.startIndex, range.endIndex) : null,
+      portfolioTicker
+        ? computeWindowStats(portfolioTicker, range.startIndex, range.endIndex, false)
+        : null,
     [portfolioTicker, range]
+  );
+  const diversificationRatio = useMemo(
+    () =>
+      showPortfolio
+        ? computeDiversificationRatio(
+            universe,
+            range.startIndex,
+            range.endIndex,
+            portfolioStats ? portfolioStats.annualizedVol : null
+          )
+        : null,
+    [showPortfolio, universe, range, portfolioStats]
   );
 
   const [query, setQuery] = useState('');
@@ -167,7 +182,9 @@ export function ListScreen({
           </Pressable>
         </View>
 
-        {showPortfolio && <PortfolioSummary stats={portfolioStats} />}
+        {showPortfolio && (
+          <PortfolioSummary stats={portfolioStats} diversificationRatio={diversificationRatio} />
+        )}
 
         <TextInput
           value={query}

@@ -1,7 +1,7 @@
 // Shared presentational pieces: segmented control, sparkline, price chart, row.
 
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Path, Line as SvgLine, Stop } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 
@@ -245,11 +245,73 @@ export function PriceChart({ values, height = 220, onScrub, excludeTail = 0 }) {
 }
 
 /**
- * The watchlist's own return, volatility and risk-adjusted return, treated as
- * one equal-weighted position rather than N separate rows. `stats` already
- * reflects whatever window and skip setting the rest of the screen is using.
+ * A small circled "i" that opens a short explanation on tap. For a stat whose
+ * name alone doesn't say what question it answers.
  */
-export function PortfolioSummary({ stats }) {
+export function InfoButton({ title, children }) {
+  const colors = useColors();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Pressable
+        onPress={() => setOpen(true)}
+        hitSlop={10}
+        style={[ib.circle, { borderColor: colors.textFaint }]}
+        accessibilityRole="button"
+        accessibilityLabel={`About ${title}`}
+      >
+        <Text style={[type.micro, { color: colors.textFaint }]}>i</Text>
+      </Pressable>
+
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <Pressable style={[ib.scrim, { backgroundColor: colors.scrim }]} onPress={() => setOpen(false)} />
+        <View style={ib.centerWrap} pointerEvents="box-none">
+          <View style={[ib.card, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+            <Text style={[type.heading, { color: colors.text }]}>{title}</Text>
+            <Text style={[type.body, { color: colors.textMuted, marginTop: space(2) }]}>{children}</Text>
+            <Pressable
+              onPress={() => setOpen(false)}
+              style={[ib.closeButton, { backgroundColor: colors.surface }]}
+              accessibilityRole="button"
+            >
+              <Text style={[type.bodyStrong, { color: colors.text }]}>Got it</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+    </>
+  );
+}
+
+const ib = StyleSheet.create({
+  circle: { width: 16, height: 16, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  scrim: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  centerWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space(8) },
+  card: { width: '100%', maxWidth: 340, borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, padding: space(5) },
+  closeButton: { marginTop: space(4), paddingVertical: space(3), borderRadius: radius.md, alignItems: 'center' },
+});
+
+const DIVERSIFICATION_EXPLANATION =
+  'The average volatility of your holdings on their own, divided by your ' +
+  "portfolio's actual volatility. 1.0x means combining these names bought " +
+  'you nothing - your risk is the same as just holding one of them. 2.0x ' +
+  'means your combined risk is half what the average holding carries alone. ' +
+  'Higher is more diversified.';
+
+function formatDiversification(v) {
+  if (v === null || !Number.isFinite(v)) return '—';
+  return `${v.toFixed(2)}x`;
+}
+
+/**
+ * The watchlist's own return, volatility, risk-adjusted return and
+ * diversification ratio, treated as one equal-weighted position rather than N
+ * separate rows. `stats` already reflects whatever window and skip setting
+ * the rest of the screen is using, with the vol floor turned off (see
+ * stats.js's computeWindowStats).
+ */
+export function PortfolioSummary({ stats, diversificationRatio }) {
   const colors = useColors();
 
   if (!stats) {
@@ -271,7 +333,8 @@ export function PortfolioSummary({ stats }) {
       accessibilityLabel={
         `Portfolio, equal-weighted: return ${formatPercent(stats.totalReturn)}, ` +
         `volatility ${formatPercentPlain(stats.annualizedVol)}, ` +
-        `return over volatility ${formatRatio(stats.ratio)}`
+        `return over volatility ${formatRatio(stats.ratio)}, ` +
+        `diversification ${formatDiversification(diversificationRatio)}`
       }
     >
       <Text style={[type.micro, { color: colors.textFaint }]}>PORTFOLIO · EQUAL-WEIGHTED</Text>
@@ -284,7 +347,6 @@ export function PortfolioSummary({ stats }) {
           <Text style={[type.micro, { color: colors.textFaint }]}>ANN σ</Text>
           <Text style={[type.heading, mono, { color: colors.textMuted }]}>
             {formatPercentPlain(stats.annualizedVol)}
-            {stats.volFloored ? '*' : ''}
           </Text>
         </View>
         <View style={pf.figure}>
@@ -292,11 +354,18 @@ export function PortfolioSummary({ stats }) {
           <Text style={[type.heading, mono, { color: colors.text }]}>{formatRatio(stats.ratio)}</Text>
         </View>
       </View>
-      {stats.volFloored && (
-        <Text style={[type.caption, { color: colors.textFaint, marginTop: space(1) }]}>
-          * σ is held at the 12.5% floor applied to the ratio's divisor.
+
+      <View style={[pf.divider, { backgroundColor: colors.hairline }]} />
+
+      <View style={pf.diversificationRow}>
+        <View style={pf.diversificationLabel}>
+          <Text style={[type.micro, { color: colors.textFaint }]}>DIVERSIFICATION</Text>
+          <InfoButton title="Diversification ratio">{DIVERSIFICATION_EXPLANATION}</InfoButton>
+        </View>
+        <Text style={[type.heading, mono, { color: colors.text }]}>
+          {formatDiversification(diversificationRatio)}
         </Text>
-      )}
+      </View>
     </View>
   );
 }
@@ -311,6 +380,9 @@ const pf = StyleSheet.create({
   },
   figures: { flexDirection: 'row', justifyContent: 'space-between', marginTop: space(1) },
   figure: { gap: 2 },
+  divider: { height: StyleSheet.hairlineWidth, marginVertical: space(2) },
+  diversificationRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  diversificationLabel: { flexDirection: 'row', alignItems: 'center', gap: space(1.5) },
 });
 
 export const ROW_HEIGHT = 64;

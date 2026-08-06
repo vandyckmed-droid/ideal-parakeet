@@ -1,4 +1,5 @@
 import { LAST_INDEX, Ticker, closeAt } from './market';
+import { computeWindowStats } from './stats';
 
 /**
  * A synthetic Ticker for $1 invested equally across every name in `basket`,
@@ -54,4 +55,40 @@ export function buildPortfolioTicker(basket: Ticker[]): Ticker | null {
     closes,
     lastClose: closes[closes.length - 1],
   };
+}
+
+/**
+ * How much less volatile the portfolio is than its holdings would be held
+ * separately: the equal-weighted average of each holding's own annualised
+ * sigma, divided by the portfolio's own annualised sigma. 1.0x means
+ * combining these names bought nothing - the mix is as risky as its average
+ * member. 2.0x means the combined risk is half what the average holding
+ * carries alone.
+ *
+ * Built entirely from the *never-floored* sigma on both sides -
+ * `computeWindowStats`'s `annualizedVol`, not its floor-adjusted `ratio` -
+ * so this is not subject to VOL_FLOOR at all. That floor exists to stop a
+ * single quiet name dominating a return-over-risk ranking for reasons
+ * unrelated to skill; a ratio of two volatilities isn't a ranking a quiet
+ * name could dominate, so there is nothing here for the floor to guard
+ * against.
+ *
+ * A holding with too little history in the window (null `annualizedVol`) is
+ * excluded from the average rather than failing the whole calculation.
+ */
+export function computeDiversificationRatio(
+  basket: Ticker[],
+  startIndex: number,
+  endIndex: number,
+  portfolioVol: number | null
+): number | null {
+  if (portfolioVol === null || portfolioVol <= 1e-9) return null;
+
+  const vols = basket
+    .map((t) => computeWindowStats(t, startIndex, endIndex)?.annualizedVol ?? null)
+    .filter((v): v is number => v !== null);
+  if (vols.length === 0) return null;
+
+  const avg = vols.reduce((sum, v) => sum + v, 0) / vols.length;
+  return avg / portfolioVol;
 }

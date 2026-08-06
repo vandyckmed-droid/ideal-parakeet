@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/fi3cy5CDne513Kwo6bfCa), so it can be opened in
+Snack](https://snack.expo.dev/Yas6JeV6mmCSkSoNqWjuF), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -329,36 +329,60 @@ brute-force implementation that does perform the literal exclusion.
 
 ## Portfolio summary
 
-The Watchlist screen leads with one card: the watchlist's own Return, Ann σ
-and Return ÷ σ, treated as a single equal-weighted position instead of N
-separate rows. It answers a question the row list can't: not "how did each
-holding do," but "how did the *combination* do" - which isn't the average of
-the row-level numbers, because volatility doesn't average linearly and
-correlation between holdings changes the real combined risk. A user eyeballing
-the individual rows and mentally averaging their σ figures would get a
-meaningfully wrong number for exactly that reason.
+The Watchlist screen leads with one card: the watchlist's own Return, Ann σ,
+Return ÷ σ and diversification ratio, treated as a single equal-weighted
+position instead of N separate rows. It answers a question the row list
+can't: not "how did each holding do," but "how did the *combination* do" -
+which isn't the average of the row-level numbers, because volatility doesn't
+average linearly and correlation between holdings changes the real combined
+risk. A user eyeballing the individual rows and mentally averaging their σ
+figures would get a meaningfully wrong number for exactly that reason.
 
 Built by constructing a synthetic ticker - $1 invested equally across the
 watchlist, rebalanced daily - shaped exactly like any other ticker in the
 dataset, then running it through the *same* `computeWindowStats` every
 individual row already uses. That is a deliberate choice over a bespoke
-calculation: it guarantees the portfolio figure uses the same annualisation,
-the same Bessel correction, and the same 12.5% vol floor as every number
-already on screen, with no second implementation to keep in sync. Measured
-against the current snapshot:
+calculation: it guarantees the portfolio figure uses the same annualisation
+and the same Bessel correction as every number already on screen, with no
+second implementation to keep in sync.
 
-| Watchlist | Avg. individual σ | Portfolio σ | Portfolio Return ÷ σ |
+**The 12.5% vol floor does not apply here** (`computeWindowStats`'s fourth
+argument, `applyFloor`, defaults to `true` for every existing call site and is
+passed `false` only for the portfolio ticker). The floor exists to stop a
+single quiet *name* dominating a ranking for reasons unrelated to skill - the
+`EA` case, a price pinned near an announced deal. That reasoning does not
+carry over to a portfolio: a well-diversified basket routinely produces σ
+under 12.5% as the *ordinary, intended result* of combining
+imperfectly-correlated holdings, not an anomaly to correct for. Checking a
+handful of cross-sector baskets against the current snapshot, most land under
+the floor:
+
+| Basket | Portfolio σ | Would floor at 12.5%? |
+| --- | --- | --- |
+| JNJ+XOM+JPM+NVDA+WMT+FTS+PLD | 9.6% | yes |
+| MSFT+JNJ+XOM+V+PLD | 11.2% | yes |
+| AAPL+BRK-B+XOM+JNJ | 11.3% | yes |
+| GOOGL+JPM+XOM+PLD+KO+DUK+V+UNH | 10.7% | yes |
+| KO+PG+UNH+HD+V+DUK | 13.5% | no |
+
+A floor that fires on most well-built portfolios isn't screening out an
+anomaly, it's screening out the thing the card exists to show.
+
+**Diversification ratio** answers the question directly, and is unaffected by
+the floor question either way: the equal-weighted average of each holding's
+own annualised σ, divided by the portfolio's own annualised σ - both taken
+from `computeWindowStats`'s never-floored `annualizedVol` field, not its
+(possibly floor-adjusted) `ratio`. 1.0x means combining these names bought
+nothing; 2.0x means the combined risk is half what the average holding
+carries alone. An `ⓘ` button next to the label opens that explanation in the
+app itself, so the number is never shown without access to what it means.
+Measured against the current snapshot:
+
+| Watchlist | Avg. individual σ | Portfolio σ | **Diversification ratio** |
 | --- | --- | --- | --- |
-| Diversified (7 sectors) | 23.3% | **9.6%*** | 2.68 |
-| Semiconductors (6, concentrated) | 60.4% | **45.5%** | 3.95 |
-| Utilities (6, concentrated) | 15.7% | **13.6%** | 0.69 |
-
-\* Floored - the diversified portfolio's raw σ is actually 9.6%, comfortably
-under 12.5%, so its ratio is held back from an unfloored 3.50 exactly as the
-floor is designed to do. This is worth knowing before reading the ratio
-column as a clean ranking: a well-diversified watchlist is exactly the case
-most likely to hit the floor, since diversification is what drives σ down in
-the first place.
+| Diversified (7 sectors) | 23.3% | 9.6% | **2.43x** |
+| Semiconductors (6, concentrated) | 60.6% | 45.5% | **1.33x** |
+| Utilities (6, concentrated) | 15.6% | 13.5% | **1.15x** |
 
 **Respects Skip; ignores nothing Overlap ignores.** Unlike Overlap, which
 deliberately uses the unskipped window because correlation structure isn't a

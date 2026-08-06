@@ -4,19 +4,37 @@ import { StyleSheet, Text, View } from 'react-native';
 import { WindowStats, formatPercent, formatPercentPlain, formatRatio } from '../data/stats';
 import { useColors } from '../theme/ThemeProvider';
 import { mono, radius, space, type } from '../theme/theme';
+import { InfoButton } from './InfoButton';
 
 type Props = {
   stats: WindowStats | null;
+  diversificationRatio: number | null;
 };
 
+const DIVERSIFICATION_EXPLANATION =
+  'The average volatility of your holdings on their own, divided by your ' +
+  "portfolio's actual volatility. 1.0x means combining these names bought " +
+  'you nothing - your risk is the same as just holding one of them. 2.0x ' +
+  'means your combined risk is half what the average holding carries alone. ' +
+  'Higher is more diversified.';
+
+function formatDiversification(v: number | null): string {
+  if (v === null || !Number.isFinite(v)) return '—';
+  return `${v.toFixed(2)}x`;
+}
+
 /**
- * The watchlist's own return, volatility and risk-adjusted return, treated as
- * one equal-weighted position rather than N separate rows. `stats` already
- * reflects whatever window and skip setting the rest of the screen is using,
- * computed by TickerListScreen via the same `computeWindowStats` every
- * individual row uses - this component only renders.
+ * The watchlist's own return, volatility, risk-adjusted return and
+ * diversification ratio, treated as one equal-weighted position rather than N
+ * separate rows. `stats` already reflects whatever window and skip setting
+ * the rest of the screen is using, computed by TickerListScreen via the same
+ * `computeWindowStats` every individual row uses (with the vol floor turned
+ * off - see src/data/stats.ts) - this component only renders.
  */
-export const PortfolioSummary = React.memo(function PortfolioSummary({ stats }: Props) {
+export const PortfolioSummary = React.memo(function PortfolioSummary({
+  stats,
+  diversificationRatio,
+}: Props) {
   const colors = useColors();
 
   if (!stats) {
@@ -40,7 +58,8 @@ export const PortfolioSummary = React.memo(function PortfolioSummary({ stats }: 
       accessibilityLabel={
         `Portfolio, equal-weighted: return ${formatPercent(stats.totalReturn)}, ` +
         `volatility ${formatPercentPlain(stats.annualizedVol)}, ` +
-        `return over volatility ${formatRatio(stats.ratio)}`
+        `return over volatility ${formatRatio(stats.ratio)}, ` +
+        `diversification ${formatDiversification(diversificationRatio)}`
       }
     >
       <Text style={[type.micro, { color: colors.textFaint }]}>PORTFOLIO · EQUAL-WEIGHTED</Text>
@@ -56,7 +75,6 @@ export const PortfolioSummary = React.memo(function PortfolioSummary({ stats }: 
           <Text style={[type.micro, { color: colors.textFaint }]}>ANN σ</Text>
           <Text style={[type.heading, mono, { color: colors.textMuted }]}>
             {formatPercentPlain(stats.annualizedVol)}
-            {stats.volFloored ? '*' : ''}
           </Text>
         </View>
         <View style={styles.figure}>
@@ -67,11 +85,17 @@ export const PortfolioSummary = React.memo(function PortfolioSummary({ stats }: 
         </View>
       </View>
 
-      {stats.volFloored && (
-        <Text style={[type.caption, { color: colors.textFaint, marginTop: space(1) }]}>
-          * σ is held at the 12.5% floor applied to the ratio's divisor.
+      <View style={[styles.divider, { backgroundColor: colors.hairline }]} />
+
+      <View style={styles.diversificationRow}>
+        <View style={styles.diversificationLabel}>
+          <Text style={[type.micro, { color: colors.textFaint }]}>DIVERSIFICATION</Text>
+          <InfoButton title="Diversification ratio">{DIVERSIFICATION_EXPLANATION}</InfoButton>
+        </View>
+        <Text style={[type.heading, mono, { color: colors.text }]}>
+          {formatDiversification(diversificationRatio)}
         </Text>
-      )}
+      </View>
     </View>
   );
 });
@@ -90,4 +114,15 @@ const styles = StyleSheet.create({
     marginTop: space(1),
   },
   figure: { gap: 2 },
+  divider: { height: StyleSheet.hairlineWidth, marginVertical: space(2) },
+  diversificationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  diversificationLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space(1.5),
+  },
 });
