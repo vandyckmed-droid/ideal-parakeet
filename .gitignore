@@ -11,9 +11,3 @@ expo-env.d.ts
 data/prices/
 data/candidates.json
 data/fetch-failures.json
-
-# Earnings history, one file per symbol. Regenerable with stage 5.
-data/earnings/
-data/earnings-failures.json
-data/research-prices/
-data/sp500/
