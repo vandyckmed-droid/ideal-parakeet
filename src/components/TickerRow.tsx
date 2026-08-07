@@ -2,6 +2,7 @@ import * as Haptics from 'expo-haptics';
 import React, { useCallback } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { daysUntilEarnings, earningsImminent, formatDaysUntil } from '../data/earnings';
 import { Ticker } from '../data/market';
 import { OVERLAP_THRESHOLD } from '../data/overlap';
 import {
@@ -57,6 +58,13 @@ export const TickerRow = React.memo(function TickerRow({
 }: Props) {
   const colors = useColors();
 
+  // Only when it is close enough to change what you would do right now. A
+  // date three months out is trivia; three days out is the difference between
+  // buying today and buying Friday.
+  const reportsIn = earningsImminent(ticker.nextEarnings)
+    ? daysUntilEarnings(ticker.nextEarnings)
+    : null;
+
   const value = metricValue(stats, metric);
   const tone =
     value === null ? colors.flat : value >= 0 ? colors.up : colors.down;
@@ -90,6 +98,7 @@ export const TickerRow = React.memo(function TickerRow({
       accessibilityRole="button"
       accessibilityLabel={
         `${ticker.symbol}, ${ticker.name}` +
+        (reportsIn !== null ? `, reports ${formatDaysUntil(reportsIn)}` : '') +
         (overlapScore != null && overlapScore >= OVERLAP_THRESHOLD
           ? ', overlaps your watchlist'
           : '')
@@ -121,6 +130,13 @@ export const TickerRow = React.memo(function TickerRow({
           </Text>
           {watched && (
             <View style={[styles.dot, { backgroundColor: colors.accent }]} />
+          )}
+          {reportsIn !== null && (
+            <View style={[styles.earningsBadge, { borderColor: colors.border }]}>
+              <Text style={[type.micro, mono, { color: colors.textMuted }]}>
+                ⚑ {formatDaysUntil(reportsIn)}
+              </Text>
+            </View>
           )}
           {overlapScore != null && (
             <View
@@ -187,6 +203,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: space(1.5),
     paddingVertical: 1,
     borderRadius: radius.sm,
+  },
+  // Outlined rather than filled: this is a date, not a finding, and it should
+  // not compete with the overlap flag beside it.
+  earningsBadge: {
+    paddingHorizontal: space(1.5),
+    paddingVertical: 1,
+    borderRadius: radius.sm,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   spark: { width: 64, marginHorizontal: space(3) },
   figures: { minWidth: 84, alignItems: 'flex-end', gap: 2 },

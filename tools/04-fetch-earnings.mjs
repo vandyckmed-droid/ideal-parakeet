@@ -35,14 +35,14 @@ async function main() {
     }
     try {
       const rows = await fmp('earnings', { symbol });
-      // Keep only what a score needs. The endpoint also returns scheduled
-      // future dates with null actuals; those are dropped here rather than
-      // downstream, so every stored row is a report that happened.
+      // Scheduled future dates come back with null actuals. They are kept:
+      // the one thing this data reliably supports is telling you a report is
+      // coming, and that is exactly the row carrying it.
       const clean = (Array.isArray(rows) ? rows : [])
-        .filter((r) => r.date && r.epsActual !== null && r.epsActual !== undefined)
+        .filter((r) => r.date)
         .map((r) => ({
           date: r.date,
-          epsActual: r.epsActual,
+          epsActual: r.epsActual ?? null,
           epsEstimated: r.epsEstimated ?? null,
           revenueActual: r.revenueActual ?? null,
           revenueEstimated: r.revenueEstimated ?? null,

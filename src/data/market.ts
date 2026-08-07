@@ -19,6 +19,8 @@ export type RawTicker = {
   adv: number; // median daily dollar volume
   o: number; // index into `dates` of this series' first close
   p: number[]; // split- and dividend-adjusted closes
+  er?: string; // next scheduled earnings date, YYYY-MM-DD
+  em?: number; // median absolute 2-day move across this name's past reports
 };
 
 export type Ticker = {
@@ -33,6 +35,12 @@ export type Ticker = {
   offset: number;
   closes: number[];
   lastClose: number;
+  /** Next scheduled report, or undefined when none is on the calendar. */
+  nextEarnings?: string;
+  /** How much this name typically moves over the report's two days, as a
+   *  fraction. Its own history, not the universe average - that runs from
+   *  0.6% to 23% across these 500, so the average describes nobody. */
+  earningsMove?: number;
 };
 
 const dataset = raw as unknown as {
@@ -57,6 +65,8 @@ export const TICKERS: Ticker[] = dataset.tickers.map((t) => ({
   offset: t.o,
   closes: t.p,
   lastClose: t.p[t.p.length - 1],
+  nextEarnings: t.er,
+  earningsMove: t.em,
 }));
 
 export const BY_SYMBOL = new Map(TICKERS.map((t) => [t.symbol, t]));

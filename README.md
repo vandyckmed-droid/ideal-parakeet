@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/9zUWNmRe0xflNA02Ux6y4), so it can be opened in
+Snack](https://snack.expo.dev/QKfNPKVdGRWQcBLGmCQNy), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -62,7 +62,13 @@ middle one costs ~800 API calls and is worth resuming rather than repeating.
 | 1 | `01-build-candidates.mjs` | Screens NYSE / NASDAQ / AMEX into ~800 candidates |
 | 2 | `02-fetch-prices.mjs` | Pulls ~2 years of adjusted daily closes, one file per symbol |
 | 3 | `03-build-dataset.mjs` | Filters to exactly 500 and packs the app asset |
-| 4 | `04-validate-dataset.mjs` | Refuses to ship a misshapen snapshot |
+| 4 | `04-fetch-earnings.mjs` | Full reported history for the surviving 500 |
+| 5 | `05-add-earnings.mjs` | Folds the next report date and typical move into the asset |
+| 6 | `06-validate-dataset.mjs` | Refuses to ship a misshapen snapshot |
+
+Earnings are fetched *after* the pack, not before, because the pack is what
+decides which 500 names survive — fetching earlier would spend ~300 calls a day
+on candidates that get cut.
 
 Stage 2 skips symbols it has already fetched, so an interrupted run resumes for
 free. Pass `--force` to refetch everything — and note that the skip is a real
@@ -123,9 +129,10 @@ Before it can run you need to do two things it cannot do for itself:
    from there, so on a feature branch it will never fire — `workflow_dispatch`
    lets you run it by hand in the meantime.
 
-One running cost worth knowing. A run costs **803 API calls**: 3 screener calls
-in stage 1, one per candidate in stage 2, and none in stages 3–4. At five runs
-a week that is roughly 17,000 a month against your FMP quota.
+One running cost worth knowing. A run costs **~1,303 API calls**: 3 screener
+calls in stage 1, one per candidate (~800) in stage 2, one per surviving name
+(500) in stage 4, and none in stages 3, 5 or 6. At five runs a week that is
+roughly 28,000 a month against your FMP quota.
 
 Narrowing the date range would not change that number.
 `historical-price-eod/dividend-adjusted` is a **per-symbol** endpoint, so
@@ -382,6 +389,35 @@ effect and has decayed since it was first published. The smallest-quintile cut
 above is the closest this universe can get to that test, and it finds nothing
 either.
 
+### The denominator does not rescue it
+
+The 8-quarter analyst-error window in the first pass was a convention, not a
+finding, so `tools/research/earnings-sue-variants.mjs` sweeps both textbook
+denominators across five lookbacks and three horizons — thirty more cells, all
+shown:
+
+| Denominator | 4q | 8q | 12q | 16q | 20q |
+| --- | --- | --- | --- | --- | --- |
+| forecast-error, 5d | −0.48% | −0.53% *(t −2.0)* | −0.31% | −0.39% | −0.49% |
+| forecast-error, 20d | −0.77% | −0.75% | −0.62% | −0.97% | −0.69% |
+| forecast-error, 60d | −0.05% | −0.53% | −0.96% | −0.99% | −0.42% |
+| time-series, 5d | −0.37% | −0.28% | −0.32% | −0.36% | −0.35% |
+| time-series, 20d | −0.86% | −0.53% | −0.58% | −0.61% | −0.90% |
+| time-series, 60d | +0.48% | 0.00% | 0.00% | +0.16% | +0.81% |
+
+`forecast-error` is `(actual − estimate) ÷ SD(prior forecast errors)`;
+`time-series` is Foster–Olsen–Shevlin's original,
+`(EPS_t − EPS_t−4) ÷ SD(prior seasonal differences)`, which needs no analyst
+estimate and so reaches the 19% of reports without one.
+
+**All fifteen forecast-error cells are negative.** Twelve of fifteen
+time-series cells are too, and the three positives are under 1% with t below 1.
+One cell clears |t| ≥ 2 and it is negative. No lookback rescues anything,
+which is the answer to "how many quarters should the SD use": it does not
+matter, because there is no signal to sharpen. If anything SUE is mildly
+*contrarian* here at short horizons — consistent with the announcement pop
+slightly overshooting and giving a little back.
+
 So no earnings score ships. A number that looks predictive and isn't is worse
 than no number.
 
@@ -396,7 +432,46 @@ Earnings dates are worth knowing as **risk**, not as a forecast:
 
 Reporting days move **2.38×** an ordinary day, and one in ten exceeds 10%.
 "A report lands in three days" is honest, actionable and needs no prediction.
-That is the feature this research argues for; it is not built yet.
+
+**That is what ships.** Two fields go into the dataset — `er`, the next
+scheduled report date, and `em`, that name's own median absolute 2-day move
+across its past reports. The app shows a `⚑ 3d` flag on a row only when a
+report is within a week, and the per-ticker view carries the date and the move
+among its other facts.
+
+`em` is per-name rather than the universe average because the average
+describes almost nobody: across these 500 the median reporting-day move runs
+from **±0.6%** (`CVX`, `HLN`, `EPD`) to **±23%** (`UI`, `MDB`), with a median
+of ±4.0% and a 10th-to-90th range of ±1.8% to ±8.7%. Knowing you hold the
+±23% one is the entire value.
+
+It is a raw move, not market-relative: a holder experiences the whole thing,
+and adjusting for the market would understate what actually turns up in the
+price.
+
+### What is not built, and why
+
+The natural next signal is the one with the better recent evidence — a
+transcript-derived score, extracting guidance, demand, margin and management
+tone from the earnings call and standardising that the way SUE standardises
+EPS. The 2023 JFQA result on `SUE.txt` reports drift that is larger than
+classic SUE-based PEAD and still substantial in years when classic PEAD is
+near zero, which matches what this dataset shows about classic PEAD.
+
+Two things block it here, both hard:
+
+- **Transcripts are not on this FMP plan.** `earning-call-transcript` returns
+  HTTP 402, restricted endpoint.
+- **There is no LLM API key in this environment**, so even with transcripts
+  there is no way to score ~4,000 calls programmatically. Scoring a hand-sized
+  sample would not have the statistical power to distinguish a real effect
+  from noise — classic PEAD spreads are 1–2%, and detecting that needs
+  hundreds of observations, not dozens.
+
+Both are procurement problems rather than design problems. The distinction
+worth preserving if it is ever built: extract *structured facts* from the call
+and standardise them, which is what the paper does — do not ask a model to
+predict the price, which is not what the evidence supports.
 
 Reproduce any of it from the repo root:
 

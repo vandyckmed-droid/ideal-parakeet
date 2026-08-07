@@ -8,6 +8,7 @@ import {
   PRESETS, computeWindowStats, formatBigNumber, formatDate, formatPercent,
   formatPercentPlain, formatPrice, formatRatio, slice, windowForPreset, withSkip, VOL_FLOOR,
 } from './stats';
+import { daysUntilEarnings, formatDaysUntil, formatEarningsMove } from './earnings';
 
 function Page({ ticker, dates, initialPreset, width, skipEnabled, sessionsStale }) {
   const colors = useColors();
@@ -148,6 +149,21 @@ function Page({ ticker, dates, initialPreset, width, skipEnabled, sessionsStale 
         <Text style={[type.micro, { color: colors.textFaint, marginBottom: space(2) }]}>ABOUT</Text>
         <View style={[s.facts, { backgroundColor: colors.surface }]}>
           {[
+            // A report is a scheduled volatility event, so it sits with the
+            // other facts rather than pretending to be a signal. The move is
+            // this name's own median - the universe average describes nobody.
+            ...(ticker.er
+              ? [[
+                  'Next report',
+                  formatDate(ticker.er) +
+                    (daysUntilEarnings(ticker.er) !== null && daysUntilEarnings(ticker.er) >= 0
+                      ? ' · ' + formatDaysUntil(daysUntilEarnings(ticker.er))
+                      : ''),
+                ]]
+              : []),
+            ...(formatEarningsMove(ticker.em)
+              ? [['Typical move on the day', formatEarningsMove(ticker.em)]]
+              : []),
             ['Sector', ticker.se],
             ['Industry', ticker.in],
             ['Exchange', ticker.x],

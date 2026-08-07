@@ -9,6 +9,7 @@ import { useColors } from './theme';
 import { mixHex, mono, radius, space, type, withAlpha } from './theme';
 import { formatMetric, formatPercentPlain, formatPrice, formatRatio, metricValue } from './stats';
 import { OVERLAP_THRESHOLD } from './overlap';
+import { daysUntilEarnings, earningsImminent, formatDaysUntil } from './earnings';
 import { rankHeat } from './ranks';
 
 const haptic = (fn) => {
@@ -261,6 +262,11 @@ export const TickerRow = React.memo(function TickerRow({
   const value = metricValue(stats, metric);
   const tone = value === null ? colors.flat : value >= 0 ? colors.up : colors.down;
 
+  // Only when it is close enough to change what you would do right now. A date
+  // three months out is trivia; three days out is the difference between
+  // buying today and buying Friday.
+  const reportsIn = earningsImminent(ticker.er) ? daysUntilEarnings(ticker.er) : null;
+
   return (
     <Pressable
       onPress={() => {
@@ -281,6 +287,7 @@ export const TickerRow = React.memo(function TickerRow({
       accessibilityRole="button"
       accessibilityLabel={
         `${ticker.s}, ${ticker.n}` +
+        (reportsIn !== null ? `, reports ${formatDaysUntil(reportsIn)}` : '') +
         (overlapScore != null && overlapScore >= OVERLAP_THRESHOLD ? ', overlaps your watchlist' : '')
       }
       accessibilityHint="Tap to toggle watchlist, long press to open details"
@@ -293,6 +300,13 @@ export const TickerRow = React.memo(function TickerRow({
             {ticker.s}
           </Text>
           {watched && <View style={[row.dot, { backgroundColor: colors.accent }]} />}
+          {reportsIn !== null && (
+            <View style={[row.earningsBadge, { borderColor: colors.border }]}>
+              <Text style={[type.micro, mono, { color: colors.textMuted }]}>
+                ⚑ {formatDaysUntil(reportsIn)}
+              </Text>
+            </View>
+          )}
           {overlapScore != null && (
             <View
               style={[
@@ -336,6 +350,12 @@ const row = StyleSheet.create({
   symbolLine: { flexDirection: 'row', alignItems: 'center', gap: space(1.5) },
   dot: { width: 5, height: 5, borderRadius: 3 },
   overlapBadge: { paddingHorizontal: space(1.5), paddingVertical: 1, borderRadius: radius.sm },
+  // Outlined rather than filled: a date, not a finding, and it should not
+  // compete with the overlap flag beside it.
+  earningsBadge: {
+    paddingHorizontal: space(1.5), paddingVertical: 1,
+    borderRadius: radius.sm, borderWidth: StyleSheet.hairlineWidth,
+  },
   spark: { width: 64, marginHorizontal: space(3) },
   figures: { minWidth: 84, alignItems: 'flex-end', gap: 2 },
 });
