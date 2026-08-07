@@ -30,7 +30,14 @@ jobs:
     timeout-minutes: 45
 
     steps:
+      # Full history, not the default depth-1 shallow clone: the commit step
+      # rebases if the branch moved during the run, and a rebase needs a merge
+      # base that a shallow clone does not have. The cost is that the clone
+      # carries every past snapshot - this job adds a ~1.7MB blob per weekday -
+      # so if checkout ever becomes the slow part, that is the reason.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:

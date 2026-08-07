@@ -123,13 +123,21 @@ Before it can run you need to do two things it cannot do for itself:
    from there, so on a feature branch it will never fire — `workflow_dispatch`
    lets you run it by hand in the meantime.
 
-One running cost worth knowing: stage 2 re-fetches all ~800 symbols every run,
-because `data/prices/` is gitignored and the runner starts clean. That is ~800
-API calls a weekday against your FMP quota. Caching the price files between
-runs would not help as things stand — stage 2 skips files it already has, so a
-warm cache would freeze the data rather than speed it up. Making the fetch
-incremental (ask only for sessions newer than the last bar) is the change that
-would cut it, and is not done.
+One running cost worth knowing. A run costs **803 API calls**: 3 screener calls
+in stage 1, one per candidate in stage 2, and none in stages 3–4. At five runs
+a week that is roughly 17,000 a month against your FMP quota.
+
+Narrowing the date range would not change that number.
+`historical-price-eod/dividend-adjusted` is a **per-symbol** endpoint, so
+asking for one session instead of two years cuts the payload and leaves the
+request count exactly where it was. The only thing that would actually reduce
+it is a bulk end-of-day endpoint — one call returning every symbol for one date
+— which FMP offers on some plans. Whether it is available here is unverified,
+and nothing in this repo uses it.
+
+Caching `data/prices/` between runs is likewise not the answer: stage 2 skips
+files it already has, so a warm cache would freeze the data rather than speed
+anything up.
 
 ## How the 500 are chosen
 
