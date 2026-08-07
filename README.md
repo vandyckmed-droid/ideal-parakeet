@@ -320,6 +320,93 @@ Session counting is weekend-aware but has no holiday calendar. A market holiday
 inside the gap overcounts by one session, which moves the measurement date by a
 day and changes a multi-month return negligibly.
 
+## Earnings: what was tested, and what it found
+
+`tools/05-fetch-earnings.mjs` pulls every reported quarter for all 500 names
+(one call per symbol; the bulk `earnings-calendar` endpoint caps at 4000 records
+per call *regardless of the date range asked for* and spans every listed company
+on earth, so it takes dozens of calls to get what 500 targeted ones give
+cleanly). That is 58,156 reports, 81% carrying an analyst estimate, median
+history starting 1993.
+
+The goal was an earnings score standardised against a name's own past — the
+classic **SUE**, `(actual EPS − estimate) ÷ σ(that name's last 8 surprises)` —
+and to confirm it predicts forward returns before putting it in the app.
+
+**It does not, in this universe.** Reported rather than buried, because the
+testing is the point.
+
+### The data is sound
+
+Before blaming the market, the estimates had to be checked. The most robust
+fact in this literature is that a stock moves in the *direction* of its
+surprise on the day, and that is emphatically present:
+
+| Surprise quintile | Mean 2-day abnormal move |
+| --- | --- |
+| 1 (biggest miss) | **−1.75%** |
+| 2 | −0.96% |
+| 3 | +0.23% |
+| 4 | +0.90% |
+| 5 (biggest beat) | **+3.21%** |
+
+Rank correlation 0.208, monotonic across all five buckets, n=4,081. A 77.8%
+beat rate matches the well-known low-balling bias in consensus estimates. The
+surprise measure is real.
+
+### The drift is not
+
+Every cell of the search, none omitted — top-minus-bottom quintile, market-
+relative, entering two days after the report:
+
+| Signal | Subset | 5d | 10d | 20d | 60d |
+| --- | --- | --- | --- | --- | --- |
+| SUE | all 500 | −0.57% *(t −2.2)* | −1.06% *(t −2.8)* | −0.81% | −0.56% |
+| SUE | smallest 20% | −0.67% | −1.13% | −0.23% | −1.10% |
+| Surprise % | all 500 | −0.24% | −0.09% | +0.16% | +1.46% |
+| Surprise % | smallest 20% | −0.47% | −0.81% | +0.69% | −1.48% |
+| Reaction | all 500 | +0.13% | +0.25% | +0.78% | +0.60% |
+| Reaction | smallest 20% | −0.33% | +1.03% | +2.20% | −0.52% |
+
+Only two of twenty-four cells clear |t| ≥ 2, and both are **negative** — a
+small give-back after the announcement pop, the opposite of the drift being
+looked for. Quintile means are non-monotonic everywhere. Quarter-by-quarter
+the SUE spread flips sign constantly (−5.0%, +2.5%, −4.3%, −1.8%, 0.0%, −6.0%,
++7.1%, 0.0%), which is what noise looks like. At twenty-four tests, roughly one
+false positive at 5% is expected anyway.
+
+The reading: **this information is fully priced within two days.** That is not
+surprising for the 500 largest US companies, which are the most analyst-covered
+securities in the world; post-earnings drift is documented as a small-cap
+effect and has decayed since it was first published. The smallest-quintile cut
+above is the closest this universe can get to that test, and it finds nothing
+either.
+
+So no earnings score ships. A number that looks predictive and isn't is worse
+than no number.
+
+### What the data *does* support
+
+Earnings dates are worth knowing as **risk**, not as a forecast:
+
+| | Mean | Median | 90th pct |
+| --- | --- | --- | --- |
+| 2-day abnormal move around a report | **4.73%** | 3.10% | 10.66% |
+| 2-day abnormal move on an ordinary day | 1.98% | 1.38% | 4.32% |
+
+Reporting days move **2.38×** an ordinary day, and one in ten exceeds 10%.
+"A report lands in three days" is honest, actionable and needs no prediction.
+That is the feature this research argues for; it is not built yet.
+
+Reproduce any of it from the repo root:
+
+```bash
+node tools/05-fetch-earnings.mjs        # 500 calls
+node tools/research/earnings-validity.mjs
+node tools/research/earnings-drift.mjs
+node tools/research/earnings-event-risk.mjs
+```
+
 ## Overlap
 
 Both screens flag names that would add little a portfolio doesn't already
