@@ -268,6 +268,7 @@ function Shell() {
         overlap={overlap}
         overlapCaption={overlapCaption}
         showPortfolioSummary={tab === 'watchlist'}
+        showGestureHint={tab === 'market'}
         emptyState={
           tab === 'watchlist' ? (
             <View style={{ alignItems: 'center', gap: space(2) }}>

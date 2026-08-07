@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/tLuy6oeuWRsrhXO2NRgjM), so it can be opened in
+Snack](https://snack.expo.dev/GtwLJLy4CuzmXay5P63zC), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -596,6 +596,12 @@ not something to treat as a position.
 the reverse of the usual convention, so the affordance carries itself: watched
 rows show an accent bar, a coloured symbol and a trailing dot, and the two
 gestures fire different haptics.
+
+A footer under the Market list says so in words. It appears **only there**: on
+the Watchlist screen a tap *removes* the row it lands on, so the same sentence
+would describe the opposite of what the gesture does, and by the time you have
+a watchlist to look at, the convention it exists to teach has already been
+learned by using it.
 
 - **Market** — all 500, searchable, filterable by sector, sortable by the live
   metric, by size, or alphabetically.

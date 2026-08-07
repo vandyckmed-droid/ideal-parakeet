@@ -45,6 +45,7 @@ export function TickerListScreen({
   overlap,
   overlapCaption,
   showPortfolioSummary,
+  showGestureHint,
   headerAccessory,
 }: {
   title: string;
@@ -76,6 +77,16 @@ export function TickerListScreen({
    * holdings, not the Market screen's full 500.
    */
   showPortfolioSummary?: boolean;
+  /**
+   * The "tap a row to watchlist it" footer.
+   *
+   * True only where a tap actually *adds*. On the Watchlist screen a tap
+   * removes the row it lands on, so the same sentence there describes the
+   * opposite of what the gesture does. The hint exists to teach a reversed
+   * convention anyway, which is a job already finished by the time someone has
+   * a watchlist to look at.
+   */
+  showGestureHint?: boolean;
 }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -477,7 +488,7 @@ export function TickerListScreen({
           </View>
         }
         ListFooterComponent={
-          rows.length > 0 ? (
+          showGestureHint && rows.length > 0 ? (
             <Text style={[type.caption, styles.hint, { color: colors.textFaint }]}>
               Tap a row to watchlist it · press and hold to open it
             </Text>

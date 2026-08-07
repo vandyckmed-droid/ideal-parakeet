@@ -17,6 +17,10 @@ export function ListScreen({
   metric, setMetric, skipEnabled, setSkipEnabled, sessionsStale,
   isWatched, toggleWatch, onOpenDetail, onOrder, emptyState, tab, overlap, overlapCaption,
   showPortfolioSummary,
+  // The "tap a row to watchlist it" footer. True only where a tap actually
+  // *adds*: on the Watchlist screen a tap removes the row it lands on, so the
+  // same sentence there describes the opposite of what the gesture does.
+  showGestureHint,
   // Rendered between the title block and the search box. Exists for the Market
   // tab's Card/Table switch, which sits inside this header but belongs to the
   // screen above it.
@@ -337,7 +341,7 @@ export function ListScreen({
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={<View style={s.empty}>{emptyState || null}</View>}
         ListFooterComponent={
-          rows.length > 0 ? (
+          showGestureHint && rows.length > 0 ? (
             <Text style={[type.caption, s.hint, { color: colors.textFaint }]}>
               Tap a row to watchlist it · press and hold to open it
             </Text>
