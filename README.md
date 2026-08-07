@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/jvxt31bzruVzqTjT2ON_M), so it can be opened in
+Snack](https://snack.expo.dev/pmaGiTEBgUWjSSPRL-F9S), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -307,10 +307,23 @@ aligned daily returns, below which a correlation is mostly sampling noise.
 This 3-name minimum gates Market-screen candidate flags too, even though
 scoring a candidate against a smaller basket is mathematically no different:
 a basket that small barely qualifies as "a basket" to screen candidates
-against in the first place, not a limit of the maths. The Watchlist header
-explains whichever of these applies instead of showing a blank result; the
-Market screen just stays quiet, since that guidance belongs on the screen
-with the watchlist on it.
+against in the first place, not a limit of the maths.
+
+Both headers explain whichever of these applies rather than showing a blank
+result. The Market screen used to stay quiet on the grounds that the guidance
+belonged on the screen with the watchlist on it, which was wrong once the
+Overlap sort existed: the chip is simply *absent* while the basket doesn't
+qualify, and a control that vanishes with nothing said reads as a missing
+feature rather than an unmet precondition. It now says
+"Watchlist needs 1 more name to screen for overlap" (or 2, or
+"Widen the window..."), in muted grey rather than the warn colour a flag
+count gets — it's guidance, not a finding.
+
+The one case Market still stays quiet on is an **empty** watchlist. That tab
+is where the app opens, so prompting someone to feed a feature they haven't
+met yet is noise; from one name on, the prompt describes something already
+begun. The Watchlist screen has no such problem — it shows its own empty
+state instead.
 
 A recently listed *holding* shortens the comparison window for everyone:
 every basket member needs a close on every day measured, so the window

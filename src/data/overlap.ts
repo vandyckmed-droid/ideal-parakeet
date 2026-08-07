@@ -211,3 +211,37 @@ export function countCandidateFlags(overlap: OverlapSummary): number {
   for (const s of overlap.scores) if (!s.inBasket && overlap.flagged.has(s.symbol)) count++;
   return count;
 }
+
+/**
+ * Header line for the Market screen: how many of the 500 would be redundant
+ * additions - or, when the basket can't be scored against at all, what would
+ * make it scoreable.
+ *
+ * Says so rather than staying silent, because on this screen the Overlap sort
+ * chip is simply absent while the basket doesn't qualify, and a control that
+ * vanishes without explanation reads as a missing feature rather than an
+ * unmet precondition.
+ *
+ * The one case it still stays quiet on is an empty watchlist. The Market tab
+ * is where the app opens, so prompting someone to feed a feature they have
+ * not met yet is noise; from one name on, the prompt describes something
+ * already begun.
+ */
+export function describeCandidateOverlap(
+  overlap: OverlapSummary,
+  watchlistCount: number
+): string | null {
+  if (overlap.reason === 'too_few_names') {
+    if (watchlistCount === 0) return null;
+    const need = MIN_OVERLAP_NAMES - watchlistCount;
+    return `Watchlist needs ${need} more ${need === 1 ? 'name' : 'names'} to screen for overlap`;
+  }
+  if (overlap.reason === 'insufficient_history') {
+    return `Widen the window to screen for overlap · ${overlap.observations} of ${MIN_OVERLAP_OBSERVATIONS} days available`;
+  }
+  const count = countCandidateFlags(overlap);
+  if (count === 0) return null;
+  return `${count} name${count === 1 ? '' : 's'} would overlap your watchlist by ${Math.round(
+    OVERLAP_THRESHOLD * 100
+  )}% or more`;
+}

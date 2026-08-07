@@ -15,7 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { ThemeProvider, useTheme, radius, space, type } from './theme';
 import { sessionsSinceSnapshot, windowForPreset } from './stats';
-import { OVERLAP_THRESHOLD, computeOverlap, countCandidateFlags, describeOverlap } from './overlap';
+import { computeOverlap, describeCandidateOverlap, describeOverlap } from './overlap';
 import { ListScreen } from './ListScreen';
 import { DetailScreen } from './DetailScreen';
 
@@ -179,11 +179,8 @@ function Shell() {
   let overlapCaption = null;
   if (tab === 'watchlist') {
     if (watched.length > 0) overlapCaption = describeOverlap(overlap, watched.length);
-  } else if (overlap.reason === 'ok') {
-    const count = countCandidateFlags(overlap);
-    if (count > 0) {
-      overlapCaption = `${count} name${count === 1 ? '' : 's'} would overlap your watchlist by ${Math.round(OVERLAP_THRESHOLD * 100)}% or more`;
-    }
+  } else {
+    overlapCaption = describeCandidateOverlap(overlap, watched.length);
   }
 
   const tabBar = (
