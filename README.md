@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/r7tdn0jthXuGICdnfT4qe), so it can be opened in
+Snack](https://snack.expo.dev/1ybmiimLdspPNcj0BP6YJ), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -127,12 +127,12 @@ Before it can run you need to do two things it cannot do for itself:
    from there, so on a feature branch it will never fire — `workflow_dispatch`
    lets you run it by hand in the meantime.
 
-One running cost worth knowing. A run costs **~1,040 API calls**: the
+One running cost worth knowing. A run costs **~1,225 API calls**: the
 constituent list, 3 screener calls and a few profile fills in stage 1, one per
-constituent (~503) in stage 2, none in stages 3-4, and ~530 in stage 5 (index
-membership plus prices for every name that was a member during the backtest
-window). At five runs a week that is roughly 23,000 a month against your FMP
-quota.
+constituent (~503) in stage 2, none in stages 3-4, and ~716 in stage 5 (index
+membership plus prices for every name that was a member at any point since
+January 2016 — a longer backtest window means more departed members to price).
+At five runs a week that is roughly 27,000 a month against your FMP quota.
 
 Narrowing the date range would not change that number.
 `historical-price-eod/dividend-adjusted` is a **per-symbol** endpoint, so
@@ -615,9 +615,9 @@ how this app thinks:
 
 ## The Research tab
 
-A third tab graphs **$10,000 in the top-50 momentum portfolio over the
-previous four quarters**, updated by the same nightly job that refreshes
-prices. Every rule that produces the line is displayed on the screen with it:
+A third tab graphs **$10,000 in the top-50 momentum portfolio since January
+2016**, updated by the same nightly job that refreshes prices. Every rule that
+produces the line is displayed on the screen with it:
 
 | Rule | Setting |
 | --- | --- |
@@ -625,7 +625,7 @@ prices. Every rule that produces the line is displayed on the screen with it:
 | Signal | 12-1 momentum: return from 12 months before the measurement date to 1 month before it |
 | Selection | Top 50, equally weighted |
 | Rebalance | Measured at the last trading day of each month, traded at the next trading day's close (per `docs/rebalancing-standard.md`), held untouched in between |
-| Period | Previous four quarters, $10,000 at the start |
+| Period | Since January 2016, $10,000 at the start |
 | Dividends | Reinvested, via adjusted closes |
 | Costs | No taxes or fees |
 | Delistings | Frozen at the last close until the next rebalance |
@@ -634,9 +634,56 @@ Two choices worth stating. The universe is the same S&P 500 the Market tab
 tracks, held to point-in-time membership because avoiding selection bias
 requires knowing who was in the index *then*, not who survived until today.
 And the series is built entirely by the pipeline
-(`tools/05-build-research.mjs`, ~530 API calls per run, prices fetched fresh
+(`tools/05-build-research.mjs`, ~716 API calls per run, prices fetched fresh
 every time); the app only displays it, so the graph, the current 50 holdings
 and the rules can never disagree with each other.
+
+### Why the window starts in 2016
+
+Not because the history runs out. The index change log reaches 1957, and
+surviving companies price back to the 1970s once you work around the
+endpoint's undocumented 5,000-row cap. What runs out is **the ability to price
+companies that died** — and a backtest that cannot price them does not exclude
+them honestly, it excludes them silently.
+
+Measured against the reconstructed point-in-time roster, the share of members
+that can actually be scored at a formation date:
+
+| Formation date | Roster scoreable |
+| --- | --- |
+| 2026 / 2023 | 100% |
+| 2020 / 2017 | 99% |
+| 2014 | 90% |
+| 2011 | 77% |
+| 2008 | 76% |
+| 2005 | 63% |
+| 2002 | 59% |
+| 1999 | 50% |
+
+The direction of the loss is what rules out the earlier years. Of the mid-2008
+members that *cannot* be priced, 18% are still in the index today; of the ones
+that can, 70% are. The unpriceable set is the casualty list — GM, General
+Growth, Weatherford, Monsanto, Tyco, Anadarko — while Lehman, Enron,
+Washington Mutual and old GM return no data at all. A 2008 backtest built on
+this source would not show a harsher crash; it would show a flattered one,
+with a quarter of the wreckage missing.
+
+There is a second trap the longer window has to dodge: **recycled tickers**.
+Ask this API for Wachovia today and you get Weibo's history from 2014;
+`SUNW` returns a solar company from 2010, `CC` returns Chemours, `KODK` the
+relisted Kodak. Feeding those into a backtest would hand a dead company's slot
+to a different company's returns.
+
+So the pipeline records the roster coverage at every formation and **exits
+non-zero if any month falls below 85%** (`COVERAGE_FLOOR`), writing the worst
+observed value into `research.json` as `minCoverage`. Current run: 98.1% mean,
+90.3% worst — the weakest month is the first, whose lookback reaches furthest
+into thinning history. It also fails loudly if any price response comes back
+at exactly 5,000 rows, since that is the cap silently truncating history
+rather than a real answer.
+
+Going meaningfully earlier needs a survivorship-bias-free dataset such as CRSP
+— the academic standard — which this data source does not offer.
 
 ## Using it
 

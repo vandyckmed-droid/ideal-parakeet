@@ -1,5 +1,5 @@
 // Step 5 - build the Research tab's series: $10,000 in the top-50 momentum
-// portfolio over the previous four quarters, written to assets/data/research.json.
+// portfolio since January 2016, written to assets/data/research.json.
 //
 // The rules, exactly as displayed in the app:
 //
@@ -15,11 +15,23 @@
 //   Rebalance  Measured at the last trading day of each month, traded at the
 //              close of the first trading day of the next month, per
 //              docs/rebalancing-standard.md. Held untouched in between.
-//   Period     The previous four quarters. $10,000 at the start. Dividends
-//              are in via adjusted closes. No taxes or fees.
+//   Period     From January 2016 to the latest session. $10,000 at the start.
+//              Dividends are in via adjusted closes. No taxes or fees.
 //   Delisting  A holding that stops trading mid-month is frozen at its last
 //              close (equivalent to holding the proceeds in cash) until the
 //              next rebalance.
+//
+// Why the window starts in 2016 and not earlier. The index change log reaches
+// 1957 and surviving companies price back to the 1970s, so neither of those
+// binds. What binds is that companies which died can no longer be priced, and
+// a backtest that cannot price them silently drops them from the selection
+// universe. Measured against the point-in-time roster, the share of members
+// that can be scored is ~99% back to 2017 and ~90% at 2014, but only ~76% at
+// 2008 and ~59% at 2002. Worse, the missing names are the casualties: of the
+// mid-2008 members that cannot be priced, 18% are still in the index today
+// against 70% of the ones that can. Extending past 2016 would not show a
+// harsher crash, it would show a flattered one. COVERAGE_FLOOR below is what
+// stops that happening by accident.
 //
 // Prices are fetched fresh every run - history is cheap and a cache here would
 // be one more way to serve yesterday's answer.
@@ -29,9 +41,28 @@ import { fmp, mapPool, progress } from './lib/fmp.mjs';
 
 const TOP = 50;
 const START_CASH = 10_000;
-const MONTHS_BACK = 12; // previous four quarters
+// Fixed anchor rather than a rolling window: the $10,000 goes in once and the
+// track record accumulates, so yesterday's chart is still a prefix of today's.
+const START_MONTH = '2016-01';
 const M = 21; // trading days per month for the momentum lookbacks
 const CONCURRENCY = 8;
+
+// The share of a formation date's roster that must be scoreable. Below this
+// the selection universe has quietly become the set of companies that
+// survived, which is the one bias this whole construction exists to avoid.
+//
+// Observed: ~98% on average, with the weakest formation at the very start of
+// the window (~90%, since the oldest lookback reaches furthest into thinning
+// history). The floor sits below that on purpose - it is here to catch a
+// material slide toward survivors, not to fail the nightly job over one
+// symbol going missing. For scale, 2011 measures 77% and 2005 63%.
+const COVERAGE_FLOOR = 0.85;
+
+// historical-price-eod/dividend-adjusted truncates at 5000 rows (~20 years)
+// without saying so. The window is ~12 years today, comfortably inside it, but
+// a fixed start date means the span grows every year - so a response landing
+// exactly on the cap is treated as truncation rather than trusted.
+const ROW_CAP = 5000;
 
 function iso(d) {
   return d.toISOString().slice(0, 10);
@@ -65,32 +96,34 @@ async function main() {
 
   // Every name that was a member at any point in the window, so the union
   // includes the ones that have since dropped out - that is the entire point.
-  const windowStart = new Date(today);
-  windowStart.setMonth(windowStart.getMonth() - (MONTHS_BACK + 2));
+  const windowStart = new Date(`${START_MONTH}-01T00:00:00Z`);
+  windowStart.setMonth(windowStart.getMonth() - 2);
   const need = new Set();
   const probe = new Date(windowStart);
   while (probe <= today) {
     for (const s of rosterAt(iso(probe))) need.add(s);
     probe.setMonth(probe.getMonth() + 1);
   }
-  console.log(`  ${need.size} symbols were members at some point in the window`);
+  console.log(`  ${need.size} symbols were members at some point since ${START_MONTH}`);
 
   // --- prices ----------------------------------------------------------------
   // The earliest formation needs 12 months of history behind it.
-  const from = new Date(today);
-  from.setMonth(from.getMonth() - (MONTHS_BACK + 14));
+  const from = new Date(`${START_MONTH}-01T00:00:00Z`);
+  from.setMonth(from.getMonth() - 14);
   const to = iso(today);
 
   const bars = new Map();
   let done = 0;
   const failed = [];
+  const truncated = [];
   await mapPool([...need], CONCURRENCY, async (symbol) => {
     try {
       const rows = await fmp('historical-price-eod/dividend-adjusted', {
-        symbol,
+        symbol: symbol.replace(/\./g, '-'),
         from: iso(from),
         to,
       });
+      if (Array.isArray(rows) && rows.length >= ROW_CAP) truncated.push(symbol);
       const clean = (Array.isArray(rows) ? rows : [])
         .filter((r) => r.date && Number.isFinite(r.adjClose) && r.adjClose > 0)
         .map((r) => [r.date, r.adjClose])
@@ -101,6 +134,16 @@ async function main() {
     }
     progress('prices', ++done, need.size);
   });
+
+  // Silent truncation would lop off the oldest years and quietly shorten the
+  // backtest. Fetch in date chunks if this ever fires.
+  if (truncated.length) {
+    console.error(
+      `\n  ${truncated.length} symbol(s) hit the ${ROW_CAP}-row cap ` +
+        `(${truncated.slice(0, 5).join(' ')}) - history is being truncated`
+    );
+    process.exit(1);
+  }
   console.log(`\n  priced ${bars.size}/${need.size}${failed.length ? ` (${failed.length} unavailable, long delisted)` : ''}`);
 
   // --- master calendar: real US sessions only --------------------------------
@@ -123,20 +166,26 @@ async function main() {
   const monthEnds = [];
   for (let i = 1; i < N; i++) if (DATES[i].slice(0, 7) !== DATES[i - 1].slice(0, 7)) monthEnds.push(i - 1);
 
-  // "Previous four quarters" counts whole months: the first entry is the
-  // first trading day of the month twelve months back, not a mid-month date.
-  const cutoff = new Date(today);
-  cutoff.setMonth(cutoff.getMonth() - MONTHS_BACK);
-  const cutoffMonth = iso(cutoff).slice(0, 7);
+  // Whole months: the first entry is the first trading day of START_MONTH,
+  // not a mid-month date.
   const formations = monthEnds.filter(
-    (i) => i + 1 < N && DATES[i + 1].slice(0, 7) >= cutoffMonth && i - 12 * M >= 0
+    (i) => i + 1 < N && DATES[i + 1].slice(0, 7) >= START_MONTH && i - 12 * M >= 0
   );
-  if (formations.length < MONTHS_BACK) {
-    console.error(`  only ${formations.length} formation dates - not enough history`);
+  // One formation per month between the start and now, less a little slack.
+  const [sy, sm] = START_MONTH.split('-').map(Number);
+  const expected = (today.getUTCFullYear() - sy) * 12 + (today.getUTCMonth() + 1 - sm);
+  if (formations.length < expected * 0.9) {
+    console.error(
+      `  only ${formations.length} formation dates, expected ~${expected} - not enough history`
+    );
     process.exit(1);
   }
 
   // --- select and simulate ---------------------------------------------------
+  // Coverage is recorded at every formation, not just checked: if the share of
+  // the roster that can be scored ever sags, the backtest is drifting toward
+  // survivors and the number it prints stops meaning what it says.
+  const coverage = [];
   const pick = (i) => {
     const roster = rosterAt(DATES[i]);
     const scored = [];
@@ -149,8 +198,14 @@ async function main() {
       scored.push({ sym, mom: near / then - 1 });
     }
     scored.sort((a, b) => b.mom - a.mom);
-    if (scored.length < TOP + 50) {
-      console.error(`  only ${scored.length} scoreable names at ${DATES[i]}`);
+    const share = roster.size ? scored.length / roster.size : 0;
+    coverage.push({ date: DATES[i], share, scored: scored.length, roster: roster.size });
+    if (share < COVERAGE_FLOOR) {
+      console.error(
+        `  ${DATES[i]}: only ${scored.length}/${roster.size} ` +
+          `(${(share * 100).toFixed(0)}%) of the roster is scoreable, ` +
+          `floor is ${(COVERAGE_FLOOR * 100).toFixed(0)}%`
+      );
       process.exit(1);
     }
     return scored.slice(0, TOP).map((s) => s.sym);
@@ -199,8 +254,10 @@ async function main() {
   }
 
   // --- sanity, then write ----------------------------------------------------
-  if (series.length < 200) {
-    console.error(`  series has only ${series.length} points`);
+  // ~252 sessions a year since START_MONTH, less generous slack.
+  const minPoints = Math.floor(expected * 21 * 0.9);
+  if (series.length < minPoints) {
+    console.error(`  series has only ${series.length} points, expected ~${expected * 21}`);
     process.exit(1);
   }
   for (let i = 1; i < series.length; i++) {
@@ -220,6 +277,9 @@ async function main() {
     signal: '12-1 momentum',
     universe: 'S&P 500, point-in-time membership',
     rebalance: 'monthly',
+    // The worst roster coverage any formation ran at - the honest reader's
+    // first question about a backtest this long.
+    minCoverage: Math.round(Math.min(...coverage.map((c) => c.share)) * 1000) / 1000,
     series,
     formations: formationLog,
   };
@@ -229,6 +289,24 @@ async function main() {
   console.log(`  ${series.length} daily points, ${first[0]} -> ${last[0]}`);
   console.log(`  $${START_CASH.toLocaleString()} -> $${last[1].toLocaleString()} (${(((last[1] / START_CASH) - 1) * 100).toFixed(1)}%)`);
   console.log(`  ${formationLog.length} rebalances, latest holdings: ${formationLog[formationLog.length - 1].holdings.slice(0, 8).join(' ')}...`);
+
+  // Peak-to-trough on the daily series: the crashes are the reason for the
+  // longer window, so they get printed rather than left to the eye.
+  let peak = series[0][1], mdd = 0, mddAt = series[0][0];
+  for (const [d, v] of series) {
+    if (v > peak) peak = v;
+    const dd = v / peak - 1;
+    if (dd < mdd) { mdd = dd; mddAt = d; }
+  }
+  console.log(`  max drawdown ${(mdd * 100).toFixed(1)}% (trough ${mddAt})`);
+
+  const worst = coverage.reduce((a, b) => (b.share < a.share ? b : a));
+  const mean = coverage.reduce((s, c) => s + c.share, 0) / coverage.length;
+  console.log(
+    `  roster coverage: mean ${(mean * 100).toFixed(1)}%, ` +
+      `worst ${(worst.share * 100).toFixed(1)}% at ${worst.date} ` +
+      `(${worst.scored}/${worst.roster})`
+  );
 }
 
 main().catch((err) => {

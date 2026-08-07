@@ -32,12 +32,19 @@ export function ResearchScreen({ research }) {
   const tone = ret >= 0 ? colors.up : colors.down;
   const latest = research.formations[research.formations.length - 1];
 
+  // Read off the series rather than restated, so the rule cannot drift out of
+  // step with the window the pipeline actually built.
+  const startLabel = new Date(`${series[0][0]}T00:00:00`).toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  });
+
   const rules = [
     ['Universe', 'S&P 500 members as of each measurement date (point in time - names later removed are included while they were members). The Market tab tracks the same index.'],
     ['Signal', '12-1 momentum: return from 12 months before the measurement date to 1 month before it'],
     ['Selection', `Top ${research.top}, equally weighted`],
     ['Rebalance', 'Measured at the last trading day of each month, traded at the next trading day’s close, held untouched in between'],
-    ['Period', `Previous four quarters, $${research.startValue.toLocaleString()} at the start`],
+    ['Period', `Since ${startLabel}, $${research.startValue.toLocaleString()} at the start`],
     ['Dividends', 'Reinvested, via adjusted closes'],
     ['Costs', 'No taxes or fees'],
     ['Delistings', 'A holding that stops trading is frozen at its last close until the next rebalance'],
