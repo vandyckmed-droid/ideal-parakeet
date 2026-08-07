@@ -12,7 +12,7 @@
 // like the price stage.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { fmp, mapPool, progress } from './lib/fmp.mjs';
+import { fmp, mapPool, progress } from '../lib/fmp.mjs';
 
 const CONCURRENCY = 8;
 

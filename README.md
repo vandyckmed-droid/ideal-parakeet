@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/QKfNPKVdGRWQcBLGmCQNy), so it can be opened in
+Snack](https://snack.expo.dev/82iUsaWySXnzKZ1pAeQ0A), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -62,13 +62,7 @@ middle one costs ~800 API calls and is worth resuming rather than repeating.
 | 1 | `01-build-candidates.mjs` | Screens NYSE / NASDAQ / AMEX into ~800 candidates |
 | 2 | `02-fetch-prices.mjs` | Pulls ~2 years of adjusted daily closes, one file per symbol |
 | 3 | `03-build-dataset.mjs` | Filters to exactly 500 and packs the app asset |
-| 4 | `04-fetch-earnings.mjs` | Full reported history for the surviving 500 |
-| 5 | `05-add-earnings.mjs` | Folds the next report date and typical move into the asset |
-| 6 | `06-validate-dataset.mjs` | Refuses to ship a misshapen snapshot |
-
-Earnings are fetched *after* the pack, not before, because the pack is what
-decides which 500 names survive — fetching earlier would spend ~300 calls a day
-on candidates that get cut.
+| 4 | `04-validate-dataset.mjs` | Refuses to ship a misshapen snapshot |
 
 Stage 2 skips symbols it has already fetched, so an interrupted run resumes for
 free. Pass `--force` to refetch everything — and note that the skip is a real
@@ -129,10 +123,9 @@ Before it can run you need to do two things it cannot do for itself:
    from there, so on a feature branch it will never fire — `workflow_dispatch`
    lets you run it by hand in the meantime.
 
-One running cost worth knowing. A run costs **~1,303 API calls**: 3 screener
-calls in stage 1, one per candidate (~800) in stage 2, one per surviving name
-(500) in stage 4, and none in stages 3, 5 or 6. At five runs a week that is
-roughly 28,000 a month against your FMP quota.
+One running cost worth knowing. A run costs **803 API calls**: 3 screener
+calls in stage 1, one per candidate (~800) in stage 2, and none in stages 3-4.
+At five runs a week that is roughly 17,000 a month against your FMP quota.
 
 Narrowing the date range would not change that number.
 `historical-price-eod/dividend-adjusted` is a **per-symbol** endpoint, so
@@ -445,7 +438,7 @@ node tools/research/factor-calendar-time.mjs   # the real one
 
 ## Earnings: what was tested, and what it found
 
-`tools/05-fetch-earnings.mjs` pulls every reported quarter for all 500 names
+`tools/research/fetch-earnings.mjs` pulls every reported quarter for all 500 names
 (one call per symbol; the bulk `earnings-calendar` endpoint caps at 4000 records
 per call *regardless of the date range asked for* and spans every listed company
 on earth, so it takes dozens of calls to get what 500 targeted ones give
@@ -549,21 +542,11 @@ Earnings dates are worth knowing as **risk**, not as a forecast:
 Reporting days move **2.38×** an ordinary day, and one in ten exceeds 10%.
 "A report lands in three days" is honest, actionable and needs no prediction.
 
-**That is what ships.** Two fields go into the dataset — `er`, the next
-scheduled report date, and `em`, that name's own median absolute 2-day move
-across its past reports. The app shows a `⚑ 3d` flag on a row only when a
-report is within a week, and the per-ticker view carries the date and the move
-among its other facts.
-
-`em` is per-name rather than the universe average because the average
-describes almost nobody: across these 500 the median reporting-day move runs
-from **±0.6%** (`CVX`, `HLN`, `EPD`) to **±23%** (`UI`, `MDB`), with a median
-of ±4.0% and a 10th-to-90th range of ±1.8% to ±8.7%. Knowing you hold the
-±23% one is the entire value.
-
-It is a raw move, not market-relative: a holder experiences the whole thing,
-and adjusting for the market would understate what actually turns up in the
-price.
+An earnings flag built on this — the next report date and each name's own
+typical reporting-day move — was implemented, then **removed at the owner's
+decision**. The app carries no earnings data and makes no reference to
+earnings; the analysis above stays in the repo as a record only, and the
+fetcher lives under `tools/research/` for offline use.
 
 ### What is not built, and why
 
@@ -592,7 +575,7 @@ predict the price, which is not what the evidence supports.
 Reproduce any of it from the repo root:
 
 ```bash
-node tools/05-fetch-earnings.mjs        # 500 calls
+node tools/research/fetch-earnings.mjs  # 500 calls, offline research only
 node tools/research/earnings-validity.mjs
 node tools/research/earnings-drift.mjs
 node tools/research/earnings-event-risk.mjs

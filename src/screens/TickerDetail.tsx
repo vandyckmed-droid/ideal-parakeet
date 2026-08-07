@@ -3,7 +3,6 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { PriceChart } from '../components/PriceChart';
 import { SegmentedControl } from '../components/SegmentedControl';
-import { daysUntilEarnings, formatDaysUntil, formatEarningsMove } from '../data/earnings';
 import { DATES, Ticker, formatDate, slice } from '../data/market';
 import {
   computeWindowStats,
@@ -218,31 +217,6 @@ export function TickerDetail({
         </Text>
         <View style={[styles.facts, { backgroundColor: colors.surface }]}>
           {[
-            // A report is a scheduled volatility event, so it sits with the
-            // other facts about the name rather than pretending to be a
-            // signal. The move figure is this name's own median, because the
-            // universe average describes nobody: 0.6% to 23% across the 500.
-            ...(ticker.nextEarnings
-              ? [
-                  [
-                    'Next report',
-                    `${formatDate(ticker.nextEarnings)}${
-                      (() => {
-                        const d = daysUntilEarnings(ticker.nextEarnings);
-                        return d !== null && d >= 0 ? ` · ${formatDaysUntil(d)}` : '';
-                      })()
-                    }`,
-                  ] as [string, string],
-                ]
-              : []),
-            ...(formatEarningsMove(ticker.earningsMove)
-              ? [
-                  [
-                    'Typical move on the day',
-                    formatEarningsMove(ticker.earningsMove)!,
-                  ] as [string, string],
-                ]
-              : []),
             ['Sector', ticker.sector],
             ['Industry', ticker.industry],
             ['Exchange', ticker.exchange],
