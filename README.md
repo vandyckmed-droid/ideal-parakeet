@@ -327,6 +327,94 @@ Session counting is weekend-aware but has no holiday calendar. A market holiday
 inside the gap overcounts by one session, which moves the measurement date by a
 day and changes a multi-month return negligibly.
 
+## What predicts 1-12 month returns here: nothing I could demonstrate
+
+The honest headline. Every standard cross-sectional predictor was tested on
+survivorship-free S&P 500 membership over 2010-2026, and none of them clears
+significance. Momentum leans positive consistently but cannot be shown to work
+on this sample.
+
+Getting to that answer took three attempts, and **two of them produced
+significant-looking results that were artifacts**. That is the useful part.
+
+### Attempt 1 - biased universe
+
+Testing on today's 500 largest gave two results at |t| > 2.7 across all four
+horizons: low volatility strongly *negative* (high-vol won) and earnings yield
+strongly *negative* (growth beat value).
+
+Both are what survivorship bias manufactures. Today's 500 largest returned an
+average **1,489%** since 2010, against roughly 500-600% for the index itself.
+That gap is selection, not skill: the high-vol, expensive names that blew up
+are simply not in the set, so "high volatility won" is close to a tautology.
+
+### Attempt 2 - point-in-time membership, broken calendar
+
+`historical-sp500-constituent` plus the current roster reconstructs who was
+actually in the index on any date. Walking the change log backwards reproduces
+a roster of 501 / 501 / 505 / 506 / 504 members at five probe dates across
+sixteen years, which is the check that it worked. That set - 1,615 names ever
+in the index, 1,286 with usable price history including bankruptcies like
+`BBBY` - is the right universe.
+
+On it, momentum 12-1 at a 12-month hold looked significant: +6.67%, t = 2.91,
+positive in 82% of periods.
+
+It was a bug. The master calendar was built from the union of every name's
+bars, and long-delisted and foreign listings carry dates the US market was
+shut - inflating it to ~295 sessions a year. A 252-step lookback was therefore
+reaching back about ten and a half months, not twelve, and the mismatch
+between formation and holding windows was manufacturing the result.
+
+### Attempt 3 - point-in-time membership, correct calendar
+
+Restricting the calendar to days at least 100 names traded gives 4,173
+sessions, ~252/year. Re-run, with non-overlapping periods so the observations
+are genuinely independent:
+
+| Signal | 1m | 3m | 6m | 12m | worst period |
+| --- | --- | --- | --- | --- | --- |
+| momentum 12-1 | +0.12% | +0.82% | +1.43% | +2.65% | −31.2% |
+| momentum 12-0 | +0.12% | +0.99% | +1.84% | +4.52% | −29.8% |
+| momentum 6-1 | +0.07% | +0.68% | +2.04% | +3.14% | −29.9% |
+| 1-month reversal | +0.03% | +0.23% | −0.84% | −2.58% | −20.4% |
+| low volatility | −0.30% | −0.96% | −1.61% | −1.11% | −40.1% |
+| 52-week high | −0.10% | +0.26% | +0.57% | +0.74% | −32.3% |
+
+**Nothing reaches |t| = 2.** The best case is momentum 12-0 at twelve months:
++4.52%, t = 1.37, positive in 87% of periods — suggestive, and undemonstrable
+on fifteen independent observations.
+
+Note also the last column. Even the signals that lean positive have single
+periods down 20-31%. That is momentum's documented crash behaviour, and a mean
+hides it completely.
+
+### What that does and does not mean
+
+It does **not** mean momentum does not work. Fifteen independent 12-month
+periods is very low power, and the published evidence for momentum runs to
+ninety years and dozens of countries. Absence of proof on a 16-year sample is
+not proof of absence.
+
+What it does mean is that **this app cannot claim to predict anything**, and
+does not. The default view ranks on 12-1 momentum — trailing return with the
+recent month skipped, which is exactly what the Return metric plus Skip
+computes — because that is the best-supported construct available, not because
+this dataset proves it. The test above is at least consistent with it: the
+sign is positive at every horizon and the hit rate climbs from 54% to 67% as
+the horizon lengthens.
+
+Read the rankings as a screen, not a forecast. What survived testing well
+enough to ship is on the previous section: earnings as a scheduled volatility
+event, which needs no prediction to be useful.
+
+```bash
+node tools/research/fetch-deep-prices.mjs     # ~16y of daily closes
+node tools/research/build-pit-universe.mjs    # roster + delisted names
+node tools/research/factor-test.mjs           # biased, for contrast
+node tools/research/factor-test-pit.mjs       # the real one
+```
+
 ## Earnings: what was tested, and what it found
 
 `tools/05-fetch-earnings.mjs` pulls every reported quarter for all 500 names
