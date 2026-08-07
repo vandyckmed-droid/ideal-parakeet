@@ -41,16 +41,26 @@ async function main() {
     dependencies: DEPENDENCIES,
   };
 
-  const res = await fetch('https://exp.host/--/api/v2/snack/save', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    throw new Error(`Snack save failed: HTTP ${res.status} ${await res.text()}`);
+  // Snack ids are random and may end in `_` or `-`. A trailing one of those is
+  // routinely swallowed when the link is auto-linked in a message or chat app,
+  // and the shortened id 404s with "we couldn't find the Snack". Publishing is
+  // cheap, so keep drawing until the id ends in something safe to paste.
+  let hashId;
+  for (let attempt = 1; ; attempt++) {
+    const res = await fetch('https://exp.host/--/api/v2/snack/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      throw new Error(`Snack save failed: HTTP ${res.status} ${await res.text()}`);
+    }
+    ({ hashId } = await res.json());
+    if (/[A-Za-z0-9]$/.test(hashId)) break;
+    console.log(`  id "${hashId}" ends in punctuation; republishing`);
+    if (attempt >= 10) throw new Error('could not get a paste-safe snack id');
   }
 
-  const { hashId } = await res.json();
   const size = (JSON.stringify(payload).length / 1024).toFixed(0);
   console.log(`  published ${files.length} files (${size} KB), SDK ${SDK}`);
   console.log(`\n  https://snack.expo.dev/${hashId}\n`);
