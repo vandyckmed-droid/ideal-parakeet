@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { WindowStats, formatPercent, formatPercentPlain, formatRatio } from '../data/stats';
+import { WindowStats, formatPercentPlain, formatRatio } from '../data/stats';
 import { useColors } from '../theme/ThemeProvider';
 import { mono, radius, space, type } from '../theme/theme';
 import { InfoButton } from './InfoButton';
@@ -24,12 +24,20 @@ function formatDiversification(v: number | null): string {
 }
 
 /**
- * The watchlist's own return, volatility, risk-adjusted return and
- * diversification ratio, treated as one equal-weighted position rather than N
- * separate rows. `stats` already reflects whatever window and skip setting
- * the rest of the screen is using, computed by TickerListScreen via the same
+ * The watchlist's own volatility, risk-adjusted return and diversification
+ * ratio, treated as one equal-weighted position rather than N separate rows.
+ * `stats` already reflects whatever window and skip setting the rest of the
+ * screen is using, computed by TickerListScreen via the same
  * `computeWindowStats` every individual row uses (with the vol floor turned
  * off - see src/data/stats.ts) - this component only renders.
+ *
+ * Deliberately does not show the portfolio's total return. A watchlist is
+ * assembled by reading a list ranked on past return and keeping the names
+ * near the top, so its backtested return is close to a tautology: it measures
+ * the selection, not a result anyone could have had. The risk figures do not
+ * have that problem - nothing here was chosen for being low-volatility or
+ * uncorrelated, so sigma and the diversification ratio describe the basket
+ * rather than restating how it was picked.
  */
 export const PortfolioSummary = React.memo(function PortfolioSummary({
   stats,
@@ -50,13 +58,11 @@ export const PortfolioSummary = React.memo(function PortfolioSummary({
     );
   }
 
-  const tone = stats.totalReturn >= 0 ? colors.up : colors.down;
-
   return (
     <View
       style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
       accessibilityLabel={
-        `Portfolio, equal-weighted: return ${formatPercent(stats.totalReturn)}, ` +
+        `Portfolio, equal-weighted: ` +
         `volatility ${formatPercentPlain(stats.annualizedVol)}, ` +
         `return over volatility ${formatRatio(stats.ratio)}, ` +
         `diversification ${formatDiversification(diversificationRatio)}`
@@ -65,12 +71,6 @@ export const PortfolioSummary = React.memo(function PortfolioSummary({
       <Text style={[type.micro, { color: colors.textFaint }]}>PORTFOLIO · EQUAL-WEIGHTED</Text>
 
       <View style={styles.figures}>
-        <View style={styles.figure}>
-          <Text style={[type.micro, { color: colors.textFaint }]}>RETURN</Text>
-          <Text style={[type.heading, mono, { color: tone }]}>
-            {formatPercent(stats.totalReturn)}
-          </Text>
-        </View>
         <View style={styles.figure}>
           <Text style={[type.micro, { color: colors.textFaint }]}>ANN σ</Text>
           <Text style={[type.heading, mono, { color: colors.textMuted }]}>

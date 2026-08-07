@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/pmaGiTEBgUWjSSPRL-F9S), so it can be opened in
+Snack](https://snack.expo.dev/CIhVVWaezD0CIlZoLKo8F), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -261,18 +261,28 @@ out, so it is correlated directly against the full basket average instead.
 Both describe the same thing: how much a name's daily moves resemble the
 basket as a whole. That is **not** a claim that any two flagged names are
 correlated with each other - two names can each score high independently by
-each tracking the group, without moving together at all. "Most overlap: AMD
-68%, MU 67%" names two names that are each redundant with the group, not a
-pair that moves in lockstep.
+each tracking the group, without moving together at all. `AMD` at 68% beside
+`MU` at 67% is two names each redundant with the group, not a pair that moves
+in lockstep.
 
-Every name scoring **65% or higher** is flagged - on the Watchlist screen,
-shown as a badge and named in the header; on the Market screen, shown as a
-badge on every matching row among all 500, with a count in the header ("12
-names would overlap your watchlist by 65% or more"). There is no cap on how
-many can flag: a watchlist of 6 correlated names can flag all 6, and a search
-for a sector you're already concentrated in can turn up a dozen matches.
-`OVERLAP_THRESHOLD` in `src/data/overlap.ts` is the number to change if 65%
-flags more or less than you want.
+Every name scoring **65% or higher** is flagged with a `⇄ 68%` badge on its
+own row - on the Watchlist screen among your holdings, on the Market screen
+among all 500, where the header also carries a count ("12 names would overlap
+your watchlist by 65% or more") because you cannot see 500 rows at once.
+There is no cap on how many can flag: a watchlist of 6 correlated names can
+flag all 6, and a search for a sector you're already concentrated in can turn
+up a dozen matches. `OVERLAP_THRESHOLD` in `src/data/overlap.ts` is the
+number to change if 65% flags more or less than you want.
+
+The Watchlist header deliberately does **not** list its flagged names. It
+used to ("Most overlap: ASX 69%, MU 69%, ADI 68%, ..."), which on a list of
+any size was the same symbols and percentages printed twice - once at the
+top in the screen's loudest colour, wrapping onto a second line above the
+portfolio card, and again on each row a few pixels below. The rule the header
+follows now is that it only says things the rows cannot: that the calculation
+couldn't run, or that **nothing** was flagged. The last of those is worth a
+line precisely because an absence of badges is indistinguishable from a list
+you simply haven't scrolled yet.
 
 65% rather than a round 70%: on the default 1Y window, real watchlists fall
 into a natural gap. Loosely related sets - REITs, a mix of megacap tech
@@ -371,15 +381,14 @@ Overlap ascending on the default 1Y window:
 
 `RVMD` (a biotech) is the one name in this list not tracking the rest of it;
 `SNDK` and `WDC` (storage, same sub-industry as `MU` and `STX`) sit at the
-redundant end, matching the header's own "Most overlap" line for this basket.
-Re-sorting the full 500-name Market universe the same way surfaces
+redundant end. Re-sorting the full 500-name Market universe the same way surfaces
 `RSG` (waste management) at -47% - a real negative correlation to this
 particular basket, not just a low positive one, which is a stronger
 diversification signal than anything scoring near 0% would be.
 
 ## Portfolio summary
 
-The Watchlist screen leads with one card: the watchlist's own Return, Ann σ,
+The Watchlist screen leads with one card: the watchlist's own Ann σ,
 Return ÷ σ and diversification ratio, treated as a single equal-weighted
 position instead of N separate rows. It answers a question the row list
 can't: not "how did each holding do," but "how did the *combination* do" -
@@ -387,6 +396,33 @@ which isn't the average of the row-level numbers, because volatility doesn't
 average linearly and correlation between holdings changes the real combined
 risk. A user eyeballing the individual rows and mentally averaging their σ
 figures would get a meaningfully wrong number for exactly that reason.
+
+### Why there is no portfolio return
+
+The card used to lead with the watchlist's total return, and that figure was
+removed rather than kept. It read as a result and wasn't one.
+
+A watchlist in this app is assembled by opening a list *ranked on past
+return* and tapping names near the top. Measuring the return of what you kept
+therefore mostly measures the ranking you picked from: the number is high
+because high-return names were selected, which is a restatement of the
+selection rule rather than a finding about the basket. A real 45-name
+watchlist built this way showed **+106%** over 9 months. Nobody held that.
+It is what perfect hindsight paid, and putting it in the largest type on the
+screen, in the green used for gains, invited reading it as performance.
+
+The risk figures that remain don't have this problem, because nothing here
+was chosen for being low-volatility or uncorrelated: σ and the
+diversification ratio describe the basket rather than restating how it was
+picked. Same reason overlap survives - a concentration warning derived from a
+concentrated selection is still true about the thing you're holding.
+
+One caveat stated plainly: **Return ÷ σ keeps an annualised return in its
+numerator**, so it inherits some of the same selection bias, and its
+*absolute* level should be read with the same suspicion the raw return
+earned. It is kept because its useful job is comparative - the same basket
+across windows, or against another basket assembled the same way - where the
+bias is at least applied consistently on both sides.
 
 Built by constructing a synthetic ticker - $1 invested equally across the
 watchlist, rebalanced daily - shaped exactly like any other ticker in the

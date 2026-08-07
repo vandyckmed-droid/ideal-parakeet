@@ -174,16 +174,21 @@ function pearson(x: number[], y: number[]): number | null {
   return cov / Math.sqrt(vx * vy);
 }
 
-/** Most names a header line names before falling back to "+N more". */
-const MAX_NAMED = 6;
-
 /**
- * Header line for the Watchlist screen: describes flags among basket
- * (watchlist) members only. A candidate flagged elsewhere in the universe
- * belongs on the Market screen, not named here - "most overlap" on your own
- * list should describe your own holdings.
+ * Header line for the Watchlist screen - or null when the rows already say it.
+ *
+ * The header only speaks about things the list itself cannot show. Every
+ * flagged holding already carries its own `⇄ 69%` badge on its own row, so
+ * naming those same holdings and percentages again at the top is the same
+ * information printed twice, in the screen's loudest colour, costing two
+ * lines of vertical space above the portfolio card.
+ *
+ * "Nothing is flagged" is the one result the rows can't express - an absence
+ * of badges is indistinguishable from a list you haven't scrolled - so that
+ * case still gets a line, as do the two states where the calculation can't
+ * run at all.
  */
-export function describeOverlap(overlap: OverlapSummary, n: number): string {
+export function describeOverlap(overlap: OverlapSummary, n: number): string | null {
   if (overlap.reason === 'too_few_names') {
     const need = MIN_OVERLAP_NAMES - n;
     return `Add ${need} more ${need === 1 ? 'name' : 'names'} to see overlap`;
@@ -191,18 +196,9 @@ export function describeOverlap(overlap: OverlapSummary, n: number): string {
   if (overlap.reason === 'insufficient_history') {
     return `Widen the window to see overlap · ${overlap.observations} of ${MIN_OVERLAP_OBSERVATIONS} days available`;
   }
-  const flagged = overlap.scores
-    .filter((s) => s.inBasket && overlap.flagged.has(s.symbol))
-    .sort((a, b) => (b.score as number) - (a.score as number));
-  if (flagged.length === 0) {
-    return `No name overlaps the rest of the list by ${Math.round(OVERLAP_THRESHOLD * 100)}% or more`;
-  }
-  const named = flagged
-    .slice(0, MAX_NAMED)
-    .map((s) => `${s.symbol} ${Math.round((s.score as number) * 100)}%`)
-    .join(', ');
-  const extra = flagged.length > MAX_NAMED ? ` (+${flagged.length - MAX_NAMED} more)` : '';
-  return `Most overlap: ${named}${extra}`;
+  const anyFlagged = overlap.scores.some((s) => s.inBasket && overlap.flagged.has(s.symbol));
+  if (anyFlagged) return null;
+  return `No name overlaps the rest of the list by ${Math.round(OVERLAP_THRESHOLD * 100)}% or more`;
 }
 
 /** Count of flagged names that are candidates, not current holdings. */

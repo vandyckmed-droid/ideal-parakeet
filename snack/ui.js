@@ -7,7 +7,7 @@ import * as Haptics from 'expo-haptics';
 
 import { useColors } from './theme';
 import { mono, radius, space, type } from './theme';
-import { formatMetric, formatPercent, formatPercentPlain, formatPrice, formatRatio, metricValue } from './stats';
+import { formatMetric, formatPercentPlain, formatPrice, formatRatio, metricValue } from './stats';
 import { OVERLAP_THRESHOLD } from './overlap';
 
 const haptic = (fn) => {
@@ -306,11 +306,19 @@ function formatDiversification(v) {
 }
 
 /**
- * The watchlist's own return, volatility, risk-adjusted return and
- * diversification ratio, treated as one equal-weighted position rather than N
- * separate rows. `stats` already reflects whatever window and skip setting
- * the rest of the screen is using, with the vol floor turned off (see
- * stats.js's computeWindowStats).
+ * The watchlist's own volatility, risk-adjusted return and diversification
+ * ratio, treated as one equal-weighted position rather than N separate rows.
+ * `stats` already reflects whatever window and skip setting the rest of the
+ * screen is using, with the vol floor turned off (see stats.js's
+ * computeWindowStats).
+ *
+ * Deliberately does not show the portfolio's total return. A watchlist is
+ * assembled by reading a list ranked on past return and keeping the names
+ * near the top, so its backtested return is close to a tautology: it measures
+ * the selection, not a result anyone could have had. The risk figures do not
+ * have that problem - nothing here was chosen for being low-volatility or
+ * uncorrelated, so sigma and the diversification ratio describe the basket
+ * rather than restating how it was picked.
  */
 export function PortfolioSummary({ stats, diversificationRatio }) {
   const colors = useColors();
@@ -326,13 +334,11 @@ export function PortfolioSummary({ stats, diversificationRatio }) {
     );
   }
 
-  const tone = stats.totalReturn >= 0 ? colors.up : colors.down;
-
   return (
     <View
       style={[pf.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
       accessibilityLabel={
-        `Portfolio, equal-weighted: return ${formatPercent(stats.totalReturn)}, ` +
+        `Portfolio, equal-weighted: ` +
         `volatility ${formatPercentPlain(stats.annualizedVol)}, ` +
         `return over volatility ${formatRatio(stats.ratio)}, ` +
         `diversification ${formatDiversification(diversificationRatio)}`
@@ -340,10 +346,6 @@ export function PortfolioSummary({ stats, diversificationRatio }) {
     >
       <Text style={[type.micro, { color: colors.textFaint }]}>PORTFOLIO · EQUAL-WEIGHTED</Text>
       <View style={pf.figures}>
-        <View style={pf.figure}>
-          <Text style={[type.micro, { color: colors.textFaint }]}>RETURN</Text>
-          <Text style={[type.heading, mono, { color: tone }]}>{formatPercent(stats.totalReturn)}</Text>
-        </View>
         <View style={pf.figure}>
           <Text style={[type.micro, { color: colors.textFaint }]}>ANN σ</Text>
           <Text style={[type.heading, mono, { color: colors.textMuted }]}>
