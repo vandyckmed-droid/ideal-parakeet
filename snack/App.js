@@ -17,7 +17,14 @@ import { ThemeProvider, useTheme, radius, space, type } from './theme';
 import { sessionsSinceSnapshot, windowForPreset } from './stats';
 import { computeOverlap, describeCandidateOverlap, describeOverlap } from './overlap';
 import { ListScreen } from './ListScreen';
+import { RankTable } from './RankTable';
+import { SegmentedControl } from './ui';
 import { DetailScreen } from './DetailScreen';
+
+const MARKET_VIEWS = [
+  { key: 'card', label: 'Card' },
+  { key: 'table', label: 'Table' },
+];
 
 const DATA_URL =
   'https://raw.githubusercontent.com/vandyckmed-droid/ideal-parakeet/main/assets/data/market.json';
@@ -32,6 +39,7 @@ function Shell() {
   const [attempt, setAttempt] = useState(0);
 
   const [tab, setTab] = useState('market');
+  const [marketView, setMarketView] = useState('card');
   const [detail, setDetail] = useState(null);
   const [order, setOrder] = useState([]);
 
@@ -203,10 +211,43 @@ function Shell() {
     </View>
   );
 
+  // The Market tab in two views of the same 500 names. Local state rather than
+  // persisted: the choice survives switching tabs, which is the only continuity
+  // that matters here - a view mode restored on a cold start would be a
+  // setting, and this is a glance.
+  const viewSwitch =
+    tab === 'market' ? (
+      <SegmentedControl segments={MARKET_VIEWS} value={marketView} onChange={setMarketView} />
+    ) : null;
+
+  if (tab === 'market' && marketView === 'table') {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
+        <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} />
+        <RankTable
+          universe={data.tickers}
+          dates={data.dates}
+          sectors={data.sectors}
+          metric={metric}
+          setMetric={setMetric}
+          skipEnabled={skipEnabled}
+          setSkipEnabled={setSkipEnabled}
+          sessionsStale={sessionsStale}
+          isWatched={isWatched}
+          toggleWatch={toggleWatch}
+          onOpenDetail={setDetail}
+          tab={tabBar}
+          headerAccessory={viewSwitch}
+        />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
       <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} />
       <ListScreen
+        headerAccessory={viewSwitch}
         title={tab === 'market' ? 'Market' : 'Watchlist'}
         universe={tab === 'market' ? data.tickers : watched}
         dates={data.dates}

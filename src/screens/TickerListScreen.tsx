@@ -45,10 +45,17 @@ export function TickerListScreen({
   overlap,
   overlapCaption,
   showPortfolioSummary,
+  headerAccessory,
 }: {
   title: string;
   universe: Ticker[];
   emptyState?: React.ReactNode;
+  /**
+   * Rendered between the title block and the search box. Exists for the Market
+   * tab's Card/Table switch, which has to sit inside this screen's header but
+   * belongs to the screen above it.
+   */
+  headerAccessory?: React.ReactNode;
   /**
    * Drives the row badges on any screen that supplies it. The Market screen
    * scores the full universe against the current watchlist; the Watchlist
@@ -290,6 +297,8 @@ export function TickerListScreen({
             </Text>
           </Pressable>
         </View>
+
+        {headerAccessory}
 
         {showPortfolio && (
           <PortfolioSummary stats={portfolioStats} diversificationRatio={diversificationRatio} />

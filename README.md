@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/CIhVVWaezD0CIlZoLKo8F), so it can be opened in
+Snack](https://snack.expo.dev/F9HBzkaHnk_gPrVOTCYfU), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -34,9 +34,10 @@ file-based routing unevenly — so that build differs in exactly two ways:
 
 The maths in `snack/stats.js` mirrors `src/data/stats.ts`, `snack/overlap.js`
 mirrors `src/data/overlap.ts`, `snack/portfolio.js` mirrors
-`src/data/portfolio.ts`, and the palette mirrors `src/theme/theme.ts`. They are
-duplicated rather than shared because the two builds have different module
-systems; if they ever disagree, `src/` is the source of truth.
+`src/data/portfolio.ts`, `snack/ranks.js` mirrors `src/data/ranks.ts`, and the
+palette mirrors `src/theme/theme.ts`. They are duplicated rather than shared
+because the two builds have different module systems; if they ever disagree,
+`src/` is the source of truth.
 Re-publish after editing with:
 
 ```bash
@@ -385,6 +386,100 @@ redundant end. Re-sorting the full 500-name Market universe the same way surface
 `RSG` (waste management) at -47% - a real negative correlation to this
 particular basket, not just a low positive one, which is a stronger
 diversification signal than anything scoring near 0% would be.
+
+## The rank table
+
+The Market tab has two views, switched by a Card / Table control under the
+title. **Card** is the original list - one window at a time, with the
+sparkline, price and overlap badge that need the room. **Table** trades all of
+that for five horizons side by side: every name's rank at 1M, 3M, 6M, 9M and
+12M, as a heatmap.
+
+The card view answers "how is this name doing over the window I picked." The
+table answers the question that needs five windows at once - whether a name is
+strong *everywhere* or only recently - which is invisible when you can see one
+horizon at a time and have to hold the other four in your head. Two rows from
+the current snapshot, ranked on Return:
+
+| Symbol | 1M | 3M | 6M | 9M | 12M |
+| --- | --- | --- | --- | --- | --- |
+| SNDK | 488 | 375 | 17 | **1** | **1** |
+| DELL | 78 | **2** | **1** | 7 | 13 |
+
+`SNDK` is the best name in the market over 9 and 12 months and in the bottom
+decile over the last one. `DELL` is strong at every horizon. The card view
+shows one of those five columns at a time and cannot tell the two situations
+apart; sorting by 1M ascending pulls up a whole screen of the first kind
+(`STM` 495 → 19/15/35, `UMC` 491 → 15/13/8/17).
+
+**Ranks are market-wide and stay that way.** Filtering to one sector or
+searching does not renumber them - a rank that meant "best of the eleven names
+still visible" would answer a different question on every filter and could not
+be compared against the unfiltered view. The header says so when a filter is
+active ("37 of 500 · ranks stay market-wide").
+
+**Each horizon carries its own skip.** `skipForLength` is sublinear on
+purpose, so with Skip on the five columns drop 5 / 10 / 15 / 17 / 20 sessions
+respectively, and the header states that rather than showing one day count
+that would be wrong for four of the five columns. The Return / Return ÷ σ
+toggle applies too - the ranks are on whichever metric is selected.
+
+**Sorting is the column headers**, tapping one sorts by that horizon and
+tapping it again flips direction. There is nothing else in this view to sort
+by, so a separate row of sort chips would have been a second way to say the
+same thing. It opens on 12M, the horizon where a rank is least noisy.
+
+### The heatmap
+
+`rankHeat` maps a rank to a distance from the middle of the pack and a
+direction, and the cell renders that as a background tint (peaking at 26%
+alpha) plus a text colour blended from `textMuted` toward the pole. Both
+channels move together, so the ramp is continuous rather than banded.
+
+It is **diverging**, not sequential: the top of the market and the bottom both
+read loudly, and the wide middle stays quiet. That matters at 500 names, where
+rank 240 and rank 260 mean the same thing and a linear ramp would leave most
+of the table tinted - colour implying information that isn't there. The
+`HEAT_GAMMA` of 1.5 is what pushes the middle back down; rank 25 of 500 still
+reads at 0.86 strength while rank 200 falls to 0.09.
+
+**One judgement call worth flagging:** the poles are the palette's `up` and
+`down` - the same green and red the app uses for gains and losses everywhere
+else. That is a deliberate overload. A rank of 400 does not mean the name lost
+money, and colouring it red implies something the number doesn't say. Two
+things argued for it anyway: the cell contains an integer with a month label
+above it, so "bad rank" is the natural reading rather than "lost money"; and
+rank and return sign are correlated enough in practice that the implication is
+rarely wrong. The alternative - a sequential green-to-neutral fade with no red
+- avoids the overload but makes rank 480 and rank 300 look identical, which
+loses exactly the bottom-end signal the second table row above depends on.
+
+### Cost
+
+Five horizons over 500 names is 2,500 `computeWindowStats` calls, which run in
+**10-25ms** on this dataset - measured across all four metric × skip
+combinations. The memo is keyed only on metric, skip and staleness, so typing,
+filtering, sorting and scrolling never rebuild it.
+
+It reuses `computeWindowStats` rather than a faster rank-specific path for the
+same reason the portfolio card does: a rank that disagreed with the number the
+card view shows for the same name and window would be a bug with no single
+place to fix it. Verified against exactly that - the ranks were checked
+against an independently computed card-view ordering for every horizon and
+both metrics, with and without skip, and matched on all 10,000 comparisons.
+The 9M column with Skip on reproduces the card view's leaderboard digit for
+digit (`SNDK` +19.26, `MU` +8.48, `LITE` +6.82, `WDC` +6.81 over
+2025-11-03 → 2026-07-14).
+
+Names with no measurement at a horizon are ranked `null` and shown as `—`,
+sorting to the bottom in either direction rather than posing as the best or
+worst of a window they weren't in. Every name in the current 500 has at least
+a year of history by construction, so this path is defensive: it is exercised
+by the code but not by this dataset.
+
+The table shows no overlap badges and no overlap count. Overlap warns about
+redundancy against your watchlist, which is a different question from momentum
+persistence, and at this row density the badges would crowd out the ranks.
 
 ## Portfolio summary
 

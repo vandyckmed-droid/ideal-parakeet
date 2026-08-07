@@ -6,9 +6,10 @@ import Svg, { Circle, Defs, LinearGradient, Path, Line as SvgLine, Stop } from '
 import * as Haptics from 'expo-haptics';
 
 import { useColors } from './theme';
-import { mono, radius, space, type } from './theme';
+import { mixHex, mono, radius, space, type, withAlpha } from './theme';
 import { formatMetric, formatPercentPlain, formatPrice, formatRatio, metricValue } from './stats';
 import { OVERLAP_THRESHOLD } from './overlap';
+import { rankHeat } from './ranks';
 
 const haptic = (fn) => {
   try {
@@ -480,6 +481,114 @@ const row = StyleSheet.create({
   overlapBadge: { paddingHorizontal: space(1.5), paddingVertical: 1, borderRadius: radius.sm },
   spark: { width: 64, marginHorizontal: space(3) },
   figures: { minWidth: 84, alignItems: 'flex-end', gap: 2 },
+});
+
+// --- rank table row ----------------------------------------------------------
+
+export const RANK_ROW_HEIGHT = 44;
+/** Width of one rank cell. Five of these plus the symbol column fit a phone. */
+export const RANK_CELL_WIDTH = 46;
+
+/**
+ * Peak background tint. Deliberately low: the cell has to sit behind a number
+ * that stays readable in both palettes, and a full-strength fill would turn the
+ * table into a block of colour with the ranks fighting it.
+ */
+const MAX_TINT = 0.26;
+
+function RankCell({ rank, count }) {
+  const colors = useColors();
+  const heat = rankHeat(rank, count);
+
+  if (rank === null || heat === null) {
+    return (
+      <View style={rank_.cell}>
+        <Text style={[type.caption, mono, { color: colors.textFaint }]}>—</Text>
+      </View>
+    );
+  }
+
+  const pole = heat.side === 'up' ? colors.up : colors.down;
+  return (
+    <View style={rank_.cell}>
+      <View style={[rank_.chip, { backgroundColor: withAlpha(pole, heat.strength * MAX_TINT) }]}>
+        <Text
+          style={[type.caption, mono, { color: mixHex(colors.textMuted, pole, heat.strength) }]}
+        >
+          {rank}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+/**
+ * One name's rank at every horizon.
+ *
+ * Same gestures as the card view's row - tap to watchlist, long press to open -
+ * so the two sub-views of the Market tab do not teach different meanings for
+ * the same touch.
+ */
+export const RankRow = React.memo(function RankRow({
+  ticker, ranks, counts, watched, onToggleWatch, onOpenDetail,
+}) {
+  const colors = useColors();
+
+  return (
+    <Pressable
+      onPress={() => {
+        haptic(() =>
+          Haptics.impactAsync(watched ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light)
+        );
+        onToggleWatch(ticker.s);
+      }}
+      onLongPress={() => {
+        haptic(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success));
+        onOpenDetail(ticker.s);
+      }}
+      delayLongPress={280}
+      style={({ pressed }) => [
+        rank_.row,
+        { backgroundColor: pressed ? colors.surface : 'transparent', borderBottomColor: colors.hairline },
+      ]}
+      accessibilityRole="button"
+      accessibilityLabel={
+        `${ticker.s}, ${ticker.n}. Ranks: ` +
+        ranks.map((r) => (r === null ? 'unranked' : r)).join(', ')
+      }
+      accessibilityHint="Tap to toggle watchlist, long press to open details"
+    >
+      <View style={[rank_.marker, { backgroundColor: watched ? colors.accent : 'transparent' }]} />
+      <View style={rank_.identity}>
+        <Text
+          style={[type.bodyStrong, { color: watched ? colors.accent : colors.text }]}
+          numberOfLines={1}
+        >
+          {ticker.s}
+        </Text>
+      </View>
+      {ranks.map((r, i) => (
+        <RankCell key={i} rank={r} count={counts[i]} />
+      ))}
+    </Pressable>
+  );
+});
+
+const rank_ = StyleSheet.create({
+  row: {
+    height: RANK_ROW_HEIGHT, flexDirection: 'row', alignItems: 'center',
+    paddingRight: space(3), borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  marker: {
+    width: 3, height: 20, borderTopRightRadius: radius.sm,
+    borderBottomRightRadius: radius.sm, marginRight: space(2.5),
+  },
+  identity: { flex: 1, justifyContent: 'center' },
+  cell: { width: RANK_CELL_WIDTH, alignItems: 'center', justifyContent: 'center' },
+  chip: {
+    minWidth: 34, paddingVertical: 3, paddingHorizontal: space(1),
+    borderRadius: radius.sm, alignItems: 'center',
+  },
 });
 
 export { haptic };

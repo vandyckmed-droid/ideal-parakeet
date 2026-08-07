@@ -17,6 +17,10 @@ export function ListScreen({
   metric, setMetric, skipEnabled, setSkipEnabled, sessionsStale,
   isWatched, toggleWatch, onOpenDetail, onOrder, emptyState, tab, overlap, overlapCaption,
   showPortfolioSummary,
+  // Rendered between the title block and the search box. Exists for the Market
+  // tab's Card/Table switch, which sits inside this header but belongs to the
+  // screen above it.
+  headerAccessory,
 }) {
   const { colors, scheme, preference, setPreference } = useTheme();
   // The range the maths actually uses, once the recent tail is dropped.
@@ -199,6 +203,8 @@ export function ListScreen({
             </Text>
           </Pressable>
         </View>
+
+        {headerAccessory}
 
         {showPortfolio && (
           <PortfolioSummary stats={portfolioStats} diversificationRatio={diversificationRatio} />

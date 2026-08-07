@@ -95,6 +95,34 @@ export const mono: TextStyle = Platform.select<TextStyle>({
   default: { fontVariant: ['tabular-nums'] },
 })!;
 
+// --- colour maths ------------------------------------------------------------
+// Only needed by the rank heatmap, which has to produce a continuum between two
+// palette entries rather than pick from them.
+
+function parseHex(hex: string): [number, number, number] {
+  const h = hex.replace('#', '');
+  return [
+    parseInt(h.slice(0, 2), 16),
+    parseInt(h.slice(2, 4), 16),
+    parseInt(h.slice(4, 6), 16),
+  ];
+}
+
+/** `hex` at a given alpha, as an rgba() string. */
+export function withAlpha(hex: string, alpha: number): string {
+  const [r, g, b] = parseHex(hex);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+/** Linear blend between two hex colours; `t` of 0 returns `from`. */
+export function mixHex(from: string, to: string, t: number): string {
+  const a = parseHex(from);
+  const b = parseHex(to);
+  const k = Math.max(0, Math.min(1, t));
+  const ch = (i: number) => Math.round(a[i] + (b[i] - a[i]) * k);
+  return `rgb(${ch(0)}, ${ch(1)}, ${ch(2)})`;
+}
+
 export const type = {
   hero: { fontSize: 34, fontWeight: '700' as const, letterSpacing: -0.8 },
   title: { fontSize: 22, fontWeight: '700' as const, letterSpacing: -0.4 },
