@@ -152,27 +152,22 @@ export function describeOverlap(overlap, n) {
   return `No name overlaps the rest of the list by ${Math.round(OVERLAP_THRESHOLD * 100)}% or more`;
 }
 
-/** Count of flagged names that are candidates, not current holdings. */
-export function countCandidateFlags(overlap) {
-  let count = 0;
-  for (const s of overlap.scores) if (!s.inBasket && overlap.flagged.has(s.symbol)) count++;
-  return count;
-}
-
 /**
- * Header line for the Market screen: how many of the 500 would be redundant
- * additions - or, when the basket can't be scored against at all, what would
- * make it scoreable.
+ * Header line for the Market screen - or null, which is the ordinary case.
  *
- * Says so rather than staying silent, because on this screen the Overlap sort
- * chip is simply absent while the basket doesn't qualify, and a control that
- * vanishes without explanation reads as a missing feature rather than an
- * unmet precondition.
+ * Speaks only when overlap cannot be computed at all and something the user
+ * could do would fix it: too few names in the watchlist, or too little shared
+ * history in the window. Both are states where the Overlap sort chip is simply
+ * absent, and a control that vanishes with nothing said reads as a missing
+ * feature rather than an unmet precondition.
  *
- * The one case it still stays quiet on is an empty watchlist. The Market tab
- * is where the app opens, so prompting someone to feed a feature they have
- * not met yet is noise; from one name on, the prompt describes something
- * already begun.
+ * It does NOT report how many of the 500 are flagged. Every one of those names
+ * carries its own badge, and the Overlap sort puts them in order on demand, so
+ * a running count at the top was a third way to say the same thing - in the
+ * loudest colour on the screen, permanently, above everything else.
+ *
+ * Also silent on an empty watchlist: the Market tab is where the app opens, so
+ * prompting someone to feed a feature they have not met yet is noise.
  */
 export function describeCandidateOverlap(overlap, watchlistCount) {
   if (overlap.reason === 'too_few_names') {
@@ -183,9 +178,5 @@ export function describeCandidateOverlap(overlap, watchlistCount) {
   if (overlap.reason === 'insufficient_history') {
     return `Widen the window to screen for overlap · ${overlap.observations} of ${MIN_OVERLAP_OBSERVATIONS} days available`;
   }
-  const count = countCandidateFlags(overlap);
-  if (count === 0) return null;
-  return `${count} name${count === 1 ? '' : 's'} would overlap your watchlist by ${Math.round(
-    OVERLAP_THRESHOLD * 100
-  )}% or more`;
+  return null;
 }

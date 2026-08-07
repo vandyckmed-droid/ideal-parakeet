@@ -279,16 +279,11 @@ export function TickerListScreen({
               {formatDateShort(DATES[range.endIndex])}
               {range.skip > 0 ? ` · ${range.skip}d skipped` : ''}
             </Text>
+            {/* Always the faint tone. Every caption either screen still
+                produces is a precondition the user can act on, never a
+                finding - findings live on the rows they belong to. */}
             {overlapCaption && (
-              <Text
-                style={[
-                  type.caption,
-                  {
-                    color: overlap && overlap.flagged.size > 0 ? colors.warn : colors.textFaint,
-                    marginTop: 2,
-                  },
-                ]}
-              >
+              <Text style={[type.caption, { color: colors.textFaint, marginTop: 2 }]}>
                 {overlapCaption}
               </Text>
             )}

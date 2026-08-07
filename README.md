@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/GtwLJLy4CuzmXay5P63zC), so it can be opened in
+Snack](https://snack.expo.dev/o63gucsxUSl9KPiy6KuBi), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -268,22 +268,42 @@ in lockstep.
 
 Every name scoring **65% or higher** is flagged with a `⇄ 68%` badge on its
 own row - on the Watchlist screen among your holdings, on the Market screen
-among all 500, where the header also carries a count ("12 names would overlap
-your watchlist by 65% or more") because you cannot see 500 rows at once.
-There is no cap on how many can flag: a watchlist of 6 correlated names can
-flag all 6, and a search for a sector you're already concentrated in can turn
-up a dozen matches. `OVERLAP_THRESHOLD` in `src/data/overlap.ts` is the
-number to change if 65% flags more or less than you want.
+among all 500. There is no cap on how many can flag: a watchlist of 6
+correlated names can flag all 6, and a search for a sector you're already
+concentrated in can turn up a dozen matches. `OVERLAP_THRESHOLD` in
+`src/data/overlap.ts` is the number to change if 65% flags more or less than
+you want.
 
-The Watchlist header deliberately does **not** list its flagged names. It
-used to ("Most overlap: ASX 69%, MU 69%, ADI 68%, ..."), which on a list of
-any size was the same symbols and percentages printed twice - once at the
-top in the screen's loudest colour, wrapping onto a second line above the
-portfolio card, and again on each row a few pixels below. The rule the header
-follows now is that it only says things the rows cannot: that the calculation
-couldn't run, or that **nothing** was flagged. The last of those is worth a
-line precisely because an absence of badges is indistinguishable from a list
-you simply haven't scrolled yet.
+### What the headers don't say
+
+Neither screen's header reports what overlap *found*. Both used to, and both
+lines were removed for the same reason.
+
+The Watchlist header listed its flagged holdings ("Most overlap: ASX 69%, MU
+69%, ADI 68%, ..."), which was the same symbols and percentages printed twice
+- once at the top in the screen's loudest colour, wrapping onto a second line
+above the portfolio card, and again on each row a few pixels below. The Market
+header carried a running count ("26 names would overlap your watchlist by 65%
+or more"), which had a better excuse - you cannot see 500 rows at once - but
+was still a permanent orange banner restating what the badges already say, and
+the Overlap sort now puts exactly those names in order on demand, which is a
+better answer than a number.
+
+What survives is the rule that **a header only says what the rows and controls
+cannot**:
+
+- *the calculation couldn't run, and here's what would fix it* - "Watchlist
+  needs 1 more name to screen for overlap", "Widen the window to screen for
+  overlap". These matter because in those states the Overlap sort chip is
+  simply absent, and a control that vanishes with nothing said reads as a
+  missing feature rather than an unmet precondition.
+- *nothing was flagged at all* - on the Watchlist only, because an absence of
+  badges is indistinguishable from a list you haven't scrolled yet.
+
+Everything else is a finding, and findings live on the row they belong to.
+With the count gone, every caption either screen can still produce is a
+precondition rather than a result, so the header's warn-orange branch became
+unreachable and was removed too - the caption is now always the faint tone.
 
 65% rather than a round 70%: on the default 1Y window, real watchlists fall
 into a natural gap. Loosely related sets - REITs, a mix of megacap tech
