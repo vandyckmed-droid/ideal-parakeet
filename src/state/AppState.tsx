@@ -9,7 +9,12 @@ import React, {
 } from 'react';
 
 import { MetricKey } from '../data/stats';
-import { DateWindow, PresetKey, windowForPreset } from '../data/windows';
+import {
+  DateWindow,
+  PresetKey,
+  sessionsSinceSnapshot,
+  windowForPreset,
+} from '../data/windows';
 
 type AppStateValue = {
   window: DateWindow;
@@ -19,6 +24,13 @@ type AppStateValue = {
   metric: MetricKey;
   setMetric: (m: MetricKey) => void;
 
+  /** Drop the recent tail of every window; see `withSkip`. */
+  skipEnabled: boolean;
+  setSkipEnabled: (v: boolean) => void;
+
+  /** Trading sessions between the newest bar and today; see `withSkip`. */
+  sessionsStale: number;
+
   watchlist: string[];
   isWatched: (symbol: string) => boolean;
   toggleWatch: (symbol: string) => boolean;
@@ -27,12 +39,18 @@ type AppStateValue = {
 
 const AppStateContext = createContext<AppStateValue | null>(null);
 const WATCHLIST_KEY = 'parakeet.watchlist';
+const SKIP_KEY = 'parakeet.skip';
 
 export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const [window, setWindow] = useState<DateWindow>(() => windowForPreset('1Y'));
   const [metric, setMetric] = useState<MetricKey>('return');
+  const [skipEnabled, setSkipEnabledState] = useState(false);
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [hydrated, setHydrated] = useState(false);
+
+  // Read once per launch. Re-reading on every render would make window maths
+  // depend on wall-clock time, and the value only moves at midnight anyway.
+  const [sessionsStale] = useState(() => sessionsSinceSnapshot());
 
   useEffect(() => {
     AsyncStorage.getItem(WATCHLIST_KEY)
@@ -46,6 +64,15 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         /* a corrupt entry just starts the user with an empty watchlist */
       })
       .finally(() => setHydrated(true));
+
+    AsyncStorage.getItem(SKIP_KEY)
+      .then((saved) => setSkipEnabledState(saved === '1'))
+      .catch(() => {});
+  }, []);
+
+  const setSkipEnabled = useCallback((v: boolean) => {
+    setSkipEnabledState(v);
+    AsyncStorage.setItem(SKIP_KEY, v ? '1' : '0').catch(() => {});
   }, []);
 
   // Guarded on `hydrated` so the initial empty state cannot race ahead of the
@@ -89,12 +116,18 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       setCustomWindow,
       metric,
       setMetric,
+      skipEnabled,
+      setSkipEnabled,
+      sessionsStale,
       watchlist,
       isWatched,
       toggleWatch,
       clearWatchlist,
     }),
-    [window, setPreset, setCustomWindow, metric, watchlist, isWatched, toggleWatch, clearWatchlist]
+    [
+      window, setPreset, setCustomWindow, metric, skipEnabled, setSkipEnabled,
+      sessionsStale, watchlist, isWatched, toggleWatch, clearWatchlist,
+    ]
   );
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;

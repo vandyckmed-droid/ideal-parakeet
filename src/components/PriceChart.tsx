@@ -17,6 +17,12 @@ type Props = {
   height?: number;
   /** Index within `values` currently under the finger, or null when idle. */
   onScrub?: (index: number | null) => void;
+  /**
+   * Trailing points excluded from the measurement. They are still drawn, but
+   * dimmed and fenced off by a divider: cropping them would hide the very
+   * price action the user chose to skip, and seeing it is the point.
+   */
+  excludeTail?: number;
 };
 
 /**
@@ -26,7 +32,7 @@ type Props = {
  * position is up or down over the selected window is legible at a glance
  * without reading a single number.
  */
-export function PriceChart({ values, height = 220, onScrub }: Props) {
+export function PriceChart({ values, height = 220, onScrub, excludeTail = 0 }: Props) {
   const colors = useColors();
   const [width, setWidth] = useState(0);
   const [scrubIndex, setScrubIndex] = useState<number | null>(null);
@@ -35,8 +41,12 @@ export function PriceChart({ values, height = 220, onScrub }: Props) {
     setWidth(e.nativeEvent.layout.width);
   }, []);
 
-  const rising =
-    values.length >= 2 && values[values.length - 1] >= values[0];
+  // The last measured point, i.e. where the window actually ends.
+  const cut = Math.max(0, values.length - 1 - Math.max(0, excludeTail));
+
+  // Direction is judged on the measured stretch, so the colour agrees with the
+  // return being reported rather than with the excluded tail.
+  const rising = values.length >= 2 && values[cut] >= values[0];
   const lineColor = rising ? colors.up : colors.down;
 
   const geometry = useMemo(() => {
@@ -61,17 +71,22 @@ export function PriceChart({ values, height = 220, onScrub }: Props) {
     const maxPoints = Math.min(values.length, Math.max(2, Math.floor(width)));
     const step = (values.length - 1) / (maxPoints - 1);
 
+    // Two paths so the excluded tail can be drawn in its own style. They share
+    // the vertex at `cut` so the join is seamless.
     let line = '';
+    let tail = '';
     for (let i = 0; i < maxPoints; i++) {
       const idx = Math.round(i * step);
-      const x = xAt(idx);
-      const y = yAt(values[idx]);
-      line += `${i === 0 ? 'M' : 'L'}${x.toFixed(2)} ${y.toFixed(2)}`;
+      const cmd = `${xAt(idx).toFixed(2)} ${yAt(values[idx]).toFixed(2)}`;
+      if (idx <= cut) line += `${line === '' ? 'M' : 'L'}${cmd}`;
+      if (idx >= cut) tail += `${tail === '' ? 'M' : 'L'}${cmd}`;
     }
-    const area = `${line}L${width.toFixed(2)} ${height}L0 ${height}Z`;
+    // Fill stops at the cut, so the shaded mass matches the measured window.
+    const cutX = xAt(cut);
+    const area = `${line}L${cutX.toFixed(2)} ${height}L0 ${height}Z`;
 
-    return { line, area, xAt, yAt, min, max, baselineY: yAt(values[0]) };
-  }, [values, width, height]);
+    return { line, tail, area, xAt, yAt, min, max, cutX, baselineY: yAt(values[0]) };
+  }, [values, width, height, cut]);
 
   const updateScrub = useCallback(
     (x: number) => {
@@ -134,6 +149,28 @@ export function PriceChart({ values, height = 220, onScrub }: Props) {
               strokeDasharray="3 4"
               opacity={0.6}
             />
+
+            {excludeTail > 0 && (
+              <>
+                <Path
+                  d={geometry.tail}
+                  stroke={colors.textFaint}
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                />
+                <SvgLine
+                  x1={geometry.cutX}
+                  y1={0}
+                  x2={geometry.cutX}
+                  y2={height}
+                  stroke={colors.textFaint}
+                  strokeWidth={1}
+                  strokeDasharray="2 3"
+                />
+              </>
+            )}
 
             <Path
               d={geometry.line}

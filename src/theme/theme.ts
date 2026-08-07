@@ -23,6 +23,9 @@ export type Palette = {
   flat: string;
   accent: string;
   accentMuted: string;
+  /** Reserved for overlap/concentration flags - never used for return sign. */
+  warn: string;
+  warnMuted: string;
   chartFillTop: string;
   chartFillBottom: string;
   scrim: string;
@@ -42,6 +45,8 @@ const dark: Palette = {
   flat: '#9A9AA6',
   accent: '#00C853',
   accentMuted: 'rgba(0, 200, 83, 0.16)',
+  warn: '#FFB020',
+  warnMuted: 'rgba(255, 176, 32, 0.16)',
   chartFillTop: 'rgba(0, 200, 83, 0.22)',
   chartFillBottom: 'rgba(0, 200, 83, 0)',
   scrim: 'rgba(0, 0, 0, 0.7)',
@@ -61,6 +66,8 @@ const light: Palette = {
   flat: '#5F6672',
   accent: '#00794A',
   accentMuted: 'rgba(0, 121, 74, 0.12)',
+  warn: '#A15C00',
+  warnMuted: 'rgba(161, 92, 0, 0.12)',
   chartFillTop: 'rgba(0, 121, 74, 0.16)',
   chartFillBottom: 'rgba(0, 121, 74, 0)',
   scrim: 'rgba(0, 0, 0, 0.35)',
@@ -87,6 +94,34 @@ export const mono: TextStyle = Platform.select<TextStyle>({
   android: { fontFamily: 'monospace' },
   default: { fontVariant: ['tabular-nums'] },
 })!;
+
+// --- colour maths ------------------------------------------------------------
+// Only needed by the rank heatmap, which has to produce a continuum between two
+// palette entries rather than pick from them.
+
+function parseHex(hex: string): [number, number, number] {
+  const h = hex.replace('#', '');
+  return [
+    parseInt(h.slice(0, 2), 16),
+    parseInt(h.slice(2, 4), 16),
+    parseInt(h.slice(4, 6), 16),
+  ];
+}
+
+/** `hex` at a given alpha, as an rgba() string. */
+export function withAlpha(hex: string, alpha: number): string {
+  const [r, g, b] = parseHex(hex);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+/** Linear blend between two hex colours; `t` of 0 returns `from`. */
+export function mixHex(from: string, to: string, t: number): string {
+  const a = parseHex(from);
+  const b = parseHex(to);
+  const k = Math.max(0, Math.min(1, t));
+  const ch = (i: number) => Math.round(a[i] + (b[i] - a[i]) * k);
+  return `rgb(${ch(0)}, ${ch(1)}, ${ch(2)})`;
+}
 
 export const type = {
   hero: { fontSize: 34, fontWeight: '700' as const, letterSpacing: -0.8 },

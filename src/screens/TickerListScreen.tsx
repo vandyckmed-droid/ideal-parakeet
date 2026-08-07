@@ -21,14 +21,15 @@ import { ROW_HEIGHT, TickerRow } from '../components/TickerRow';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { WindowPicker } from '../components/WindowPicker';
 import { DATES, SECTORS, Ticker, formatDateShort, slice } from '../data/market';
+import { OverlapSummary } from '../data/overlap';
 import { MetricKey, computeWindowStats, metricValue } from '../data/stats';
-import { PRESETS, PresetKey } from '../data/windows';
+import { PRESETS, PresetKey, withSkip } from '../data/windows';
 import { useAppState } from '../state/AppState';
 import { setOrderedSymbols } from '../state/listContext';
 import { useTheme } from '../theme/ThemeProvider';
 import { mono, radius, space, type } from '../theme/theme';
 
-type SortKey = 'metric' | 'cap' | 'symbol';
+type SortKey = 'metric' | 'cap' | 'symbol' | 'overlap';
 
 const METRIC_SEGMENTS: { key: MetricKey; label: string }[] = [
   { key: 'return', label: 'Return' },
@@ -39,16 +40,67 @@ export function TickerListScreen({
   title,
   universe,
   emptyState,
+  overlap,
+  overlapCaption,
+  showCaption,
+  showGestureHint,
+  headerAccessory,
 }: {
   title: string;
   universe: Ticker[];
   emptyState?: React.ReactNode;
+  /**
+   * Rendered between the title block and the search box. Exists for the Market
+   * tab's Card/Table switch, which has to sit inside this screen's header but
+   * belongs to the screen above it.
+   */
+  headerAccessory?: React.ReactNode;
+  /**
+   * Drives the row badges on any screen that supplies it. The Market screen
+   * scores the full universe against the current watchlist; the Watchlist
+   * screen scores just its own members.
+   */
+  overlap?: OverlapSummary;
+  /**
+   * Header line under the title, or omit for none. Only ever a precondition
+   * the user can act on, never a finding - the caller decides, because what
+   * counts as actionable differs by screen.
+   */
+  overlapCaption?: string | null;
+  /**
+   * The "N names · through <date> · Nd skipped" line under the title.
+   *
+   * On the Market screen the count is live feedback for the search and sector
+   * filters, so it earns its place. The Watchlist screen shows nothing at all
+   * between its title and the search box: the numbers that belong to a name
+   * belong on that name's row.
+   */
+  showCaption?: boolean;
+  /**
+   * The "tap a row to watchlist it" footer.
+   *
+   * True only where a tap actually *adds*. On the Watchlist screen a tap
+   * removes the row it lands on, so the same sentence there describes the
+   * opposite of what the gesture does. The hint exists to teach a reversed
+   * convention anyway, which is a job already finished by the time someone has
+   * a watchlist to look at.
+   */
+  showGestureHint?: boolean;
 }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, scheme, preference, setPreference } = useTheme();
-  const { window: win, setPreset, setCustomWindow, metric, setMetric, isWatched, toggleWatch } =
-    useAppState();
+  const {
+    window: win, setPreset, setCustomWindow, metric, setMetric,
+    skipEnabled, setSkipEnabled, sessionsStale, isWatched, toggleWatch,
+  } = useAppState();
+
+  // The range the maths actually uses: recent tail dropped, and anchored to
+  // today rather than to whenever the snapshot was taken.
+  const range = useMemo(
+    () => withSkip(win, skipEnabled, sessionsStale),
+    [win, skipEnabled, sessionsStale]
+  );
 
   const [query, setQuery] = useState('');
   const [sector, setSector] = useState<string | null>(null);
@@ -58,6 +110,22 @@ export function TickerListScreen({
 
   // Typing should not block on re-ranking 500 rows on every keystroke.
   const deferredQuery = useDeferredValue(query);
+
+  // Every scored name, keyed by symbol. Sorting by Overlap needs every row's
+  // own number to rank against, not just the ones that clear the flag
+  // threshold - so while that sort is active this widens from "flagged only"
+  // to "every non-null score," and TickerRow shows the same distinction with
+  // colour (flagged = warn tone, everything else = neutral) rather than by
+  // only rendering a badge for some rows and not others.
+  const overlapScores = useMemo(() => {
+    if (!overlap) return null;
+    const m = new Map<string, number>();
+    for (const s of overlap.scores) {
+      if (s.score === null) continue;
+      if (sortKey === 'overlap' || overlap.flagged.has(s.symbol)) m.set(s.symbol, s.score);
+    }
+    return m;
+  }, [overlap, sortKey]);
 
   const rows = useMemo(() => {
     const needle = deferredQuery.trim().toUpperCase();
@@ -71,8 +139,10 @@ export function TickerListScreen({
       )
       .map((t) => ({
         ticker: t,
-        stats: computeWindowStats(t, win.startIndex, win.endIndex),
-        series: slice(t, win.startIndex, win.endIndex),
+        stats: computeWindowStats(t, range.startIndex, range.endIndex),
+        // Sparkline ends where the measurement ends, so the shape and the
+        // number next to it always describe the same stretch of time.
+        series: slice(t, range.startIndex, range.endIndex),
       }));
 
     const dir = descending ? -1 : 1;
@@ -82,6 +152,16 @@ export function TickerListScreen({
       }
       if (sortKey === 'cap') {
         return (a.ticker.marketCap - b.ticker.marketCap) * dir;
+      }
+      if (sortKey === 'overlap') {
+        const av = overlapScores?.get(a.ticker.symbol) ?? null;
+        const bv = overlapScores?.get(b.ticker.symbol) ?? null;
+        // No comparable history sorts to the bottom either way, same as a
+        // metric a name has no history for.
+        if (av === null && bv === null) return 0;
+        if (av === null) return 1;
+        if (bv === null) return -1;
+        return (av - bv) * dir;
       }
       const av = metricValue(a.stats, metric);
       const bv = metricValue(b.stats, metric);
@@ -94,7 +174,7 @@ export function TickerListScreen({
     });
 
     return built;
-  }, [universe, deferredQuery, sector, sortKey, descending, metric, win]);
+  }, [universe, deferredQuery, sector, sortKey, descending, metric, range, overlapScores]);
 
   // Publish the visible order so the detail view swipes through the same list.
   // Both tabs stay mounted, so this is gated on focus: without that the
@@ -117,7 +197,10 @@ export function TickerListScreen({
         setDescending((d) => !d);
         return prev;
       }
-      setDescending(key !== 'symbol');
+      // Overlap's useful direction is ascending, same as Symbol: lowest
+      // correlation to the rest of the list first, so the top of the list is
+      // whichever name would add the most diversification.
+      setDescending(key !== 'symbol' && key !== 'overlap');
       return key;
     });
   }, []);
@@ -132,16 +215,23 @@ export function TickerListScreen({
         watched={isWatched(item.ticker.symbol)}
         onToggleWatch={toggleWatch}
         onOpenDetail={openDetail}
-        rank={sortKey === 'metric' ? index + 1 : undefined}
+        rank={sortKey === 'metric' || sortKey === 'overlap' ? index + 1 : undefined}
+        overlapScore={overlapScores?.get(item.ticker.symbol)}
       />
     ),
-    [metric, isWatched, toggleWatch, openDetail, sortKey]
+    [metric, isWatched, toggleWatch, openDetail, sortKey, overlapScores]
   );
 
+  // Only offered once the basket itself qualifies for a score (see
+  // overlap.ts): with too few names or too short a window every score is
+  // null, and a sort with nothing to rank by is a control that does nothing.
   const sortChips: { key: SortKey; label: string }[] = [
     { key: 'metric', label: metric === 'return' ? 'Return' : 'Ratio' },
     { key: 'cap', label: 'Size' },
     { key: 'symbol', label: 'A–Z' },
+    ...(overlap && overlap.reason === 'ok'
+      ? [{ key: 'overlap' as const, label: 'Overlap' }]
+      : []),
   ];
 
   return (
@@ -150,10 +240,21 @@ export function TickerListScreen({
         <View style={styles.headerTop}>
           <View>
             <Text style={[type.hero, { color: colors.text }]}>{title}</Text>
-            <Text style={[type.caption, { color: colors.textMuted }]}>
-              {rows.length} {rows.length === 1 ? 'name' : 'names'} · through{' '}
-              {formatDateShort(DATES[win.endIndex])}
-            </Text>
+            {showCaption && (
+              <Text style={[type.caption, { color: colors.textMuted }]}>
+                {rows.length} {rows.length === 1 ? 'name' : 'names'} · through{' '}
+                {formatDateShort(DATES[range.endIndex])}
+                {range.skip > 0 ? ` · ${range.skip}d skipped` : ''}
+              </Text>
+            )}
+            {/* Always the faint tone. Every caption either screen still
+                produces is a precondition the user can act on, never a
+                finding - findings live on the rows they belong to. */}
+            {overlapCaption && (
+              <Text style={[type.caption, { color: colors.textFaint, marginTop: 2 }]}>
+                {overlapCaption}
+              </Text>
+            )}
           </View>
           <Pressable
             onPress={() =>
@@ -170,6 +271,8 @@ export function TickerListScreen({
             </Text>
           </Pressable>
         </View>
+
+        {headerAccessory}
 
         <TextInput
           value={query}
@@ -216,17 +319,52 @@ export function TickerListScreen({
           </Pressable>
         </View>
 
-        {win.preset === 'CUSTOM' && (
+        <View style={styles.windowRow}>
+          <View style={{ flex: 1 }}>
+            <SegmentedControl<MetricKey>
+              segments={METRIC_SEGMENTS}
+              value={metric}
+              onChange={setMetric}
+            />
+          </View>
+          <Pressable
+            onPress={() => setSkipEnabled(!skipEnabled)}
+            style={[
+              styles.customButton,
+              {
+                backgroundColor: skipEnabled ? colors.accentMuted : colors.surface,
+                borderColor: skipEnabled ? colors.accent : 'transparent',
+              },
+            ]}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: skipEnabled }}
+            accessibilityLabel={
+              skipEnabled
+                ? `Skipping the last ${range.skip} trading days`
+                : 'Include the most recent trading days'
+            }
+          >
+            <Text
+              style={[
+                type.caption,
+                { color: skipEnabled ? colors.accent : colors.textMuted },
+              ]}
+            >
+              {skipEnabled ? `Skip ${range.skip}d` : 'Skip'}
+            </Text>
+          </Pressable>
+        </View>
+
+        {(win.preset === 'CUSTOM' || range.skip > 0) && (
           <Text style={[type.caption, mono, { color: colors.textMuted }]}>
-            {DATES[win.startIndex]} → {DATES[win.endIndex]}
+            {DATES[range.startIndex]} → {DATES[range.endIndex]}
+            {range.shortfall > 0
+              ? `  ·  ${range.shortfall}d short`
+              : sessionsStale > 0 && range.skip > 0
+                ? `  ·  data ${sessionsStale}d behind`
+                : ''}
           </Text>
         )}
-
-        <SegmentedControl<MetricKey>
-          segments={METRIC_SEGMENTS}
-          value={metric}
-          onChange={setMetric}
-        />
 
         <ScrollView
           horizontal
@@ -309,7 +447,7 @@ export function TickerListScreen({
           </View>
         }
         ListFooterComponent={
-          rows.length > 0 ? (
+          showGestureHint && rows.length > 0 ? (
             <Text style={[type.caption, styles.hint, { color: colors.textFaint }]}>
               Tap a row to watchlist it · press and hold to open it
             </Text>

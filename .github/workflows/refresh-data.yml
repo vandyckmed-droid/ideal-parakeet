@@ -1,0 +1,95 @@
+# Rebuilds assets/data/market.json after the US close and commits it if it
+# changed. The Snack build fetches that file from the default branch at launch,
+# so this is what puts fresh prices on a phone without anyone opening a laptop.
+name: Refresh market data
+
+on:
+  schedule:
+    # 23:00 UTC on weekdays: 19:00 New York in EDT, 18:00 in EST. Both are
+    # comfortably past the 16:00 close with room for FMP's end-of-day data to
+    # settle, and 23:00 UTC is still the same calendar day in New York, so the
+    # weekday fields need no shifting.
+    #
+    # Market holidays are not worth encoding. The job runs, finds no new
+    # session, produces an identical file and commits nothing.
+    - cron: '0 23 * * 1-5'
+  workflow_dispatch:
+
+# A run can outlast the next tick if FMP is slow. Queue rather than overlap:
+# two pipelines writing data/ at once would interleave their price files.
+concurrency:
+  group: refresh-data
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      # Full history, not the default depth-1 shallow clone: the commit step
+      # rebases if the branch moved during the run, and a rebase needs a merge
+      # base that a shallow clone does not have. The cost is that the clone
+      # carries every past snapshot - this job adds a ~1.7MB blob per weekday -
+      # so if checkout ever becomes the slow part, that is the reason.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # No npm install. Every script under tools/ imports nothing but node:
+      # built-ins and its own lib/, so installing the Expo toolchain here would
+      # be a couple of minutes and a few hundred megabytes spent on nothing.
+
+      - name: Screen the universe
+        run: node tools/01-build-candidates.mjs
+        env:
+          API_KEY: ${{ secrets.FMP_API_KEY }}
+
+      # --force matters even though the runner starts clean: data/prices/ is
+      # gitignored, so there is nothing to resume from, and stage 2 skips any
+      # file it already has. Should this job ever gain a cache, the flag is
+      # what stops it silently re-committing yesterday's prices.
+      - name: Fetch prices
+        run: node tools/02-fetch-prices.mjs --force
+        env:
+          API_KEY: ${{ secrets.FMP_API_KEY }}
+
+      - name: Pack the dataset
+        run: node tools/03-build-dataset.mjs
+        env:
+          API_KEY: ${{ secrets.FMP_API_KEY }}
+
+      # The gate. Nothing below this runs if the snapshot is misshapen, so a
+      # bad upstream day fails the run loudly and leaves the committed file -
+      # the one every phone fetches - untouched.
+      - name: Validate
+        run: node tools/04-validate-dataset.mjs
+
+      - name: Commit if changed
+        run: |
+          set -euo pipefail
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          if git diff --quiet -- assets/data/market.json data/universe.json; then
+            echo "No change - the newest session is already committed."
+            echo "No new session; nothing committed." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          THROUGH=$(node -e "const d=require('./assets/data/market.json');console.log(d.dates[d.dates.length-1])")
+          git add assets/data/market.json data/universe.json
+          git commit -m "Refresh market data through ${THROUGH}"
+
+          # The branch can move under a long run; rebase rather than force.
+          git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+          echo "Committed prices through **${THROUGH}**." >> "$GITHUB_STEP_SUMMARY"

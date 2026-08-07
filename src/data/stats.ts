@@ -9,6 +9,22 @@ export const TRADING_DAYS_PER_YEAR = 252;
  */
 export const MIN_VOL_OBSERVATIONS = 10;
 
+/**
+ * Floor on the sigma used as the ratio's divisor.
+ *
+ * A genuinely quiet name divides by a small number and scores enormously for
+ * reasons that have nothing to do with skill. The clearest case in the current
+ * universe is a stock pinned near an announced acquisition price: its realised
+ * vol collapses to a few percent because the price is tracking a deal, not
+ * because the business is defensive. Flooring the divisor keeps that from
+ * dominating the ranking.
+ *
+ * This floors the *divisor only*. The sigma reported in the interface stays the
+ * true measurement, because a displayed risk figure that silently reads high
+ * would be worse than the problem being solved.
+ */
+export const VOL_FLOOR = 0.125;
+
 export type WindowStats = {
   startPrice: number;
   endPrice: number;
@@ -16,8 +32,10 @@ export type WindowStats = {
   totalReturn: number;
   /** Geometric annualisation of `totalReturn`. */
   annualizedReturn: number | null;
-  /** Sample sigma of daily log returns, scaled by sqrt(252). */
+  /** Sample sigma of daily log returns, scaled by sqrt(252). Never floored. */
   annualizedVol: number | null;
+  /** True when the ratio's divisor was raised to `VOL_FLOOR`. */
+  volFloored: boolean;
   /**
    * Annualised return over annualised sigma - a Sharpe-style ratio with no
    * risk-free rate subtracted.
@@ -40,7 +58,16 @@ export type WindowStats = {
 export function computeWindowStats(
   ticker: Ticker,
   startIndex: number,
-  endIndex: number
+  endIndex: number,
+  /**
+   * The floor exists to stop a single quiet *name* dominating a ranking for
+   * reasons unrelated to skill - the EA case, a price pinned near a deal.
+   * That reasoning does not carry over to a portfolio: a well-diversified
+   * basket routinely produces sigma below VOL_FLOOR as the ordinary,
+   * intended result of combining imperfectly-correlated holdings, not an
+   * anomaly to correct for. Portfolio-level callers pass false.
+   */
+  applyFloor = true
 ): WindowStats | null {
   if (endIndex <= startIndex) return null;
 
@@ -79,9 +106,13 @@ export function computeWindowStats(
     annualizedVol = Math.sqrt(variance * TRADING_DAYS_PER_YEAR);
   }
 
+  // Divisor is floored when asked; `annualizedVol` above always stays the
+  // honest measurement either way.
+  const divisor =
+    annualizedVol === null ? null : applyFloor ? Math.max(annualizedVol, VOL_FLOOR) : annualizedVol;
   const ratio =
-    annualizedReturn !== null && annualizedVol !== null && annualizedVol > 1e-9
-      ? annualizedReturn / annualizedVol
+    annualizedReturn !== null && divisor !== null && divisor > 1e-9
+      ? annualizedReturn / divisor
       : null;
 
   return {
@@ -90,6 +121,7 @@ export function computeWindowStats(
     totalReturn,
     annualizedReturn,
     annualizedVol,
+    volFloored: applyFloor && annualizedVol !== null && annualizedVol < VOL_FLOOR,
     ratio,
     observations,
   };

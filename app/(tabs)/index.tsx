@@ -1,8 +1,7 @@
 import React from 'react';
 
-import { TICKERS } from '../../src/data/market';
-import { TickerListScreen } from '../../src/screens/TickerListScreen';
+import { MarketScreen } from '../../src/screens/MarketScreen';
 
-export default function MarketScreen() {
-  return <TickerListScreen title="Market" universe={TICKERS} />;
+export default function MarketRoute() {
+  return <MarketScreen />;
 }

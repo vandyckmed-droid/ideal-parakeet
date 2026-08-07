@@ -3,6 +3,7 @@ import React, { useCallback } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Ticker } from '../data/market';
+import { OVERLAP_THRESHOLD } from '../data/overlap';
 import {
   MetricKey,
   WindowStats,
@@ -25,6 +26,14 @@ type Props = {
   onToggleWatch: (symbol: string) => void;
   onOpenDetail: (symbol: string) => void;
   rank?: number;
+  /**
+   * This row's correlation against the current watchlist. Ordinarily set only
+   * for names at or above the overlap threshold (Market and Watchlist both
+   * pass it that way); while sorted by Overlap, every scored row gets one so
+   * the ranking is legible, with tone marking whether it actually crosses the
+   * flag threshold.
+   */
+  overlapScore?: number | null;
 };
 
 /**
@@ -44,6 +53,7 @@ export const TickerRow = React.memo(function TickerRow({
   onToggleWatch,
   onOpenDetail,
   rank,
+  overlapScore,
 }: Props) {
   const colors = useColors();
 
@@ -78,7 +88,12 @@ export const TickerRow = React.memo(function TickerRow({
         },
       ]}
       accessibilityRole="button"
-      accessibilityLabel={`${ticker.symbol}, ${ticker.name}`}
+      accessibilityLabel={
+        `${ticker.symbol}, ${ticker.name}` +
+        (overlapScore != null && overlapScore >= OVERLAP_THRESHOLD
+          ? ', overlaps your watchlist'
+          : '')
+      }
       accessibilityHint="Tap to toggle watchlist, long press to open details"
     >
       <View
@@ -106,6 +121,27 @@ export const TickerRow = React.memo(function TickerRow({
           </Text>
           {watched && (
             <View style={[styles.dot, { backgroundColor: colors.accent }]} />
+          )}
+          {overlapScore != null && (
+            <View
+              style={[
+                styles.overlapBadge,
+                {
+                  backgroundColor:
+                    overlapScore >= OVERLAP_THRESHOLD ? colors.warnMuted : colors.surface,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  type.micro,
+                  mono,
+                  { color: overlapScore >= OVERLAP_THRESHOLD ? colors.warn : colors.textMuted },
+                ]}
+              >
+                ⇄ {Math.round(overlapScore * 100)}%
+              </Text>
+            </View>
           )}
         </View>
         <Text style={[type.caption, { color: colors.textMuted }]} numberOfLines={1}>
@@ -147,6 +183,11 @@ const styles = StyleSheet.create({
   identity: { flex: 1, justifyContent: 'center', gap: 2 },
   symbolLine: { flexDirection: 'row', alignItems: 'center', gap: space(1.5) },
   dot: { width: 5, height: 5, borderRadius: 3 },
+  overlapBadge: {
+    paddingHorizontal: space(1.5),
+    paddingVertical: 1,
+    borderRadius: radius.sm,
+  },
   spark: { width: 64, marginHorizontal: space(3) },
   figures: { minWidth: 84, alignItems: 'flex-end', gap: 2 },
 });

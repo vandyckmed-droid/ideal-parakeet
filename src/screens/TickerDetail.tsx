@@ -11,8 +11,9 @@ import {
   formatPercentPlain,
   formatPrice,
   formatRatio,
+  VOL_FLOOR,
 } from '../data/stats';
-import { PRESETS, PresetKey, windowForPreset } from '../data/windows';
+import { PRESETS, PresetKey, windowForPreset, withSkip } from '../data/windows';
 import { useColors } from '../theme/ThemeProvider';
 import { mono, radius, space, type } from '../theme/theme';
 
@@ -23,10 +24,14 @@ export function TickerDetail({
   ticker,
   initialPreset,
   width,
+  skipEnabled,
+  sessionsStale,
 }: {
   ticker: Ticker;
   initialPreset: PresetKey;
   width: number;
+  skipEnabled: boolean;
+  sessionsStale: number;
 }) {
   const colors = useColors();
   const [preset, setPreset] = useState<PresetKey>(
@@ -43,13 +48,26 @@ export function TickerDetail({
     w.preset === '2Y' ? { ...w, startIndex: Math.max(w.startIndex, ticker.offset) } : w;
 
   const win = useMemo(() => clampStart(windowForPreset(preset)), [preset, ticker.offset]);
+  const range = useMemo(
+    () => withSkip(win, skipEnabled, sessionsStale),
+    [win, skipEnabled, sessionsStale]
+  );
+
+  // Drawn out to the unskipped end so the excluded tail stays visible; the
+  // chart dims it rather than hiding it.
   const series = useMemo(
     () => slice(ticker, win.startIndex, win.endIndex),
     [ticker, win]
   );
+  const measuredLength = useMemo(
+    () => slice(ticker, range.startIndex, range.endIndex).length,
+    [ticker, range]
+  );
+  const excludeTail = Math.max(0, series.length - measuredLength);
+
   const stats = useMemo(
-    () => computeWindowStats(ticker, win.startIndex, win.endIndex),
-    [ticker, win]
+    () => computeWindowStats(ticker, range.startIndex, range.endIndex),
+    [ticker, range]
   );
 
   // While a finger is down the header reports the scrubbed point instead of
@@ -75,15 +93,18 @@ export function TickerDetail({
   const table = useMemo(
     () =>
       TABLE_ROWS.map((row) => {
-        const w = clampStart(windowForPreset(row.key));
+        // Each row resolves its own skip, so a 1M row drops 5 days while the
+        // 1Y row drops 20 - the ladder applies per window, not per screen.
+        const r = withSkip(clampStart(windowForPreset(row.key)), skipEnabled, sessionsStale);
         return {
           key: row.key,
           label: row.label,
-          stats: computeWindowStats(ticker, w.startIndex, w.endIndex),
+          skip: r.skip,
+          stats: computeWindowStats(ticker, r.startIndex, r.endIndex),
         };
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [ticker]
+    [ticker, skipEnabled, sessionsStale]
   );
 
   return (
@@ -104,12 +125,15 @@ export function TickerDetail({
             {formatPercent(shownReturn)}
           </Text>
           <Text style={[type.caption, { color: colors.textMuted }]}>
-            {scrubbing ? formatDate(shownDate) : `over ${preset === '2Y' ? 'max' : preset}`}
+            {scrubbing
+              ? formatDate(shownDate)
+              : `over ${preset === '2Y' ? 'max' : preset}` +
+                (range.skip > 0 ? ` · ex last ${range.skip}d` : '')}
           </Text>
         </View>
       </View>
 
-      <PriceChart values={series} onScrub={setScrub} />
+      <PriceChart values={series} onScrub={setScrub} excludeTail={excludeTail} />
 
       <View style={styles.section}>
         <SegmentedControl<PresetKey>
@@ -149,14 +173,20 @@ export function TickerDetail({
                   },
                 ]}
               >
-                <Text style={[type.bodyStrong, styles.tdLabel, { color: colors.text }]}>
-                  {row.label}
-                </Text>
+                <View style={styles.tdLabel}>
+                  <Text style={[type.bodyStrong, { color: colors.text }]}>{row.label}</Text>
+                  {row.skip > 0 && (
+                    <Text style={[type.micro, { color: colors.textFaint }]}>
+                      −{row.skip}d
+                    </Text>
+                  )}
+                </View>
                 <Text style={[type.caption, mono, styles.td, { color: rowTone }]}>
                   {formatPercent(rt, 1)}
                 </Text>
                 <Text style={[type.caption, mono, styles.td, { color: colors.textMuted }]}>
                   {formatPercentPlain(row.stats?.annualizedVol ?? null)}
+                  {row.stats?.volFloored ? '*' : ''}
                 </Text>
                 <Text style={[type.caption, mono, styles.td, { color: colors.text }]}>
                   {formatRatio(row.stats?.ratio ?? null)}
@@ -168,6 +198,16 @@ export function TickerDetail({
         <Text style={[type.caption, { color: colors.textFaint, marginTop: space(2) }]}>
           Ret ÷ σ is the annualised return over the annualised standard
           deviation of daily log returns in the same window.
+          {range.skip > 0
+            ? ' Each window stops short of the newest close by the days marked' +
+              ' against it, so recent reversal is left out of the measurement.'
+            : ''}
+          {table.some((r) => r.stats?.volFloored)
+            ? ` A starred σ sits below the ${(VOL_FLOOR * 100).toFixed(1)}% floor` +
+              ' applied to the divisor, so the ratio beside it is held back from' +
+              ' the very large value a near-zero σ would otherwise produce. The σ' +
+              ' shown is the real measurement.'
+            : ''}
         </Text>
       </View>
 
@@ -214,7 +254,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space(3),
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  tdLabel: { width: 56 },
+  tdLabel: { width: 56, gap: 1 },
   td: { flex: 1, textAlign: 'right' },
   facts: { borderRadius: radius.md, paddingHorizontal: space(3.5), paddingVertical: space(1) },
   factRow: {
