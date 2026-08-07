@@ -63,6 +63,7 @@ export function MarketScreen() {
       overlap={overlap}
       overlapCaption={overlapCaption}
       headerAccessory={viewSwitch}
+      showCaption
       showGestureHint
     />
   );

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { BY_SYMBOL, Ticker } from '../../src/data/market';
-import { computeOverlap, describeOverlap } from '../../src/data/overlap';
+import { computeOverlap } from '../../src/data/overlap';
 import { TickerListScreen } from '../../src/screens/TickerListScreen';
 import { useAppState } from '../../src/state/AppState';
 import { useColors } from '../../src/theme/ThemeProvider';
@@ -20,6 +20,11 @@ export default function WatchlistScreen() {
     [watchlist]
   );
 
+  // Still computed, still drives the row badges and the Overlap sort - it just
+  // no longer says anything in the header. Nothing between the title and the
+  // search box on this screen: the numbers that belong to a name live on that
+  // name's row.
+  //
   // The full selected window, not the skip-adjusted range: the skip exists to
   // exclude short-term reversal from a *return* measurement, which has no
   // bearing on how two return series co-move across the window as a whole.
@@ -30,18 +35,12 @@ export default function WatchlistScreen() {
     () => computeOverlap(universe, universe, win.startIndex, win.endIndex),
     [universe, win.startIndex, win.endIndex]
   );
-  const overlapCaption = useMemo(
-    () => (universe.length > 0 ? describeOverlap(overlap, universe.length) : null),
-    [overlap, universe.length]
-  );
 
   return (
     <TickerListScreen
       title="Watchlist"
       universe={universe}
       overlap={overlap}
-      overlapCaption={overlapCaption}
-      showPortfolioSummary
       emptyState={
         <View style={styles.empty}>
           <Text style={[type.title, { color: colors.text }]}>Nothing watched yet</Text>

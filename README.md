@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/o63gucsxUSl9KPiy6KuBi), so it can be opened in
+Snack](https://snack.expo.dev/E4ThxNxADH7eq6NKAPBuh), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -62,9 +62,74 @@ middle one costs ~800 API calls and is worth resuming rather than repeating.
 | 1 | `01-build-candidates.mjs` | Screens NYSE / NASDAQ / AMEX into ~800 candidates |
 | 2 | `02-fetch-prices.mjs` | Pulls ~2 years of adjusted daily closes, one file per symbol |
 | 3 | `03-build-dataset.mjs` | Filters to exactly 500 and packs the app asset |
+| 4 | `04-validate-dataset.mjs` | Refuses to ship a misshapen snapshot |
 
 Stage 2 skips symbols it has already fetched, so an interrupted run resumes for
-free. Pass `--force` to refetch everything.
+free. Pass `--force` to refetch everything — and note that the skip is a real
+trap when refreshing rather than resuming: a run that "succeeds" in seconds
+has just re-packed yesterday's prices.
+
+### Every weekday, automatically
+
+`.github/workflows/refresh-data.yml` runs the pipeline at **23:00 UTC on
+weekdays** and commits `assets/data/market.json` if it changed. That is 19:00
+in New York during EDT and 18:00 during EST — both comfortably past the 16:00
+close, with room for end-of-day data to settle. 23:00 UTC is still the same
+calendar day in New York, so the weekday fields need no shifting.
+
+This is the mechanism that puts fresh prices on a phone: the Snack build
+fetches `market.json` from the default branch every launch, so a commit here
+*is* the update. Nothing to install, nothing to open.
+
+Two things it does not try to be clever about:
+
+- **Market holidays aren't encoded.** The job runs, finds no new session,
+  produces a byte-identical file and commits nothing. A calendar would be one
+  more thing to maintain for an outcome already handled.
+- **It installs nothing.** Every script under `tools/` imports only `node:`
+  built-ins and its own `lib/`, so there is no `npm ci` step — that would spend
+  a couple of minutes and a few hundred megabytes of Expo toolchain on a job
+  that needs `fetch` and `fs`.
+
+**Stage 4 is the gate.** Stages 1–3 can all succeed and still produce something
+wrong: an upstream schema change, a truncated response that survives its
+retries, a screener returning half a universe. Run by hand that gets noticed;
+run on a schedule and committed to a file every phone fetches, it would not.
+So `04-validate-dataset.mjs` asserts the invariants the app actually relies on
+and exits non-zero rather than letting a bad snapshot through — no commit
+happens, the run fails loudly, and the last good file stays put.
+
+It checks structure and landmarks rather than prices, because "is this close
+plausible" needs a second source and would fire on real moves, while "does
+every series end on the same session" is answerable from the file alone and
+catches the failures that actually happen: exactly 500 tickers, a strictly
+increasing calendar not dated in the future, every series ending on the newest
+session, every close finite and positive, no duplicate symbols, positive market
+cap and turnover — plus a handful of known parents present (`AAPL`, `BRK-B`,
+`MU`, `SO`, `APO`) and their baby-bond impostors absent (`SOJE`, `SOMN`,
+`CCZ`, `APOS`, `PPLC`, `STRC`, `STRD`, `STRK`, `RZC`).
+
+Verified by corrupting a real snapshot seven ways — truncating the universe to
+400, dropping one day off a single series, nulling one close, swapping a parent
+for its baby bond, dating the file to 2099, unsorting the calendar, and zeroing
+a market cap. All seven exit 1 with the specific cause named; the untouched
+file exits 0.
+
+Before it can run you need to do two things it cannot do for itself:
+
+1. Add your Financial Modeling Prep key as the repository secret
+   **`FMP_API_KEY`** (Settings → Secrets and variables → Actions).
+2. Merge the workflow to the default branch. GitHub only schedules workflows
+   from there, so on a feature branch it will never fire — `workflow_dispatch`
+   lets you run it by hand in the meantime.
+
+One running cost worth knowing: stage 2 re-fetches all ~800 symbols every run,
+because `data/prices/` is gitignored and the runner starts clean. That is ~800
+API calls a weekday against your FMP quota. Caching the price files between
+runs would not help as things stand — stage 2 skips files it already has, so a
+warm cache would freeze the data rather than speed it up. Making the fetch
+incremental (ask only for sessions newer than the last bar) is the change that
+would cut it, and is not done.
 
 ## How the 500 are chosen
 
@@ -276,34 +341,42 @@ you want.
 
 ### What the headers don't say
 
-Neither screen's header reports what overlap *found*. Both used to, and both
-lines were removed for the same reason.
+The Watchlist screen has **nothing at all** between its title and its search
+box - no count, no date line, no overlap summary, no portfolio card. The Market
+screen keeps one line, and only ever a precondition.
 
-The Watchlist header listed its flagged holdings ("Most overlap: ASX 69%, MU
-69%, ADI 68%, ..."), which was the same symbols and percentages printed twice
-- once at the top in the screen's loudest colour, wrapping onto a second line
-above the portfolio card, and again on each row a few pixels below. The Market
-header carried a running count ("26 names would overlap your watchlist by 65%
-or more"), which had a better excuse - you cannot see 500 rows at once - but
-was still a permanent orange banner restating what the badges already say, and
-the Overlap sort now puts exactly those names in order on demand, which is a
-better answer than a number.
+Three things were removed in turn, each for the same reason. The Watchlist
+header listed its flagged holdings ("Most overlap: ASX 69%, MU 69%, ADI 68%,
+..."), which was the same symbols and percentages printed twice - once at the
+top in the screen's loudest colour, wrapping onto a second line, and again on
+each row a few pixels below. The Market header carried a running count ("26
+names would overlap your watchlist by 65% or more"), which had a better
+excuse - you cannot see 500 rows at once - but was still a permanent orange
+banner restating what the badges already say, and the Overlap sort puts exactly
+those names in order on demand, which beats a number. Then the rest of the
+Watchlist header went with them.
 
-What survives is the rule that **a header only says what the rows and controls
-cannot**:
+What survives, on the Market screen only:
 
 - *the calculation couldn't run, and here's what would fix it* - "Watchlist
   needs 1 more name to screen for overlap", "Widen the window to screen for
   overlap". These matter because in those states the Overlap sort chip is
   simply absent, and a control that vanishes with nothing said reads as a
   missing feature rather than an unmet precondition.
-- *nothing was flagged at all* - on the Watchlist only, because an absence of
-  badges is indistinguishable from a list you haven't scrolled yet.
+- *the live filter count* - "500 names · through Aug 5", which is feedback for
+  the search and sector chips rather than a claim about the market.
 
-Everything else is a finding, and findings live on the row they belong to.
-With the count gone, every caption either screen can still produce is a
-precondition rather than a result, so the header's warn-orange branch became
-unreachable and was removed too - the caption is now always the faint tone.
+Everything else is a finding, and findings live on the row they belong to. With
+no findings left in any header, the warn-orange branch became unreachable and
+was removed - captions are now always the faint tone. `describeOverlap`, which
+only ever produced the Watchlist line, is gone entirely; `computeOverlap` still
+runs on that screen to drive the row badges and the Overlap sort.
+
+One cost, stated plainly: the Watchlist no longer shows what date its numbers
+run through. With Skip on or a custom window the explicit range line below the
+controls still says so ("2026-02-04 → 2026-07-16 · data 2d behind"); with Skip
+off and a preset window, nothing on that screen names the date. The Market tab
+always shows it.
 
 65% rather than a round 70%: on the default 1Y window, real watchlists fall
 into a natural gap. Loosely related sets - REITs, a mix of megacap tech
@@ -494,7 +567,7 @@ combinations. The memo is keyed only on metric, skip and staleness, so typing,
 filtering, sorting and scrolling never rebuild it.
 
 It reuses `computeWindowStats` rather than a faster rank-specific path for the
-same reason the portfolio card does: a rank that disagreed with the number the
+same reason the portfolio card did: a rank that disagreed with the number the
 card view shows for the same name and window would be a bug with no single
 place to fix it. Verified against exactly that - the ranks were checked
 against an independently computed card-view ordering for every horizon and
@@ -513,102 +586,37 @@ The table shows no overlap badges and no overlap count. Overlap warns about
 redundancy against your watchlist, which is a different question from momentum
 persistence, and at this row density the badges would crowd out the ranks.
 
-## Portfolio summary
+## Portfolio summary (removed)
 
-The Watchlist screen leads with one card: the watchlist's own Ann σ,
-Return ÷ σ and diversification ratio, treated as a single equal-weighted
-position instead of N separate rows. It answers a question the row list
-can't: not "how did each holding do," but "how did the *combination* do" -
-which isn't the average of the row-level numbers, because volatility doesn't
-average linearly and correlation between holdings changes the real combined
-risk. A user eyeballing the individual rows and mentally averaging their σ
-figures would get a meaningfully wrong number for exactly that reason.
+The Watchlist screen used to lead with a card treating your holdings as one
+equal-weighted position - Ann sigma, Return / sigma, and a diversification
+ratio with an `ⓘ` explaining it. It was removed along with everything else
+between that screen's title and its search box.
 
-### Why there is no portfolio return
+What it did, briefly, since the reasoning outlived the card:
 
-The card used to lead with the watchlist's total return, and that figure was
-removed rather than kept. It read as a result and wasn't one.
+- Built by constructing a synthetic ticker ($1 invested equally across the
+  watchlist, rebalanced daily), shaped like any other ticker in the dataset,
+  then run through the *same* `computeWindowStats` every row uses - so the
+  portfolio figure could not disagree with the rows about annualisation or
+  Bessel correction.
+- **The 12.5% vol floor did not apply**, via `computeWindowStats`'s fourth
+  argument `applyFloor`. The floor exists to stop one quiet *name* dominating
+  a ranking; a well-diversified basket routinely sits under 12.5% as the
+  intended result of diversification, not an anomaly. That parameter is still
+  in `stats.ts` and still defaults to `true`, so every row is unaffected - it
+  simply has no caller passing `false` at the moment.
+- **It deliberately showed no total return.** A watchlist here is assembled by
+  opening a list ranked on past return and tapping names near the top, so the
+  return of what you kept mostly measures the ranking you picked from. One real
+  45-name watchlist read +106% over nine months. Nobody held that.
 
-A watchlist in this app is assembled by opening a list *ranked on past
-return* and tapping names near the top. Measuring the return of what you kept
-therefore mostly measures the ranking you picked from: the number is high
-because high-return names were selected, which is a restatement of the
-selection rule rather than a finding about the basket. A real 45-name
-watchlist built this way showed **+106%** over 9 months. Nobody held that.
-It is what perfect hindsight paid, and putting it in the largest type on the
-screen, in the green used for gains, invited reading it as performance.
-
-The risk figures that remain don't have this problem, because nothing here
-was chosen for being low-volatility or uncorrelated: σ and the
-diversification ratio describe the basket rather than restating how it was
-picked. Same reason overlap survives - a concentration warning derived from a
-concentrated selection is still true about the thing you're holding.
-
-One caveat stated plainly: **Return ÷ σ keeps an annualised return in its
-numerator**, so it inherits some of the same selection bias, and its
-*absolute* level should be read with the same suspicion the raw return
-earned. It is kept because its useful job is comparative - the same basket
-across windows, or against another basket assembled the same way - where the
-bias is at least applied consistently on both sides.
-
-Built by constructing a synthetic ticker - $1 invested equally across the
-watchlist, rebalanced daily - shaped exactly like any other ticker in the
-dataset, then running it through the *same* `computeWindowStats` every
-individual row already uses. That is a deliberate choice over a bespoke
-calculation: it guarantees the portfolio figure uses the same annualisation
-and the same Bessel correction as every number already on screen, with no
-second implementation to keep in sync.
-
-**The 12.5% vol floor does not apply here** (`computeWindowStats`'s fourth
-argument, `applyFloor`, defaults to `true` for every existing call site and is
-passed `false` only for the portfolio ticker). The floor exists to stop a
-single quiet *name* dominating a ranking for reasons unrelated to skill - the
-`EA` case, a price pinned near an announced deal. That reasoning does not
-carry over to a portfolio: a well-diversified basket routinely produces σ
-under 12.5% as the *ordinary, intended result* of combining
-imperfectly-correlated holdings, not an anomaly to correct for. Checking a
-handful of cross-sector baskets against the current snapshot, most land under
-the floor:
-
-| Basket | Portfolio σ | Would floor at 12.5%? |
-| --- | --- | --- |
-| JNJ+XOM+JPM+NVDA+WMT+FTS+PLD | 9.6% | yes |
-| MSFT+JNJ+XOM+V+PLD | 11.2% | yes |
-| AAPL+BRK-B+XOM+JNJ | 11.3% | yes |
-| GOOGL+JPM+XOM+PLD+KO+DUK+V+UNH | 10.7% | yes |
-| KO+PG+UNH+HD+V+DUK | 13.5% | no |
-
-A floor that fires on most well-built portfolios isn't screening out an
-anomaly, it's screening out the thing the card exists to show.
-
-**Diversification ratio** answers the question directly, and is unaffected by
-the floor question either way: the equal-weighted average of each holding's
-own annualised σ, divided by the portfolio's own annualised σ - both taken
-from `computeWindowStats`'s never-floored `annualizedVol` field, not its
-(possibly floor-adjusted) `ratio`. 1.0x means combining these names bought
-nothing; 2.0x means the combined risk is half what the average holding
-carries alone. An `ⓘ` button next to the label opens that explanation in the
-app itself, so the number is never shown without access to what it means.
-Measured against the current snapshot:
-
-| Watchlist | Avg. individual σ | Portfolio σ | **Diversification ratio** |
-| --- | --- | --- | --- |
-| Diversified (7 sectors) | 23.3% | 9.6% | **2.43x** |
-| Semiconductors (6, concentrated) | 60.6% | 45.5% | **1.33x** |
-| Utilities (6, concentrated) | 15.6% | 13.5% | **1.15x** |
-
-**Respects Skip; ignores nothing Overlap ignores.** Unlike Overlap, which
-deliberately uses the unskipped window because correlation structure isn't a
-return question, the portfolio card uses the skip-adjusted window - this *is*
-a return question, the same one every row below it is answering, so it should
-exclude the same reversal tail.
-
-The card needs at least 2 names to appear at all - a "portfolio" of one
-holding is just that holding, redundant with the row already showing it - and
-like any ticker, it can return "not enough shared history in this window" if
-the selected window starts before the watchlist's most-recently-added member
-existed. Never shown on the Market screen: `universe` there is the full 500,
-not something to treat as a position.
+`src/data/portfolio.ts`, `src/components/PortfolioSummary.tsx` and
+`src/components/InfoButton.tsx` are still in the tree and still correct, but
+nothing imports them, so Metro does not bundle them. Putting the card back
+somewhere - a screen of its own, or behind a tap - is a render call, not a
+rewrite. Deleting them outright is a one-line `git rm` if it should go for
+good.
 
 ## Using it
 
@@ -623,8 +631,9 @@ would describe the opposite of what the gesture does, and by the time you have
 a watchlist to look at, the convention it exists to teach has already been
 learned by using it.
 
-- **Market** — all 500, searchable, filterable by sector, sortable by the live
-  metric, by size, or alphabetically.
+- **Market** — all 500, in two views. *Card* is the list; *Table* ranks every
+  name at 3M / 6M / 9M / 12M as a heatmap. Both searchable and filterable by
+  sector.
 - **Window** — presets from 1M to Max, or *Custom* for an explicit start and
   stop day. Days are picked from the trading calendar itself, so a weekend is
   never a selectable answer that silently snaps elsewhere.
@@ -636,9 +645,6 @@ learned by using it.
   the others don't already provide; on the Market screen, a candidate that
   wouldn't diversify anything if added. See *Overlap* above for what the
   score does and doesn't mean.
-- **Portfolio summary** — the card above the Watchlist row list: your holdings
-  as one equal-weighted position, not N separate numbers. See *Portfolio
-  summary* above.
 - **Per-ticker** — a scrubbable chart (drag across it and the header figures
   follow your finger), every window's return, σ and ratio at once, and
   swipe left/right to move through the list you came from in the order you

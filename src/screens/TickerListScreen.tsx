@@ -17,13 +17,11 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { PortfolioSummary } from '../components/PortfolioSummary';
 import { ROW_HEIGHT, TickerRow } from '../components/TickerRow';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { WindowPicker } from '../components/WindowPicker';
 import { DATES, SECTORS, Ticker, formatDateShort, slice } from '../data/market';
 import { OverlapSummary } from '../data/overlap';
-import { buildPortfolioTicker, computeDiversificationRatio } from '../data/portfolio';
 import { MetricKey, computeWindowStats, metricValue } from '../data/stats';
 import { PRESETS, PresetKey, withSkip } from '../data/windows';
 import { useAppState } from '../state/AppState';
@@ -44,7 +42,7 @@ export function TickerListScreen({
   emptyState,
   overlap,
   overlapCaption,
-  showPortfolioSummary,
+  showCaption,
   showGestureHint,
   headerAccessory,
 }: {
@@ -64,19 +62,20 @@ export function TickerListScreen({
    */
   overlap?: OverlapSummary;
   /**
-   * Header line under the title, or omit for none. What it should say differs
-   * by screen (a Watchlist screen names its own redundant holdings; a Market
-   * screen counts candidates that would be redundant if added), so the caller
-   * computes the text rather than this component guessing which case applies.
+   * Header line under the title, or omit for none. Only ever a precondition
+   * the user can act on, never a finding - the caller decides, because what
+   * counts as actionable differs by screen.
    */
   overlapCaption?: string | null;
   /**
-   * Shows `universe` treated as one equal-weighted position, using whatever
-   * window and skip setting the rest of the screen is using. Only meaningful
-   * when `universe` genuinely is "the portfolio" - the Watchlist screen's own
-   * holdings, not the Market screen's full 500.
+   * The "N names · through <date> · Nd skipped" line under the title.
+   *
+   * On the Market screen the count is live feedback for the search and sector
+   * filters, so it earns its place. The Watchlist screen shows nothing at all
+   * between its title and the search box: the numbers that belong to a name
+   * belong on that name's row.
    */
-  showPortfolioSummary?: boolean;
+  showCaption?: boolean;
   /**
    * The "tap a row to watchlist it" footer.
    *
@@ -101,39 +100,6 @@ export function TickerListScreen({
   const range = useMemo(
     () => withSkip(win, skipEnabled, sessionsStale),
     [win, skipEnabled, sessionsStale]
-  );
-
-  // Skip applies here exactly as it does to every row below: this is a
-  // return measurement, and the whole point of skip is excluding short-term
-  // reversal from a return measurement. That is the opposite of Overlap's
-  // window choice, which deliberately ignores skip because correlation
-  // structure isn't a return question.
-  const showPortfolio = showPortfolioSummary && universe.length >= 2;
-  const portfolioTicker = useMemo(
-    () => (showPortfolio ? buildPortfolioTicker(universe) : null),
-    [showPortfolio, universe]
-  );
-  // applyFloor: false - VOL_FLOOR exists to stop one quiet name dominating a
-  // ranking for reasons unrelated to skill, which has nothing to do with a
-  // portfolio's own honestly-earned low sigma.
-  const portfolioStats = useMemo(
-    () =>
-      portfolioTicker
-        ? computeWindowStats(portfolioTicker, range.startIndex, range.endIndex, false)
-        : null,
-    [portfolioTicker, range]
-  );
-  const diversificationRatio = useMemo(
-    () =>
-      showPortfolio
-        ? computeDiversificationRatio(
-            universe,
-            range.startIndex,
-            range.endIndex,
-            portfolioStats?.annualizedVol ?? null
-          )
-        : null,
-    [showPortfolio, universe, range, portfolioStats]
   );
 
   const [query, setQuery] = useState('');
@@ -274,11 +240,13 @@ export function TickerListScreen({
         <View style={styles.headerTop}>
           <View>
             <Text style={[type.hero, { color: colors.text }]}>{title}</Text>
-            <Text style={[type.caption, { color: colors.textMuted }]}>
-              {rows.length} {rows.length === 1 ? 'name' : 'names'} · through{' '}
-              {formatDateShort(DATES[range.endIndex])}
-              {range.skip > 0 ? ` · ${range.skip}d skipped` : ''}
-            </Text>
+            {showCaption && (
+              <Text style={[type.caption, { color: colors.textMuted }]}>
+                {rows.length} {rows.length === 1 ? 'name' : 'names'} · through{' '}
+                {formatDateShort(DATES[range.endIndex])}
+                {range.skip > 0 ? ` · ${range.skip}d skipped` : ''}
+              </Text>
+            )}
             {/* Always the faint tone. Every caption either screen still
                 produces is a precondition the user can act on, never a
                 finding - findings live on the rows they belong to. */}
@@ -305,10 +273,6 @@ export function TickerListScreen({
         </View>
 
         {headerAccessory}
-
-        {showPortfolio && (
-          <PortfolioSummary stats={portfolioStats} diversificationRatio={diversificationRatio} />
-        )}
 
         <TextInput
           value={query}

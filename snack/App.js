@@ -15,7 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { ThemeProvider, useTheme, radius, space, type } from './theme';
 import { sessionsSinceSnapshot, windowForPreset } from './stats';
-import { computeOverlap, describeCandidateOverlap, describeOverlap } from './overlap';
+import { computeOverlap, describeCandidateOverlap } from './overlap';
 import { ListScreen } from './ListScreen';
 import { RankTable } from './RankTable';
 import { SegmentedControl } from './ui';
@@ -184,12 +184,11 @@ function Shell() {
       ? computeOverlap(watched, data.tickers, win.startIndex, win.endIndex)
       : computeOverlap(watched, watched, win.startIndex, win.endIndex);
 
-  let overlapCaption = null;
-  if (tab === 'watchlist') {
-    if (watched.length > 0) overlapCaption = describeOverlap(overlap, watched.length);
-  } else {
-    overlapCaption = describeCandidateOverlap(overlap, watched.length);
-  }
+  // Only the Market screen says anything under its title. The Watchlist shows
+  // nothing between the title and the search box - the numbers that belong to
+  // a name belong on that name's row.
+  const overlapCaption =
+    tab === 'market' ? describeCandidateOverlap(overlap, watched.length) : null;
 
   const tabBar = (
     <View style={[s.tabs, { backgroundColor: colors.bg, borderTopColor: colors.hairline }]}>
@@ -267,7 +266,7 @@ function Shell() {
         tab={tabBar}
         overlap={overlap}
         overlapCaption={overlapCaption}
-        showPortfolioSummary={tab === 'watchlist'}
+        showCaption={tab === 'market'}
         showGestureHint={tab === 'market'}
         emptyState={
           tab === 'watchlist' ? (

@@ -1,11 +1,10 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { PortfolioSummary, ROW_HEIGHT, SegmentedControl, TickerRow } from './ui';
+import { ROW_HEIGHT, SegmentedControl, TickerRow } from './ui';
 import { WindowPicker } from './WindowPicker';
 import { useTheme, radius, space, type, mono } from './theme';
 import { PRESETS, computeWindowStats, formatDateShort, metricValue, slice, withSkip } from './stats';
-import { buildPortfolioTicker, computeDiversificationRatio } from './portfolio';
 
 const METRICS = [
   { key: 'return', label: 'Return' },
@@ -16,7 +15,7 @@ export function ListScreen({
   title, universe, dates, sectors, win, setPreset, setCustomWindow,
   metric, setMetric, skipEnabled, setSkipEnabled, sessionsStale,
   isWatched, toggleWatch, onOpenDetail, onOrder, emptyState, tab, overlap, overlapCaption,
-  showPortfolioSummary,
+  showCaption,
   // The "tap a row to watchlist it" footer. True only where a tap actually
   // *adds*: on the Watchlist screen a tap removes the row it lands on, so the
   // same sentence there describes the opposite of what the gesture does.
@@ -31,35 +30,6 @@ export function ListScreen({
   const range = useMemo(
     () => withSkip(win, skipEnabled, sessionsStale, dates.length - 1),
     [win, skipEnabled, sessionsStale, dates.length]
-  );
-
-  // Skip applies here exactly as it does to every row below - this is a
-  // return measurement, unlike Overlap, which deliberately ignores skip
-  // because correlation structure isn't a return question.
-  const showPortfolio = showPortfolioSummary && universe.length >= 2;
-  const portfolioTicker = useMemo(
-    () => (showPortfolio ? buildPortfolioTicker(universe, dates.length - 1) : null),
-    [showPortfolio, universe, dates.length]
-  );
-  // applyFloor: false - see the comment on computeWindowStats in stats.js.
-  const portfolioStats = useMemo(
-    () =>
-      portfolioTicker
-        ? computeWindowStats(portfolioTicker, range.startIndex, range.endIndex, false)
-        : null,
-    [portfolioTicker, range]
-  );
-  const diversificationRatio = useMemo(
-    () =>
-      showPortfolio
-        ? computeDiversificationRatio(
-            universe,
-            range.startIndex,
-            range.endIndex,
-            portfolioStats ? portfolioStats.annualizedVol : null
-          )
-        : null,
-    [showPortfolio, universe, range, portfolioStats]
   );
 
   const [query, setQuery] = useState('');
@@ -175,11 +145,13 @@ export function ListScreen({
         <View style={s.headerTop}>
           <View>
             <Text style={[type.hero, { color: colors.text }]}>{title}</Text>
-            <Text style={[type.caption, { color: colors.textMuted }]}>
-              {rows.length} {rows.length === 1 ? 'name' : 'names'} · through{' '}
-              {formatDateShort(dates[range.endIndex])}
-              {range.skip > 0 ? ` · ${range.skip}d skipped` : ''}
-            </Text>
+            {showCaption && (
+              <Text style={[type.caption, { color: colors.textMuted }]}>
+                {rows.length} {rows.length === 1 ? 'name' : 'names'} · through{' '}
+                {formatDateShort(dates[range.endIndex])}
+                {range.skip > 0 ? ` · ${range.skip}d skipped` : ''}
+              </Text>
+            )}
             {/* Always the faint tone. Every caption either screen still
                 produces is a precondition the user can act on, never a
                 finding - findings live on the rows they belong to. */}
@@ -204,10 +176,6 @@ export function ListScreen({
         </View>
 
         {headerAccessory}
-
-        {showPortfolio && (
-          <PortfolioSummary stats={portfolioStats} diversificationRatio={diversificationRatio} />
-        )}
 
         <TextInput
           value={query}

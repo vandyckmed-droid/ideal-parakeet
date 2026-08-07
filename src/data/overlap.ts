@@ -174,32 +174,9 @@ function pearson(x: number[], y: number[]): number | null {
   return cov / Math.sqrt(vx * vy);
 }
 
-/**
- * Header line for the Watchlist screen - or null when the rows already say it.
- *
- * The header only speaks about things the list itself cannot show. Every
- * flagged holding already carries its own `⇄ 69%` badge on its own row, so
- * naming those same holdings and percentages again at the top is the same
- * information printed twice, in the screen's loudest colour, costing two
- * lines of vertical space above the portfolio card.
- *
- * "Nothing is flagged" is the one result the rows can't express - an absence
- * of badges is indistinguishable from a list you haven't scrolled - so that
- * case still gets a line, as do the two states where the calculation can't
- * run at all.
- */
-export function describeOverlap(overlap: OverlapSummary, n: number): string | null {
-  if (overlap.reason === 'too_few_names') {
-    const need = MIN_OVERLAP_NAMES - n;
-    return `Add ${need} more ${need === 1 ? 'name' : 'names'} to see overlap`;
-  }
-  if (overlap.reason === 'insufficient_history') {
-    return `Widen the window to see overlap · ${overlap.observations} of ${MIN_OVERLAP_OBSERVATIONS} days available`;
-  }
-  const anyFlagged = overlap.scores.some((s) => s.inBasket && overlap.flagged.has(s.symbol));
-  if (anyFlagged) return null;
-  return `No name overlaps the rest of the list by ${Math.round(OVERLAP_THRESHOLD * 100)}% or more`;
-}
+// The Watchlist screen has no header line at all - nothing sits between its
+// title and the search box - so there is no describeOverlap counterpart to the
+// function below. Its scores still drive the row badges and the Overlap sort.
 
 /**
  * Header line for the Market screen - or null, which is the ordinary case.
