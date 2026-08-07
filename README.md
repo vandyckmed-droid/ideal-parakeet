@@ -369,50 +369,78 @@ between formation and holding windows was manufacturing the result.
 ### Attempt 3 - point-in-time membership, correct calendar
 
 Restricting the calendar to days at least 100 names traded gives 4,173
-sessions, ~252/year. Re-run, with non-overlapping periods so the observations
-are genuinely independent:
+sessions, ~252/year. Re-run with non-overlapping periods, nothing reached
+|t| = 2 - but a 12-month hold sampled that way leaves only fifteen
+observations, which cannot settle anything either way.
 
-| Signal | 1m | 3m | 6m | 12m | worst period |
+### Attempt 4 - calendar-time portfolios, and more signals
+
+Non-overlapping periods buy independence by throwing away 90% of the sample.
+Jegadeesh-Titman's method recovers it properly: run H overlapping cohorts at
+once, each holding 1/H of the book, and the strategy's **monthly** return
+series becomes a single time series with ~185 observations. It also tests a
+portfolio somebody could actually run, rather than a sequence of disconnected
+bets.
+
+Nine signals, four holding periods, both a long/short book and the long-only
+version that matters more here — this app does not short, so the real question
+is whether owning the top quintile beats owning the index.
+
+| Signal (6-month hold) | L/S annual | t | worst drawdown | Long-only vs index | t |
 | --- | --- | --- | --- | --- | --- |
-| momentum 12-1 | +0.12% | +0.82% | +1.43% | +2.65% | −31.2% |
-| momentum 12-0 | +0.12% | +0.99% | +1.84% | +4.52% | −29.8% |
-| momentum 6-1 | +0.07% | +0.68% | +2.04% | +3.14% | −29.9% |
-| 1-month reversal | +0.03% | +0.23% | −0.84% | −2.58% | −20.4% |
-| low volatility | −0.30% | −0.96% | −1.61% | −1.11% | −40.1% |
-| 52-week high | −0.10% | +0.26% | +0.57% | +0.74% | −32.3% |
+| momentum 12-1 | +1.1% | 0.29 | −48% | +0.9% | 0.52 |
+| momentum 12-0 | +1.0% | 0.26 | −49% | +0.8% | 0.49 |
+| momentum 6-1 | +1.8% | 0.59 | −32% | **+1.4%** | 1.02 |
+| momentum 12-2 | +1.0% | 0.27 | −48% | +1.0% | 0.60 |
+| residual momentum | +1.2% | 0.31 | −46% | +0.4% | 0.23 |
+| vol-scaled momentum | +1.4% | 0.38 | −42% | +0.7% | 0.46 |
+| MAX (avoid lottery) | −4.3% | −1.28 | −62% | −1.7% | −1.08 |
+| low idiosyncratic vol | −2.2% | −0.55 | −57% | −0.1% | −0.07 |
+| low beta | −6.5% | −1.17 | −80% | −2.9% | −1.08 |
 
-**Nothing reaches |t| = 2.** The best case is momentum 12-0 at twelve months:
-+4.52%, t = 1.37, positive in 87% of periods — suggestive, and undemonstrable
-on fifteen independent observations.
+**Not one of the 36 cells clears |t| = 2, on either book.** The strongest
+long/short anywhere in the grid is residual momentum at a 1-month hold: +4.4%
+a year, t = 1.05, Sharpe 0.27 — and a 37% drawdown. The strongest long-only is
++1.7% a year at t = 0.85, before any cost or tax.
 
-Note also the last column. Even the signals that lean positive have single
-periods down 20-31%. That is momentum's documented crash behaviour, and a mean
-hides it completely.
+Splitting the sample in half changes nothing: momentum 12-1 long-only runs
+−0.6% (t −0.35) in 2011-2018 and +2.6% (t 0.90) in 2019-2026. Neither half
+works.
 
-### What that does and does not mean
+Two patterns are worth naming even though neither is significant. Every one of
+the twenty momentum cells is **positive in sign** on the long-only book, which
+is at least the direction the literature predicts. And every defensive signal —
+low beta, low volatility, avoiding lottery stocks — is **negative**, which is
+the 2010-2026 growth regime showing through and should not be read as a law.
 
-It does **not** mean momentum does not work. Fifteen independent 12-month
-periods is very low power, and the published evidence for momentum runs to
-ninety years and dozens of countries. Absence of proof on a 16-year sample is
-not proof of absence.
+The column nobody quotes is the drawdown. Even the best-looking signals put you
+through 23% to 80% losses on the long/short book. A 4% annual premium that
+arrives with a 37% drawdown is not a strategy anyone holds to completion.
 
-What it does mean is that **this app cannot claim to predict anything**, and
-does not. The default view ranks on 12-1 momentum — trailing return with the
-recent month skipped, which is exactly what the Return metric plus Skip
-computes — because that is the best-supported construct available, not because
-this dataset proves it. The test above is at least consistent with it: the
-sign is positive at every horizon and the hit rate climbs from 54% to 67% as
-the horizon lengthens.
+### What this means
 
-Read the rankings as a screen, not a forecast. What survived testing well
-enough to ship is on the previous section: earnings as a scheduled volatility
-event, which needs no prediction to be useful.
+It does **not** mean momentum does not work. Sixteen years against ninety years
+of published, multi-country evidence is a small sample, and a t of 1.0 is "not
+shown", not "shown false".
+
+What it does mean, specifically and defensibly: **in the S&P 500 between 2010
+and 2026, none of these signals reliably beat simply owning the index**, and
+this app cannot claim to predict returns. It does not.
+
+The default view ranks on 12-1 momentum — trailing return with the recent month
+dropped, which is exactly Return plus Skip — because that is the best-supported
+construct available, not because this dataset proves it. The evidence here is
+consistent with it and far too weak to confirm it.
+
+Read the rankings as a screen: a consistent, honest ordering of what has
+happened, which is a genuinely useful thing to look at. Not a forecast.
 
 ```bash
-node tools/research/fetch-deep-prices.mjs     # ~16y of daily closes
-node tools/research/build-pit-universe.mjs    # roster + delisted names
-node tools/research/factor-test.mjs           # biased, for contrast
-node tools/research/factor-test-pit.mjs       # the real one
+node tools/research/fetch-deep-prices.mjs      # ~16y of daily closes
+node tools/research/build-pit-universe.mjs     # index roster + delisted names
+node tools/research/factor-test.mjs            # biased, kept for contrast
+node tools/research/factor-test-pit.mjs        # non-overlapping periods
+node tools/research/factor-calendar-time.mjs   # the real one
 ```
 
 ## Earnings: what was tested, and what it found
