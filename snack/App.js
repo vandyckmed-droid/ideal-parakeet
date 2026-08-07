@@ -17,6 +17,7 @@ import { ThemeProvider, useTheme, radius, space, type } from './theme';
 import { sessionsSinceSnapshot, windowForPreset } from './stats';
 import { computeOverlap, describeCandidateOverlap } from './overlap';
 import { ListScreen } from './ListScreen';
+import { ResearchScreen } from './Research';
 import { RankTable } from './RankTable';
 import { SegmentedControl } from './ui';
 import { DetailScreen } from './DetailScreen';
@@ -28,6 +29,12 @@ const MARKET_VIEWS = [
 
 const DATA_URL =
   'https://raw.githubusercontent.com/vandyckmed-droid/ideal-parakeet/main/assets/data/market.json';
+// Main first; the working branch second so the tab works before the merge
+// lands. Once research.json is on main the first URL always wins.
+const RESEARCH_URLS = [
+  'https://raw.githubusercontent.com/vandyckmed-droid/ideal-parakeet/main/assets/data/research.json',
+  'https://raw.githubusercontent.com/vandyckmed-droid/ideal-parakeet/claude/stock-watchlist-app-ju7qxb/assets/data/research.json',
+];
 const WATCHLIST_KEY = 'parakeet.watchlist';
 const SKIP_KEY = 'parakeet.skip';
 
@@ -35,6 +42,7 @@ function Shell() {
   const { colors, scheme } = useTheme();
 
   const [data, setData] = useState(null);
+  const [research, setResearch] = useState(null);
   const [error, setError] = useState(null);
   const [attempt, setAttempt] = useState(0);
 
@@ -76,6 +84,19 @@ function Shell() {
       .catch((e) => {
         if (!cancelled) setError(e.message || String(e));
       });
+    // Optional: the app is fully usable without it, so a failure here only
+    // leaves the Research tab explaining itself.
+    (async () => {
+      for (const url of RESEARCH_URLS) {
+        try {
+          const r = await fetch(url);
+          if (!r.ok) continue;
+          const json = await r.json();
+          if (!cancelled) setResearch(json);
+          return;
+        } catch {}
+      }
+    })();
     return () => {
       cancelled = true;
     };
@@ -194,6 +215,7 @@ function Shell() {
     <View style={[s.tabs, { backgroundColor: colors.bg, borderTopColor: colors.hairline }]}>
       {[
         { key: 'market', label: 'Market', glyph: '◫' },
+        { key: 'research', label: 'Research', glyph: '∿' },
         { key: 'watchlist', label: 'Watchlist', glyph: '★' },
       ].map((t) => {
         const active = tab === t.key;
@@ -209,6 +231,18 @@ function Shell() {
       })}
     </View>
   );
+
+  if (tab === 'research') {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
+        <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} />
+        <View style={{ flex: 1 }}>
+          <ResearchScreen research={research} />
+        </View>
+        {tabBar}
+      </SafeAreaView>
+    );
+  }
 
   // The Market tab in two views of the same 500 names. Local state rather than
   // persisted: the choice survives switching tabs, which is the only continuity

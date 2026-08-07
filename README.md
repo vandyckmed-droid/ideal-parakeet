@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/82iUsaWySXnzKZ1pAeQ0A), so it can be opened in
+Snack](https://snack.expo.dev/AeQPBrleKwoYgcTCzK39g), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -63,6 +63,7 @@ middle one costs ~800 API calls and is worth resuming rather than repeating.
 | 2 | `02-fetch-prices.mjs` | Pulls ~2 years of adjusted daily closes, one file per symbol |
 | 3 | `03-build-dataset.mjs` | Filters to exactly 500 and packs the app asset |
 | 4 | `04-validate-dataset.mjs` | Refuses to ship a misshapen snapshot |
+| 5 | `05-build-research.mjs` | Builds the Research tab's backtest series |
 
 Stage 2 skips symbols it has already fetched, so an interrupted run resumes for
 free. Pass `--force` to refetch everything — and note that the skip is a real
@@ -123,9 +124,11 @@ Before it can run you need to do two things it cannot do for itself:
    from there, so on a feature branch it will never fire — `workflow_dispatch`
    lets you run it by hand in the meantime.
 
-One running cost worth knowing. A run costs **803 API calls**: 3 screener
-calls in stage 1, one per candidate (~800) in stage 2, and none in stages 3-4.
-At five runs a week that is roughly 17,000 a month against your FMP quota.
+One running cost worth knowing. A run costs **~1,335 API calls**: 3 screener
+calls in stage 1, one per candidate (~800) in stage 2, none in stages 3-4, and
+~530 in stage 5 (index membership plus prices for every name that was a member
+during the backtest window). At five runs a week that is roughly 29,000 a
+month against your FMP quota.
 
 Narrowing the date range would not change that number.
 `historical-price-eod/dividend-adjusted` is a **per-symbol** endpoint, so
@@ -620,6 +623,35 @@ how this app thinks:
   been removed too - every remaining caller floors, which is correct for
   individual names.
 
+## The Research tab
+
+A third tab graphs **$10,000 in the top-50 momentum portfolio over the
+previous four quarters**, updated by the same nightly job that refreshes
+prices. Every rule that produces the line is displayed on the screen with it:
+
+| Rule | Setting |
+| --- | --- |
+| Universe | S&P 500 members as of each measurement date — point in time, so names later removed or delisted are included while they were members |
+| Signal | 12-1 momentum: return from 12 months before the measurement date to 1 month before it |
+| Selection | Top 50, equally weighted |
+| Rebalance | Measured at the last trading day of each month, traded at the next trading day's close (per `docs/rebalancing-standard.md`), held untouched in between |
+| Period | Previous four quarters, $10,000 at the start |
+| Dividends | Reinvested, via adjusted closes |
+| Costs | No taxes or fees |
+| Delistings | Frozen at the last close until the next rebalance |
+
+Two choices worth stating. The S&P 500 stands in for the app's own universe
+because it is the only one with verifiable historical membership — avoiding
+selection bias requires knowing who was in the index *then*, not who survived
+until today. And the series is built entirely by the pipeline
+(`tools/05-build-research.mjs`, ~530 API calls per run, prices fetched fresh
+every time); the app only displays it, so the graph, the current 50 holdings
+and the rules can never disagree with each other.
+
+The screen ends with the caveat that belongs on any backtest: selecting on
+past returns guarantees the past looks good and promises nothing about the
+future.
+
 ## Using it
 
 **Tap a row to add it to your watchlist. Press and hold to open it.** That is
@@ -647,6 +679,8 @@ learned by using it.
   the others don't already provide; on the Market screen, a candidate that
   wouldn't diversify anything if added. See *Overlap* above for what the
   score does and doesn't mean.
+- **Research** — the $10,000 top-50 momentum backtest above, with its rules
+  and current holdings.
 - **Per-ticker** — a scrubbable chart (drag across it and the header figures
   follow your finger), every window's return, σ and ratio at once, and
   swipe left/right to move through the list you came from in the order you
