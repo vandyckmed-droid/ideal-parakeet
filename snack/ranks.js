@@ -5,11 +5,16 @@ import { computeWindowStats, metricValue, windowForPreset, withSkip } from './st
 
 /**
  * The horizons the rank table measures, shortest first. `1Y` is labelled 12M so
- * the header reads as one evenly spaced series of months rather than four
+ * the header reads as one evenly spaced series of months rather than three
  * months and a year.
+ *
+ * Starts at 3M rather than 1M deliberately. A one-month rank is dominated by
+ * short-horizon reversal - whatever moved hardest recently tends to give some
+ * of it back - which is the same effect skipForLength exists to strip out of a
+ * measurement. Ranking on it produces a column that mostly reorders itself
+ * every few weeks and predicts the opposite of what it appears to.
  */
 export const HORIZONS = [
-  { key: '1M', label: '1M' },
   { key: '3M', label: '3M' },
   { key: '6M', label: '6M' },
   { key: '9M', label: '9M' },
