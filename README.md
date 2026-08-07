@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/E4ThxNxADH7eq6NKAPBuh), so it can be opened in
+Snack](https://snack.expo.dev/9zUWNmRe0xflNA02Ux6y4), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -33,8 +33,8 @@ file-based routing unevenly — so that build differs in exactly two ways:
   only dependencies that Snack preloads.
 
 The maths in `snack/stats.js` mirrors `src/data/stats.ts`, `snack/overlap.js`
-mirrors `src/data/overlap.ts`, `snack/portfolio.js` mirrors
-`src/data/portfolio.ts`, `snack/ranks.js` mirrors `src/data/ranks.ts`, and the
+mirrors `src/data/overlap.ts`, `snack/ranks.js` mirrors `src/data/ranks.ts`,
+and the
 palette mirrors `src/theme/theme.ts`. They are duplicated rather than shared
 because the two builds have different module systems; if they ever disagree,
 `src/` is the source of truth.
@@ -598,33 +598,27 @@ persistence, and at this row density the badges would crowd out the ranks.
 
 The Watchlist screen used to lead with a card treating your holdings as one
 equal-weighted position - Ann sigma, Return / sigma, and a diversification
-ratio with an `ⓘ` explaining it. It was removed along with everything else
-between that screen's title and its search box.
+ratio with an `ⓘ` explaining it. It went when everything between that screen's
+title and its search box went, and its code has since been deleted rather than
+left unreferenced. `git log` has it if it should ever come back.
 
-What it did, briefly, since the reasoning outlived the card:
+Two pieces of reasoning from it are worth keeping, because they still describe
+how this app thinks:
 
-- Built by constructing a synthetic ticker ($1 invested equally across the
-  watchlist, rebalanced daily), shaped like any other ticker in the dataset,
-  then run through the *same* `computeWindowStats` every row uses - so the
-  portfolio figure could not disagree with the rows about annualisation or
-  Bessel correction.
-- **The 12.5% vol floor did not apply**, via `computeWindowStats`'s fourth
-  argument `applyFloor`. The floor exists to stop one quiet *name* dominating
-  a ranking; a well-diversified basket routinely sits under 12.5% as the
-  intended result of diversification, not an anomaly. That parameter is still
-  in `stats.ts` and still defaults to `true`, so every row is unaffected - it
-  simply has no caller passing `false` at the moment.
-- **It deliberately showed no total return.** A watchlist here is assembled by
-  opening a list ranked on past return and tapping names near the top, so the
-  return of what you kept mostly measures the ranking you picked from. One real
-  45-name watchlist read +106% over nine months. Nobody held that.
-
-`src/data/portfolio.ts`, `src/components/PortfolioSummary.tsx` and
-`src/components/InfoButton.tsx` are still in the tree and still correct, but
-nothing imports them, so Metro does not bundle them. Putting the card back
-somewhere - a screen of its own, or behind a tap - is a render call, not a
-rewrite. Deleting them outright is a one-line `git rm` if it should go for
-good.
+- **A watchlist's backtested return is close to a tautology.** You assemble one
+  by opening a list ranked on past return and tapping names near the top, so
+  measuring the return of what you kept mostly measures the ranking you picked
+  from. One real 45-name watchlist read +106% over nine months. Nobody held
+  that. The same caveat applies, more weakly, to any Return / sigma you read
+  off your own watchlist rows - it has that return in its numerator. On the
+  Market tab, ranking all 500, there is no such problem.
+- **The 12.5% vol floor never applied to the portfolio figure.** The floor
+  exists to stop one quiet *name* dominating a ranking; a well-diversified
+  basket sits under 12.5% as the intended result of diversification, not an
+  anomaly. `computeWindowStats` briefly carried an `applyFloor` argument for
+  that one caller. With the card gone nothing passes it, so the argument has
+  been removed too - every remaining caller floors, which is correct for
+  individual names.
 
 ## Using it
 
