@@ -16,13 +16,18 @@
 import { readFileSync } from 'node:fs';
 
 const PATH = 'assets/data/market.json';
-const EXPECT_TICKERS = 500;
 
-// Companies whose baby bonds or preferred series impersonate them in a
-// market-cap screen. Presence of a parent and absence of its impostor is the
-// cheapest proof stage 1's filters still ran.
-const MUST_INCLUDE = ['AAPL', 'MSFT', 'NVDA', 'BRK-B', 'MU', 'SO', 'APO'];
-const MUST_EXCLUDE = ['SOJE', 'SOMN', 'CCZ', 'APOS', 'PPLC', 'STRC', 'STRD', 'STRK', 'RZC'];
+// The S&P 500 holds ~503 lines because a few companies list two share
+// classes. A count outside this band means the constituent endpoint broke.
+const MIN_TICKERS = 495;
+const MAX_TICKERS = 515;
+
+// Landmarks. GOOG alongside GOOGL proves dual share classes survive the
+// build; the excludes are baby bonds and preferreds that impersonate their
+// parent in screeners, plus foreign ADRs (ASML, TSM) that are large but are
+// not index members and so must be absent now.
+const MUST_INCLUDE = ['AAPL', 'MSFT', 'NVDA', 'BRK-B', 'GOOG', 'GOOGL', 'MU', 'SO', 'APO'];
+const MUST_EXCLUDE = ['SOJE', 'SOMN', 'CCZ', 'APOS', 'PPLC', 'STRC', 'STRD', 'STRK', 'RZC', 'ASML', 'TSM'];
 
 const problems = [];
 const fail = (msg) => problems.push(msg);
@@ -40,8 +45,8 @@ const dates = data.dates ?? [];
 const tickers = data.tickers ?? [];
 const lastIndex = dates.length - 1;
 
-if (tickers.length !== EXPECT_TICKERS) {
-  fail(`expected ${EXPECT_TICKERS} tickers, got ${tickers.length}`);
+if (tickers.length < MIN_TICKERS || tickers.length > MAX_TICKERS) {
+  fail(`expected ${MIN_TICKERS}-${MAX_TICKERS} tickers, got ${tickers.length}`);
 }
 
 // --- calendar ----------------------------------------------------------------

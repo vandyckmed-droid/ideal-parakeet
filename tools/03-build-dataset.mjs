@@ -1,39 +1,22 @@
-// Step 3 - turn ~800 noisy candidates into a clean set of exactly 500, and
-// pack them into the single JSON asset the app ships with.
+// Step 3 - pack the S&P 500 price histories into the single JSON asset the
+// app ships with.
 //
-// The interesting work is separating common shares from the instruments that
-// impersonate them. FMP stamps the *parent company's* market cap onto baby
-// bonds and preferred series, so SOJE (Southern Company junior subordinated
-// notes) and SOMN look like $90B companies on a screener. What gives them
-// away is that nobody trades them: they turn over a few hundred thousand
-// dollars a day against the common's hundreds of millions. Traded liquidity,
-// not size, is the discriminator.
+// Membership was settled in step 1 (the constituent list is the universe, so
+// there is nothing to screen here) - this step's job is alignment: one master
+// calendar, dense forward-filled series, and the wholesale drop of any
+// still-in-progress session so a live intraday print never gets compared
+// against yesterday's closes.
+//
+// Every constituent ships, including dual share classes (GOOGL and GOOG,
+// FOXA and FOX) - the index holds both lines, so the app does too. A name
+// that joined the index recently simply has a shorter series; the per-ticker
+// offset already handles that.
 //
 // Output: data/universe.json (audit trail) and assets/data/market.json (app)
 
 import { writeFileSync, readFileSync, mkdirSync } from 'node:fs';
 
-const TARGET = 500;
-const MIN_BARS = 252; // ~1 trading year of history
-const MIN_ADV = 10e6; // $10M/day median turnover over the last quarter
 const ADV_WINDOW = 60;
-
-// Corporate-form suffixes and share-class markers. Stripping these is what
-// collapses "Alphabet Inc." / "Alphabet Inc. Class C" onto one key, and just
-// as importantly collapses "Southern Company" onto its baby bonds so the
-// dedupe pass can drop them.
-const NOISE =
-  /\b(inc|incorporated|corp|corporation|company|co|plc|ltd|limited|llc|lp|sa|nv|ag|se|holdings?|group|the|class|[ab]|adr|ads|new|common|stock|shares?|series\s*\w*|depositary|preferred)\b/g;
-
-function normalizeName(name) {
-  return (name || '')
-    .toLowerCase()
-    .replace(/&/g, ' and ')
-    .replace(/[.,'’\-/]/g, ' ')
-    .replace(/\(.*?\)/g, ' ')
-    .replace(NOISE, ' ')
-    .replace(/[^a-z0-9]+/g, '');
-}
 
 function median(xs) {
   if (!xs.length) return 0;
@@ -90,53 +73,39 @@ function main() {
       const bars = JSON.parse(readFileSync(`data/prices/${c.symbol}.json`, 'utf8'));
       if (bars.length) loaded.set(c.symbol, bars);
     } catch {
-      /* symbol had no history file; it simply drops out */
+      /* no history file - reported below */
     }
   }
   const partial = findPartialSessions([...loaded.values()]);
 
-  // --- load history and derive liquidity -----------------------------------
-  const enriched = [];
+  const universe = [];
+  const unpriced = [];
   for (const c of candidates) {
     let bars = loaded.get(c.symbol);
-    if (!bars) continue;
-    if (partial.size) bars = bars.filter((b) => !partial.has(b.d));
-    if (bars.length < MIN_BARS) continue;
-
+    if (bars && partial.size) bars = bars.filter((b) => !partial.has(b.d));
+    // Two bars is the floor for drawing anything at all; below that the
+    // symbol has effectively no history yet.
+    if (!bars || bars.length < 2) {
+      unpriced.push(c.symbol);
+      continue;
+    }
+    // Median dollar turnover over the last quarter - display only (the
+    // detail card and the Size sort), it gates nothing.
     const tail = bars.slice(-ADV_WINDOW);
-    // Median rather than mean: one index-rebalance print can inflate a mean
-    // enough to float an otherwise untraded instrument over the threshold.
     const adv = median(tail.map((b) => b.c * (b.v || 0)));
-    enriched.push({ ...c, bars, adv, lastClose: bars[bars.length - 1].c });
+    universe.push({ ...c, bars, adv });
   }
+  universe.sort((a, b) => (b.marketCap || 0) - (a.marketCap || 0));
 
-  // --- liquidity gate ------------------------------------------------------
-  const liquid = enriched.filter((e) => e.adv >= MIN_ADV);
+  console.log(`  constituents          ${candidates.length}`);
+  console.log(`  with price history    ${universe.length}`);
+  if (unpriced.length) console.log(`  no usable history:    ${unpriced.join(' ')}`);
 
-  // --- one line per company ------------------------------------------------
-  // Among share classes of the same issuer, keep whichever the market
-  // actually trades. That picks GOOGL over GOOG, BRK-B over BRK-A, and the
-  // common over every bond and preferred wearing the same name.
-  const byCompany = new Map();
-  for (const e of liquid) {
-    const key = normalizeName(e.name) || e.symbol.toLowerCase();
-    const held = byCompany.get(key);
-    if (!held || e.adv > held.adv) byCompany.set(key, e);
-  }
-
-  const deduped = [...byCompany.values()].sort(
-    (a, b) => (b.marketCap || 0) - (a.marketCap || 0)
-  );
-  const universe = deduped.slice(0, TARGET);
-
-  console.log(`  candidates            ${candidates.length}`);
-  console.log(`  with >=${MIN_BARS} bars       ${enriched.length}`);
-  console.log(`  ADV >= $${MIN_ADV / 1e6}M          ${liquid.length}`);
-  console.log(`  after name dedupe     ${deduped.length}`);
-  console.log(`  final universe        ${universe.length}`);
-
-  if (universe.length < TARGET) {
-    console.warn(`  WARNING: only ${universe.length} names survived filtering`);
+  // An index member without prices means the fetch failed, not that the
+  // company vanished. Better to fail than to quietly ship a partial index.
+  if (unpriced.length > 5) {
+    console.error(`  ${unpriced.length} constituents have no prices - aborting`);
+    process.exit(1);
   }
 
   // --- pack for the app ----------------------------------------------------

@@ -1,7 +1,7 @@
 # Parakeet
 
-A phone watchlist app for the 500 largest US-traded equities, with a
-selectable return window and a risk-adjusted view of that same window.
+A phone watchlist app for the S&P 500, with a selectable return window and a
+risk-adjusted view of that same window.
 
 Built with Expo / React Native. The price data is pulled from Financial
 Modeling Prep by the scripts in `tools/` and baked into the app as a single
@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/AeQPBrleKwoYgcTCzK39g), so it can be opened in
+Snack](https://snack.expo.dev/8j368hdVvAOVekJCpH0N_), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -54,14 +54,14 @@ export API_KEY=...   # Financial Modeling Prep
 npm run data
 ```
 
-That runs the three stages in order. They are separate scripts because the
-middle one costs ~800 API calls and is worth resuming rather than repeating.
+That runs the stages in order. They are separate scripts because the price
+fetch costs ~500 API calls and is worth resuming rather than repeating.
 
 | Stage | Script | What it does |
 | --- | --- | --- |
-| 1 | `01-build-candidates.mjs` | Screens NYSE / NASDAQ / AMEX into ~800 candidates |
+| 1 | `01-build-candidates.mjs` | Takes the S&P 500 constituent list, joins on screener metadata |
 | 2 | `02-fetch-prices.mjs` | Pulls ~2 years of adjusted daily closes, one file per symbol |
-| 3 | `03-build-dataset.mjs` | Filters to exactly 500 and packs the app asset |
+| 3 | `03-build-dataset.mjs` | Aligns every series to one calendar and packs the app asset |
 | 4 | `04-validate-dataset.mjs` | Refuses to ship a misshapen snapshot |
 | 5 | `05-build-research.mjs` | Builds the Research tab's backtest series |
 
@@ -103,12 +103,15 @@ happens, the run fails loudly, and the last good file stays put.
 It checks structure and landmarks rather than prices, because "is this close
 plausible" needs a second source and would fire on real moves, while "does
 every series end on the same session" is answerable from the file alone and
-catches the failures that actually happen: exactly 500 tickers, a strictly
-increasing calendar not dated in the future, every series ending on the newest
-session, every close finite and positive, no duplicate symbols, positive market
-cap and turnover — plus a handful of known parents present (`AAPL`, `BRK-B`,
-`MU`, `SO`, `APO`) and their baby-bond impostors absent (`SOJE`, `SOMN`,
-`CCZ`, `APOS`, `PPLC`, `STRC`, `STRD`, `STRK`, `RZC`).
+catches the failures that actually happen: a ticker count in the index's
+~503-line band, a strictly increasing calendar not dated in the future, every
+series ending on the newest session, every close finite and positive, no
+duplicate symbols, positive market cap and turnover — plus landmarks: `AAPL`,
+`BRK-B`, `MU`, `SO`, `APO` present, both Alphabet share classes present
+(`GOOG` *and* `GOOGL`, proof dual classes survive the build), baby-bond
+impostors absent (`SOJE`, `SOMN`, `CCZ`, `APOS`, `PPLC`, `STRC`, `STRD`,
+`STRK`, `RZC`), and large foreign ADRs absent (`ASML`, `TSM` — big, liquid,
+and not index members).
 
 Verified by corrupting a real snapshot seven ways — truncating the universe to
 400, dropping one day off a single series, nulling one close, swapping a parent
@@ -124,11 +127,12 @@ Before it can run you need to do two things it cannot do for itself:
    from there, so on a feature branch it will never fire — `workflow_dispatch`
    lets you run it by hand in the meantime.
 
-One running cost worth knowing. A run costs **~1,335 API calls**: 3 screener
-calls in stage 1, one per candidate (~800) in stage 2, none in stages 3-4, and
-~530 in stage 5 (index membership plus prices for every name that was a member
-during the backtest window). At five runs a week that is roughly 29,000 a
-month against your FMP quota.
+One running cost worth knowing. A run costs **~1,040 API calls**: the
+constituent list, 3 screener calls and a few profile fills in stage 1, one per
+constituent (~503) in stage 2, none in stages 3-4, and ~530 in stage 5 (index
+membership plus prices for every name that was a member during the backtest
+window). At five runs a week that is roughly 23,000 a month against your FMP
+quota.
 
 Narrowing the date range would not change that number.
 `historical-price-eod/dividend-adjusted` is a **per-symbol** endpoint, so
@@ -142,45 +146,36 @@ Caching `data/prices/` between runs is likewise not the answer: stage 2 skips
 files it already has, so a warm cache would freeze the data rather than speed
 anything up.
 
-## How the 500 are chosen
+## How the universe is chosen
 
-The goal is 500 *companies you can actually trade*, which turns out to be the
-hard part of this project rather than an afterthought.
+It isn't — it's declared. The universe is the **current S&P 500 constituent
+list**, taken from the same FMP endpoint the Research tab's backtest uses for
+point-in-time membership. That is the point: the Market tab and the backtest
+describe one universe, and it is the only universe whose membership is
+verifiable rather than the output of a home-grown screen.
+
+An earlier version screened the 500 largest US-traded names itself, which
+meant fighting FMP's habit of stamping a parent company's market cap onto its
+baby bonds and preferred series (`SOJE` presenting as a $90B company), and
+meant `TSM` and `ASML` were in while the backtest's universe excluded them.
+Adopting the index dissolves both problems: S&P has already done the
+common-stock-only curation, and the two universes can no longer disagree.
+
+Practical consequences:
+
+- **Dual share classes ship.** The index lists both Alphabet lines, both Fox
+  lines, both News Corp lines, so the app carries ~503 tickers, not 500.
+- **Recent joiners have short histories.** A name added to the index last
+  month has a month of bars; the per-ticker calendar offset already handles
+  that, and window stats simply start where its series starts.
+- **Metadata comes from a join.** The constituent list carries only names and
+  sectors, so stage 1 joins it against the exchange screeners (and the profile
+  endpoint for the few members those miss) for market cap, industry and
+  country. `data/universe.json` is the audit trail.
 
 **Adjusted prices.** Everything uses split- and dividend-adjusted closes. On
 raw closes every stock split reads as a 50% crash and every dividend biases the
 series downward.
-
-**Instruments that impersonate common stock.** A market-cap screen alone
-produces a badly polluted list, because FMP stamps the *parent company's*
-market cap onto that company's baby bonds and preferred series. `SOJE` and
-`SOMN` (Southern Company junior subordinated notes) present as $90B companies;
-so do `CCZ`, `APOS`, `PPLC`, `RZC`, and Strategy's `STRC` / `STRD` / `STRK`
-preferred series. Several wear innocent four-letter tickers, so no symbol
-pattern catches them.
-
-What separates them is that nobody trades them. They turn over a few hundred
-thousand dollars a day against the common stock's hundreds of millions, so the
-filter that matters is **median daily dollar volume**, not size. Median rather
-than mean, because a single index-rebalance print can otherwise float an
-untraded instrument over the threshold.
-
-Three passes, in order:
-
-1. **Shape and name** — symbols must look like common stock (`AAPL`, `BRK-B`);
-   a `-P<letter>` suffix marks a preferred series, `-W` a warrant, `-U` a unit.
-   Names matching depositary / notes / debenture / warrant and similar are
-   dropped, as are shell and blank-check companies.
-2. **Tradability** — at least one year of history and a median turnover of
-   $10M/day. This is the pass that removes the baby bonds.
-3. **One line per company** — company names are normalised down to their stem
-   (`Alphabet Inc. Class C` → `alphabet`) and only the most-traded member of
-   each group survives. That keeps `GOOGL` over `GOOG` and `BRK-B` over
-   `BRK-A`, and sweeps up any bond that shared its parent's name.
-
-The survivors are ranked by market cap and cut at 500. In the current snapshot
-that cut lands at about $26B, and every name in the set trades over $100M a day.
-`data/universe.json` is the audit trail of what made it.
 
 **Partial sessions.** If the newest session is still open, only some symbols
 have a bar for it and those bars hold partial volume at an intraday price.
@@ -188,11 +183,6 @@ Mixing that into a cross-sectional ranking silently compares live prices
 against yesterday's closes, so stage 3 detects such a session by its abnormally
 low turnover and drops it everywhere. Every series ends on the same completed
 session.
-
-**"US-traded" is read literally** — listed on a US exchange, not domiciled in
-the US. `TSM`, `ASML` and other ADRs are in; the set is currently about 73% US
-by domicile. There is no $5 price floor, because large ADRs such as `ABEV` and
-`WIT` legitimately trade in low single digits; liquidity does that job better.
 
 ## The numbers
 
@@ -640,17 +630,13 @@ prices. Every rule that produces the line is displayed on the screen with it:
 | Costs | No taxes or fees |
 | Delistings | Frozen at the last close until the next rebalance |
 
-Two choices worth stating. The S&P 500 stands in for the app's own universe
-because it is the only one with verifiable historical membership — avoiding
-selection bias requires knowing who was in the index *then*, not who survived
-until today. And the series is built entirely by the pipeline
+Two choices worth stating. The universe is the same S&P 500 the Market tab
+tracks, held to point-in-time membership because avoiding selection bias
+requires knowing who was in the index *then*, not who survived until today.
+And the series is built entirely by the pipeline
 (`tools/05-build-research.mjs`, ~530 API calls per run, prices fetched fresh
 every time); the app only displays it, so the graph, the current 50 holdings
 and the rules can never disagree with each other.
-
-The screen ends with the caveat that belongs on any backtest: selecting on
-past returns guarantees the past looks good and promises nothing about the
-future.
 
 ## Using it
 

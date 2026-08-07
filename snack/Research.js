@@ -33,7 +33,7 @@ export function ResearchScreen({ research }) {
   const latest = research.formations[research.formations.length - 1];
 
   const rules = [
-    ['Universe', 'S&P 500 members as of each measurement date (point in time - names later removed are included while they were members)'],
+    ['Universe', 'S&P 500 members as of each measurement date (point in time - names later removed are included while they were members). The Market tab tracks the same index.'],
     ['Signal', '12-1 momentum: return from 12 months before the measurement date to 1 month before it'],
     ['Selection', `Top ${research.top}, equally weighted`],
     ['Rebalance', 'Measured at the last trading day of each month, traded at the next trading day’s close, held untouched in between'],
@@ -88,11 +88,6 @@ export function ResearchScreen({ research }) {
             </Text>
           </View>
         </View>
-
-        <Text style={[type.caption, s.caveat, { color: colors.textFaint }]}>
-          A backtest of stated rules, not a forecast. Selecting on past returns
-          guarantees the past looks good; it promises nothing about the future.
-        </Text>
       </ScrollView>
     </View>
   );
@@ -113,5 +108,4 @@ const s = StyleSheet.create({
   ruleLabel: { width: 84 },
   ruleText: { flex: 1 },
   holdings: { paddingVertical: space(2.5), lineHeight: 22 },
-  caveat: { paddingHorizontal: space(4), marginTop: space(6), textAlign: 'center' },
 });

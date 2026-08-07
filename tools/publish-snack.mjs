@@ -32,9 +32,9 @@ async function main() {
   const payload = {
     manifest: {
       sdkVersion: SDK,
-      name: 'Parakeet — 500 US equities',
+      name: 'Parakeet — S&P 500',
       description:
-        'Watchlist app for the 500 largest US-traded equities. Selectable return ' +
+        'Watchlist app for the S&P 500. Selectable return ' +
         'window, risk-adjusted ranking, per-ticker charts.',
     },
     code,

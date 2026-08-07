@@ -1,4 +1,4 @@
-// Parakeet - the 500 largest US-traded equities, with a selectable return
+// Parakeet - the S&P 500, with a selectable return
 // window and a risk-adjusted view of that same window.
 //
 // Expo Snack build. The dataset is fetched from the public repo rather than
@@ -165,7 +165,7 @@ function Shell() {
     return (
       <View style={[s.centre, { backgroundColor: colors.bg }]}>
         <ActivityIndicator color={colors.accent} />
-        <Text style={[type.caption, { color: colors.textMuted }]}>Loading 500 tickers…</Text>
+        <Text style={[type.caption, { color: colors.textMuted }]}>Loading the S&P 500…</Text>
       </View>
     );
   }

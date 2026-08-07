@@ -5,9 +5,9 @@
 //
 //   Universe   S&P 500 membership as of each measurement date, reconstructed
 //              from the index change log. Point in time: names later removed
-//              or delisted are included while they were members. This is the
-//              only universe with verifiable historical membership available,
-//              which is why it stands in for the app's own 500.
+//              or delisted are included while they were members. The Market
+//              tab tracks the same index (tools/01-build-candidates.mjs), so
+//              the backtest and the app describe one universe.
 //   Signal     12-1 momentum - total return from 12 months before the
 //              measurement date to 1 month before it (the recent month is
 //              skipped, the same reversal logic as the app's Skip control).
