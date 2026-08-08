@@ -18,6 +18,7 @@ import { sessionsSinceSnapshot, setMarket, windowForPreset } from './stats';
 import { computeOverlap, describeCandidateOverlap } from './overlap';
 import { ListScreen } from './ListScreen';
 import { ResearchScreen } from './Research';
+import { FamilyScreen } from './FamilyScreen';
 import { RankTable } from './RankTable';
 import { SegmentedControl } from './ui';
 import { DetailScreen } from './DetailScreen';
@@ -25,6 +26,7 @@ import { DetailScreen } from './DetailScreen';
 const MARKET_VIEWS = [
   { key: 'card', label: 'Card' },
   { key: 'table', label: 'Table' },
+  { key: 'families', label: 'Families' },
 ];
 
 // Main first; the working branch second so a payload shape that has not
@@ -266,6 +268,28 @@ function Shell() {
     tab === 'market' ? (
       <SegmentedControl segments={MARKET_VIEWS} value={marketView} onChange={setMarketView} compact />
     ) : null;
+
+  if (tab === 'market' && marketView === 'families') {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
+        <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} />
+        <FamilyScreen
+          research={research}
+          dates={data.dates}
+          win={win}
+          setPreset={setPreset}
+          setCustomWindow={setCustomWindow}
+          metric={metric}
+          setMetric={setMetric}
+          skipEnabled={skipEnabled}
+          setSkipEnabled={setSkipEnabled}
+          sessionsStale={sessionsStale}
+          headerAccessory={viewSwitch}
+          tab={tabBar}
+        />
+      </SafeAreaView>
+    );
+  }
 
   if (tab === 'market' && marketView === 'table') {
     return (

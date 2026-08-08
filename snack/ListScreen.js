@@ -350,7 +350,8 @@ const s = StyleSheet.create({
   // minWidth 0: otherwise the placeholder's width is the field's minimum and
   // the view switch gets shoved off the right edge.
   search: { flex: 1, minWidth: 0, borderRadius: radius.md, paddingHorizontal: space(3.5), paddingVertical: space(2.75) },
-  accessory: { width: 148, justifyContent: 'center' },
+  // Three segments now (Card / Table / Families); 148 fit two.
+  accessory: { width: 208, justifyContent: 'center' },
   windowRow: { flexDirection: 'row', alignItems: 'center', gap: space(2) },
   customButton: { paddingHorizontal: space(3.5), paddingVertical: space(2), borderRadius: radius.md, borderWidth: 1 },
   chipRow: { gap: space(2), paddingRight: space(4), alignItems: 'center' },
