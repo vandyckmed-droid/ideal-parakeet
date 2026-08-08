@@ -503,7 +503,8 @@ const styles = StyleSheet.create({
   },
   // Wide enough for "Card / Table" without wrapping, no wider - the search
   // field keeps the rest.
-  accessory: { width: 148, justifyContent: 'center' },
+  // Three segments now (Card / Table / Families); 148 fit two.
+  accessory: { width: 208, justifyContent: 'center' },
   windowRow: { flexDirection: 'row', alignItems: 'center', gap: space(2) },
   customButton: {
     paddingHorizontal: space(3.5),

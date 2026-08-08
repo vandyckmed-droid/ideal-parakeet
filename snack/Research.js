@@ -1,10 +1,10 @@
 // Mirrors src/screens/ResearchScreen.tsx - if these two ever disagree, the
 // .tsx file is the one that is wrong.
 
-import React, { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { CompareChart, PriceChart, SegmentedControl } from './ui';
+import { PriceChart, SegmentedControl } from './ui';
 import { useColors, radius, space, type, mono } from './theme';
 import { formatDate } from './stats';
 
@@ -29,46 +29,6 @@ export function ResearchScreen({ research }) {
   const strategy = strategies
     ? strategies.find((st) => st.key === signalKey) || strategies[0]
     : null;
-
-  // --- family comparison ----------------------------------------------------
-  // Up to four families on one chart. Selection order assigns the colour, and
-  // at the cap the oldest selection rolls off - tapping always does something.
-  // A snapshot from before families existed simply hides the section.
-  const families = research && Array.isArray(research.families) ? research.families : null;
-  const [famSelected, setFamSelected] = useState(null);
-  const famKeys =
-    famSelected ||
-    (families
-      ? (() => {
-          const preferred = ['Semiconductors', 'Software - Infrastructure'].filter((k) =>
-            families.some((f) => f.key === k)
-          );
-          return preferred.length ? preferred : families.slice(0, 2).map((f) => f.key);
-        })()
-      : []);
-  const [famScrub, setFamScrub] = useState(null);
-  // The family chart carries its own window control: the strategy picker sits
-  // a screenful above, and "change the window" should not mean scrolling away
-  // from the chart being changed.
-  const [famWindowKey, setFamWindowKey] = useState('MAX');
-  const famSpec = WINDOWS.find((w) => w.key === famWindowKey) || WINDOWS[WINDOWS.length - 1];
-
-  const toggleFamily = useCallback(
-    (key) => {
-      setFamScrub(null);
-      setFamSelected(() => {
-        const prev = famKeys;
-        if (prev.includes(key)) {
-          // Never below one line: an empty comparison chart is a worse outcome
-          // than refusing the tap.
-          return prev.length > 1 ? prev.filter((k) => k !== key) : prev;
-        }
-        const next = [...prev, key];
-        return next.length > 4 ? next.slice(1) : next;
-      });
-    },
-    [famKeys]
-  );
 
   // Both lines are re-based to $10,000 at the start of the selected window, so
   // every window answers the same question: what would the two have done with
@@ -108,47 +68,6 @@ export function ResearchScreen({ research }) {
       truncated: spec.months != null && start === 0,
     };
   }, [research, spec, strategy]);
-
-  // A window longer than the two years of family data simply shows all of it.
-  const famView = useMemo(() => {
-    // Hooks must run on every render, so this guards inside rather than
-    // living below the early return - a hook that appears only after data
-    // loads changes the hook order and crashes React.
-    if (!research || !families || !research.familyDates) return null;
-    const fd = research.familyDates;
-    let start = 0;
-    if (famSpec.months != null) {
-      const last = new Date(`${fd[fd.length - 1]}T00:00:00`);
-      const cutoff = new Date(last);
-      cutoff.setMonth(cutoff.getMonth() - famSpec.months);
-      const iso = cutoff.toISOString().slice(0, 10);
-      const found = fd.findIndex((d) => d >= iso);
-      start = found <= 0 ? 0 : found;
-    }
-    if (start > fd.length - 2) start = Math.max(0, fd.length - 2);
-    const fdates = fd.slice(start);
-    const lines = famKeys
-      .map((key, slot) => {
-        const fam = families.find((f) => f.key === key);
-        if (!fam) return null;
-        const base = fam.values[start];
-        return {
-          key,
-          n: fam.n,
-          color: colors.chart[slot % colors.chart.length],
-          values: fam.values.slice(start).map((v) => (v / base) * research.startValue),
-        };
-      })
-      .filter(Boolean);
-    // Every family ranked by its return over this same window, best first, so
-    // the chip row doubles as a league table for the period on screen.
-    const ranked = families
-      .map((f) => ({ key: f.key, n: f.n, ret: f.values[f.values.length - 1] / f.values[start] - 1 }))
-      .sort((a, b) => b.ret - a.ret);
-    return { dates: fdates, lines, ranked };
-  }, [families, research, famSpec, famKeys, colors]);
-
-  const famIdx = famView ? (famScrub == null ? famView.dates.length - 1 : famScrub) : 0;
 
   if (!research || !view) {
     return (
@@ -331,108 +250,6 @@ export function ResearchScreen({ research }) {
           </View>
         </View>
 
-        {famView && famView.lines.length > 0 && (
-          <View style={s.section}>
-            <Text style={[type.micro, { color: colors.textFaint, marginBottom: space(2) }]}>
-              INDUSTRY FAMILIES · $10,000 EACH · POINT IN TIME ·{' '}
-              {formatDate(famView.dates[famIdx]).toUpperCase()}
-            </Text>
-
-            <View style={{ marginBottom: space(2.5) }}>
-              <SegmentedControl
-                segments={WINDOWS.map((w) => ({ key: w.key, label: w.label }))}
-                value={famWindowKey}
-                onChange={(k) => {
-                  setFamScrub(null);
-                  setFamWindowKey(k);
-                }}
-                compact
-              />
-            </View>
-
-            <CompareChart
-              lines={famView.lines}
-              height={200}
-              baseline={research.startValue}
-              onScrub={setFamScrub}
-            />
-
-            <View style={[s.card, { backgroundColor: colors.surface, marginTop: space(2) }]}>
-              {famView.lines.map((l, idx) => {
-                const v = l.values[famIdx];
-                const r = v / research.startValue - 1;
-                return (
-                  <View
-                    key={l.key}
-                    style={[
-                      s.h2hRow,
-                      idx === famView.lines.length - 1
-                        ? s.h2hLast
-                        : { borderBottomColor: colors.hairline },
-                    ]}
-                  >
-                    <View style={[s.swatch, { backgroundColor: l.color }]} />
-                    <Text style={[type.caption, s.h2hName, { color: colors.text }]} numberOfLines={1}>
-                      {l.key} · {l.n}
-                    </Text>
-                    <Text style={[type.caption, mono, s.h2hMoney, { color: colors.text }]}>
-                      {money(v)}
-                    </Text>
-                    <Text
-                      style={[
-                        type.caption, mono, s.h2hPct,
-                        { color: r >= 0 ? colors.up : colors.down },
-                      ]}
-                    >
-                      {pct(r)}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
-
-            {/* Every family, ranked by its return over the window on screen -
-                the chip row doubles as the league table. Tap to add or remove,
-                up to four. */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={s.famChips}
-            >
-              {famView.ranked.map((f, rank) => {
-                const slot = famKeys.indexOf(f.key);
-                const active = slot >= 0;
-                const hue = active ? colors.chart[slot % colors.chart.length] : undefined;
-                return (
-                  <Pressable
-                    key={f.key}
-                    onPress={() => toggleFamily(f.key)}
-                    style={[
-                      s.famChip,
-                      { backgroundColor: colors.surface, borderColor: active ? hue : 'transparent' },
-                    ]}
-                  >
-                    {active && <View style={[s.famDot, { backgroundColor: hue }]} />}
-                    <Text style={[type.micro, mono, { color: colors.textFaint }]}>{rank + 1}</Text>
-                    <Text style={[type.caption, { color: active ? colors.text : colors.textMuted }]}>
-                      {f.key}
-                    </Text>
-                    <Text style={[type.micro, mono, { color: f.ret >= 0 ? colors.up : colors.down }]}>
-                      {f.ret >= 0 ? '+' : ''}
-                      {(f.ret * 100).toFixed(0)}%
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-            <Text style={[type.micro, { color: colors.textFaint, marginTop: space(1.5) }]}>
-              Ranked by return over the selected window. Equal weight within each family,
-              members as of each month, rebalanced monthly. Pick up to four; the oldest
-              pick rolls off.
-            </Text>
-          </View>
-        )}
-
         <View style={s.section}>
           <Text style={[type.micro, { color: colors.textFaint, marginBottom: space(2) }]}>RULES</Text>
           <View style={[s.card, { backgroundColor: colors.surface }]}>
@@ -488,11 +305,4 @@ const s = StyleSheet.create({
   h2hMoney: { textAlign: 'right', minWidth: 92 },
   h2hPct: { textAlign: 'right', minWidth: 62 },
   holdings: { paddingVertical: space(2.5), lineHeight: 22 },
-  famChips: { gap: space(2), paddingRight: space(4), marginTop: space(2.5), alignItems: 'center' },
-  famChip: {
-    flexDirection: 'row', alignItems: 'center', gap: space(1.5),
-    paddingHorizontal: space(3), paddingVertical: space(1.75),
-    borderRadius: radius.pill, borderWidth: 1,
-  },
-  famDot: { width: 8, height: 8, borderRadius: 4 },
 });

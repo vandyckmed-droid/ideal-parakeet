@@ -4,14 +4,16 @@ import { SegmentedControl } from '../components/SegmentedControl';
 import { BY_SYMBOL, TICKERS, Ticker } from '../data/market';
 import { computeOverlap, describeCandidateOverlap } from '../data/overlap';
 import { useAppState } from '../state/AppState';
+import { FamilyListScreen } from './FamilyListScreen';
 import { RankTableScreen } from './RankTableScreen';
 import { TickerListScreen } from './TickerListScreen';
 
-type MarketView = 'card' | 'table';
+type MarketView = 'card' | 'table' | 'families';
 
 const VIEW_SEGMENTS: { key: MarketView; label: string }[] = [
   { key: 'card', label: 'Card' },
   { key: 'table', label: 'Table' },
+  { key: 'families', label: 'Families' },
 ];
 
 /**
@@ -57,6 +59,7 @@ export function MarketScreen() {
   );
 
   if (view === 'table') return <RankTableScreen headerAccessory={viewSwitch} />;
+  if (view === 'families') return <FamilyListScreen headerAccessory={viewSwitch} />;
 
   return (
     <TickerListScreen
