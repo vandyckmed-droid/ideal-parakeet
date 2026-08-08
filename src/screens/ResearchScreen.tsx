@@ -52,6 +52,11 @@ export function ResearchScreen() {
     return have.length ? have : RESEARCH.families.slice(0, 2).map((f) => f.key);
   });
   const [famScrub, setFamScrub] = useState<number | null>(null);
+  // The family chart carries its own window control: the strategy picker sits
+  // a screenful above, and "change the window" should not mean scrolling away
+  // from the chart being changed.
+  const [famWindowKey, setFamWindowKey] = useState<WindowKey>('MAX');
+  const famSpec = WINDOWS.find((w) => w.key === famWindowKey) ?? WINDOWS[WINDOWS.length - 1];
 
   const toggleFamily = useCallback((key: string) => {
     setFamScrub(null);
@@ -100,15 +105,14 @@ export function ResearchScreen() {
     return { dates, values, refs, truncated: spec.months != null && start === 0 };
   }, [spec, strategy]);
 
-  // The same window control governs the family chart; a window longer than
-  // the two years of family data simply shows all of it.
+  // A window longer than the two years of family data simply shows all of it.
   const famView = useMemo(() => {
     const fd = RESEARCH.familyDates;
     let start = 0;
-    if (spec.months != null) {
+    if (famSpec.months != null) {
       const last = new Date(`${fd[fd.length - 1]}T00:00:00`);
       const cutoff = new Date(last);
-      cutoff.setMonth(cutoff.getMonth() - spec.months);
+      cutoff.setMonth(cutoff.getMonth() - famSpec.months);
       const iso = cutoff.toISOString().slice(0, 10);
       const found = fd.findIndex((d) => d >= iso);
       start = found <= 0 ? 0 : found;
@@ -128,8 +132,13 @@ export function ResearchScreen() {
         };
       })
       .filter((x): x is NonNullable<typeof x> => x != null);
-    return { dates, lines };
-  }, [spec, famSelected, colors]);
+    // Every family ranked by its return over this same window, best first, so
+    // the chip row doubles as a league table for the period on screen.
+    const ranked = RESEARCH.families
+      .map((f) => ({ key: f.key, n: f.n, ret: f.values[f.values.length - 1] / f.values[start] - 1 }))
+      .sort((a, b) => b.ret - a.ret);
+    return { dates, lines, ranked };
+  }, [famSpec, famSelected, colors]);
 
   const famIdx = famScrub ?? famView.dates.length - 1;
 
@@ -314,6 +323,18 @@ export function ResearchScreen() {
             {formatDate(famView.dates[famIdx]).toUpperCase()}
           </Text>
 
+          <View style={{ marginBottom: space(2.5) }}>
+            <SegmentedControl
+              segments={WINDOWS.map((w) => ({ key: w.key, label: w.label }))}
+              value={famWindowKey}
+              onChange={(k) => {
+                setFamScrub(null);
+                setFamWindowKey(k as WindowKey);
+              }}
+              compact
+            />
+          </View>
+
           <CompareChart
             lines={famView.lines}
             height={200}
@@ -357,13 +378,15 @@ export function ResearchScreen() {
             })}
           </View>
 
-          {/* Every family, biggest first; tap to add or remove, up to four. */}
+          {/* Every family, ranked by its return over the window on screen -
+              the chip row doubles as the league table. Tap to add or remove,
+              up to four. */}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.famChips}
           >
-            {RESEARCH.families.map((f) => {
+            {famView.ranked.map((f, rank) => {
               const slot = famSelected.indexOf(f.key);
               const active = slot >= 0;
               const hue = active ? famView.lines[slot]?.color ?? colors.accent : undefined;
@@ -380,16 +403,24 @@ export function ResearchScreen() {
                   ]}
                 >
                   {active && <View style={[styles.famDot, { backgroundColor: hue }]} />}
+                  <Text style={[type.micro, mono, { color: colors.textFaint }]}>{rank + 1}</Text>
                   <Text style={[type.caption, { color: active ? colors.text : colors.textMuted }]}>
                     {f.key}
+                  </Text>
+                  <Text
+                    style={[type.micro, mono, { color: f.ret >= 0 ? colors.up : colors.down }]}
+                  >
+                    {f.ret >= 0 ? '+' : ''}
+                    {(f.ret * 100).toFixed(0)}%
                   </Text>
                 </Pressable>
               );
             })}
           </ScrollView>
           <Text style={[type.micro, { color: colors.textFaint, marginTop: space(1.5) }]}>
-            Equal weight within each family, members as of each month, rebalanced monthly.
-            Pick up to four; the oldest pick rolls off.
+            Ranked by return over the selected window. Equal weight within each family,
+            members as of each month, rebalanced monthly. Pick up to four; the oldest
+            pick rolls off.
           </Text>
         </View>
 
