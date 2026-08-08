@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/uKW7NhIczKXNwon5jYSwE), so it can be opened in
+Snack](https://snack.expo.dev/As55s2DnYvs-nYdMdtYx6), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -127,9 +127,9 @@ Before it can run you need to do two things it cannot do for itself:
    from there, so on a feature branch it will never fire — `workflow_dispatch`
    lets you run it by hand in the meantime.
 
-One running cost worth knowing. A run costs **~1,228 API calls**: the
+One running cost worth knowing. A run costs **~1,270 API calls**: the
 constituent list, 3 screener calls and a few profile fills in stage 1, one per
-constituent (~503) in stage 2, none in stages 3-4, and ~719 in stage 5 (index
+constituent (~503) in stage 2, none in stages 3-4, and ~760 in stage 5 (index
 membership plus prices for every name that was a member at any point since
 January 2016 — a longer backtest window means more departed members to price).
 At five runs a week that is roughly 27,000 a month against your FMP quota.
@@ -795,6 +795,29 @@ rather than a real answer.
 
 Going meaningfully earlier needs a survivorship-bias-free dataset such as CRSP
 — the academic standard — which this data source does not offer.
+
+### Industry families
+
+Below the head-to-head, the Research tab compares **industry families**: 38
+peer groups consolidated from FMP's 116 fine-grained industry labels, each
+drawn as $10,000 equally weighted across the family's **point-in-time index
+members**, rebalanced monthly per the standard, over the trailing two years.
+A member that left the index contributes for exactly the months it was in.
+
+Tap family chips to draw up to four on one shared axis (the oldest pick rolls
+off); each line's colour keys the legend, which tracks the scrub. The window
+selector re-bases every line to $10,000 at the window's start.
+
+The taxonomy behind the families is in `tools/lib/families.mjs`, derived by
+correlating each industry's market-residual returns: industries merged when
+the residual correlation was high AND the businesses are related (Banks at
+0.80, the REITs, Insurance, Oil & Gas), two new families formed where orphans
+trade with each other (Housing; the Electrical & Construction datacenter
+complex), and lookalikes vetoed - Waste-vs-Insurance at 0.54 co-move as a
+defensive *style*, not a business, and adopting them would turn a peer group
+back into the style factor this whole layer exists to remove. Industries with
+no family (autos, railroads, airlines, Apple alone in consumer electronics)
+stay out on purpose.
 
 ## Using it
 

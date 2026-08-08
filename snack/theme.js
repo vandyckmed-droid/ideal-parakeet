@@ -20,6 +20,8 @@ export const palettes = {
     accent: '#00C853', accentMuted: 'rgba(0, 200, 83, 0.16)',
     warn: '#FFB020', warnMuted: 'rgba(255, 176, 32, 0.16)',
     scrim: 'rgba(0, 0, 0, 0.7)', fillOpacity: 0.22,
+    // Categorical hues for multi-line comparison charts; green/red stay reserved.
+    chart: ['#5B9DFF', '#F5A524', '#A78BFA', '#2DD4BF'],
   },
   light: {
     bg: '#FFFFFF', surface: '#F6F7F9', surfaceAlt: '#EDEFF3',
@@ -29,6 +31,7 @@ export const palettes = {
     accent: '#00794A', accentMuted: 'rgba(0, 121, 74, 0.12)',
     warn: '#A15C00', warnMuted: 'rgba(161, 92, 0, 0.12)',
     scrim: 'rgba(0, 0, 0, 0.35)', fillOpacity: 0.16,
+    chart: ['#2563EB', '#B45309', '#7C3AED', '#0F766E'],
   },
 };
 
