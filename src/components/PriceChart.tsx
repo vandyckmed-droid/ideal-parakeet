@@ -24,12 +24,11 @@ type Props = {
    */
   excludeTail?: number;
   /**
-   * An optional second series drawn against the same axis, for comparison.
-   * Must be the same length as `values`. Sharing one scale is the whole point -
-   * two independently scaled lines would let any pair of series look neck and
-   * neck.
+   * Optional reference series drawn against the same axis. Each must be the
+   * same length as `values`. Sharing one scale is the whole point - lines
+   * scaled independently would let any set of series look neck and neck.
    */
-  compare?: number[];
+  compare?: { values: number[]; color: string; dash: string }[];
 };
 
 /**
@@ -71,10 +70,10 @@ export function PriceChart({
       if (v < min) min = v;
       if (v > max) max = v;
     }
-    // The comparison line shares the axis, so it has to widen the extremes or
-    // it would be drawn clipped against a frame it never sized.
-    if (compare) {
-      for (const v of compare) {
+    // The comparison lines share the axis, so they have to widen the extremes
+    // or they would be drawn clipped against a frame they never sized.
+    for (const c of compare ?? []) {
+      for (const v of c.values) {
         if (v < min) min = v;
         if (v > max) max = v;
       }
@@ -106,16 +105,19 @@ export function PriceChart({
     const cutX = xAt(cut);
     const area = `${line}L${cutX.toFixed(2)} ${height}L0 ${height}Z`;
 
-    let comparePath = '';
-    if (compare && compare.length === values.length) {
-      for (let i = 0; i < maxPoints; i++) {
-        const idx = Math.round(i * step);
-        comparePath += `${comparePath === '' ? 'M' : 'L'}${xAt(idx).toFixed(2)} ${yAt(compare[idx]).toFixed(2)}`;
-      }
-    }
+    const comparePaths = (compare ?? [])
+      .filter((c) => c.values.length === values.length)
+      .map((c) => {
+        let d = '';
+        for (let i = 0; i < maxPoints; i++) {
+          const idx = Math.round(i * step);
+          d += `${d === '' ? 'M' : 'L'}${xAt(idx).toFixed(2)} ${yAt(c.values[idx]).toFixed(2)}`;
+        }
+        return { d, color: c.color, dash: c.dash };
+      });
 
     return {
-      line, tail, area, comparePath, xAt, yAt, min, max, cutX,
+      line, tail, area, comparePaths, xAt, yAt, min, max, cutX,
       baselineY: yAt(values[0]),
     };
   }, [values, width, height, cut, compare]);
@@ -204,19 +206,20 @@ export function PriceChart({
               </>
             )}
 
-            {/* Under the portfolio line and dashed, so the comparison reads as
-                the reference rather than as a second protagonist. */}
-            {geometry.comparePath !== '' && (
+            {/* Under the portfolio line and dashed, so the comparisons read as
+                references rather than as rival protagonists. */}
+            {geometry.comparePaths.map((c) => (
               <Path
-                d={geometry.comparePath}
-                stroke={colors.textMuted}
+                key={c.color + c.dash}
+                d={c.d}
+                stroke={c.color}
                 strokeWidth={1.5}
-                strokeDasharray="4 3"
+                strokeDasharray={c.dash}
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 fill="none"
               />
-            )}
+            ))}
 
             <Path
               d={geometry.line}

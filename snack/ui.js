@@ -156,10 +156,10 @@ export function PriceChart({ values, height = 220, onScrub, excludeTail = 0, com
       if (v < min) min = v;
       if (v > max) max = v;
     }
-    // The comparison line shares the axis, so it has to widen the extremes or
-    // it would be drawn clipped against a frame it never sized.
-    if (compare) {
-      for (const v of compare) {
+    // The comparison lines share the axis, so they have to widen the extremes
+    // or they would be drawn clipped against a frame they never sized.
+    for (const c of compare || []) {
+      for (const v of c.values) {
         if (v < min) min = v;
         if (v > max) max = v;
       }
@@ -183,18 +183,21 @@ export function PriceChart({ values, height = 220, onScrub, excludeTail = 0, com
       if (idx >= cut) tail += `${tail === '' ? 'M' : 'L'}${cmd}`;
     }
     const cutX = xAt(cut);
-    let comparePath = '';
-    if (compare && compare.length === values.length) {
-      for (let i = 0; i < n; i++) {
-        const idx = Math.round(i * step);
-        comparePath += `${comparePath === '' ? 'M' : 'L'}${xAt(idx).toFixed(2)} ${yAt(compare[idx]).toFixed(2)}`;
-      }
-    }
+    const comparePaths = (compare || [])
+      .filter((c) => c.values.length === values.length)
+      .map((c) => {
+        let d = '';
+        for (let i = 0; i < n; i++) {
+          const idx = Math.round(i * step);
+          d += `${d === '' ? 'M' : 'L'}${xAt(idx).toFixed(2)} ${yAt(c.values[idx]).toFixed(2)}`;
+        }
+        return { d, color: c.color, dash: c.dash };
+      });
     return {
       path,
       tail,
       cutX,
-      comparePath,
+      comparePaths,
       // Fill stops at the cut so the shaded mass matches the measured window.
       area: `${path}L${cutX.toFixed(2)} ${height}L0 ${height}Z`,
       xAt,
@@ -249,19 +252,20 @@ export function PriceChart({ values, height = 220, onScrub, excludeTail = 0, com
               />
             </>
           )}
-          {/* Under the portfolio line and dashed, so the comparison reads as
-              the reference rather than as a second protagonist. */}
-          {geo.comparePath !== '' && (
+          {/* Under the portfolio line and dashed, so the comparisons read as
+              references rather than as rival protagonists. */}
+          {geo.comparePaths.map((c) => (
             <Path
-              d={geo.comparePath}
-              stroke={colors.textMuted}
+              key={c.color + c.dash}
+              d={c.d}
+              stroke={c.color}
               strokeWidth={1.5}
-              strokeDasharray="4 3"
+              strokeDasharray={c.dash}
               strokeLinecap="round"
               strokeLinejoin="round"
               fill="none"
             />
-          )}
+          ))}
           <Path d={geo.path} stroke={line} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
           {scrub !== null && scrub < values.length && (
             <>

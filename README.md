@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/n_dlYiD5U9PdG-Kgvhwwg), so it can be opened in
+Snack](https://snack.expo.dev/XLfl4CjN_-1qMKgnzZ95r), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -127,9 +127,9 @@ Before it can run you need to do two things it cannot do for itself:
    from there, so on a feature branch it will never fire — `workflow_dispatch`
    lets you run it by hand in the meantime.
 
-One running cost worth knowing. A run costs **~1,225 API calls**: the
+One running cost worth knowing. A run costs **~1,227 API calls**: the
 constituent list, 3 screener calls and a few profile fills in stage 1, one per
-constituent (~503) in stage 2, none in stages 3-4, and ~716 in stage 5 (index
+constituent (~503) in stage 2, none in stages 3-4, and ~718 in stage 5 (index
 membership plus prices for every name that was a member at any point since
 January 2016 — a longer backtest window means more departed members to price).
 At five runs a week that is roughly 27,000 a month against your FMP quota.
@@ -627,38 +627,58 @@ with them:
 | Selection | Top 50, equally weighted |
 | Rebalance | Measured at the last trading day of each month, traded at the next trading day's close (per `docs/rebalancing-standard.md`), held untouched in between |
 | Period | Since January 2016, $10,000 at the start — or the selected window, re-based |
-| Benchmark | `SPY` bought once at the same start and held, dividends reinvested |
-| Dividends | Reinvested on both sides, via adjusted closes |
+| Benchmarks | `SPY` (cap-weighted) and `RSP` (equal-weighted), each bought once at the same start and held |
+| Dividends | Reinvested on every side, via adjusted closes |
 | Costs | No taxes or fees |
 | Delistings | Frozen at the last close until the next rebalance |
 
 ### The head-to-head
 
-The strategy is drawn against **$10,000 held in SPY** over the identical
-window, on one shared axis — two independently scaled lines would let any pair
-of series look neck and neck. Both sides use dividend-adjusted closes, so this
-is total return against total return; benchmarking a dividend-reinvesting
+The strategy is drawn against **two** buy-and-hold references over the
+identical window, on one shared axis — lines scaled independently would let any
+set of series look neck and neck. All three use dividend-adjusted closes, so
+this is total return against total return; benchmarking a dividend-reinvesting
 strategy against a price-return index would hand it a couple of free points a
 year it never earned.
 
-A window selector (`3M / 6M / 9M / 1Y / 3Y / 5Y / Max`) re-bases **both** lines
-to $10,000 at the start of the selected window, so every window asks the same
+A window selector (`3M / 6M / 9M / 1Y / 3Y / 5Y / Max`) re-bases **every** line
+to $10,000 at the start of the selected window, so each window asks the same
 question rather than mixing a re-based line with an absolute one. The Period
 rule restates whichever window is showing, so the stated rules never describe a
 different graph from the one on screen.
 
-The result is worth stating plainly, since the whole point of a benchmark is to
-be allowed to lose to it. Over the full window since January 2016 the strategy
-**trails**: $43,783 against SPY's $45,625, −18.4 percentage points, and with a
-deeper drawdown through COVID (−36.5% against −33.7%). It leads over every
-shorter window measured to the current snapshot. Both facts come off the same
-two series.
+**Why there are two benchmarks.** SPY alone answers the wrong question. This
+portfolio holds 50 names in equal amounts; SPY is weighted by company size, and
+over this particular decade a handful of megacaps did most of the index's work.
+Measured against SPY, the weighting scheme and the stock selection are tangled
+together and the signal takes the blame for both. `RSP` is the same index
+equally weighted, so it isolates the part the strategy actually chose: *which*
+50 names, not how to size them.
+
+That distinction decides the answer rather than decorating it:
+
+| Since Jan 2016 | Value | Return | Max drawdown |
+| --- | --- | --- | --- |
+| Top-50 momentum | $43,783 | +337.8% | −36.5% |
+| SPY, held (cap-weighted) | $45,625 | +356.3% | −33.7% |
+| RSP, held (equal-weighted) | $34,698 | +247.0% | −39.0% |
+
+Against SPY the strategy **trails by 18.4 points**. Against its like-for-like
+benchmark it **leads by 90.9 points**, and did so while drawing down less than
+RSP did. The apparent failure was mostly a weighting effect, not a verdict on
+momentum — which is exactly why one benchmark was not enough. It leads over
+every shorter window against both, except the trailing 3 months where it trails
+both.
+
+Worth keeping in view: the deficit against SPY is real too. Equal-weighting 50
+momentum names beat equal-weighting the index, and still did not beat owning
+the index the ordinary cap-weighted way over the same decade.
 
 Two choices worth stating. The universe is the same S&P 500 the Market tab
 tracks, held to point-in-time membership because avoiding selection bias
 requires knowing who was in the index *then*, not who survived until today.
 And the series is built entirely by the pipeline
-(`tools/05-build-research.mjs`, ~716 API calls per run, prices fetched fresh
+(`tools/05-build-research.mjs`, ~718 API calls per run, prices fetched fresh
 every time); the app only displays it, so the graph, the current 50 holdings
 and the rules can never disagree with each other.
 

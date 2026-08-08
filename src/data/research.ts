@@ -14,15 +14,13 @@ export type ResearchData = {
   rebalance: string;
   /** Worst roster coverage any formation ran at, 0-1. */
   minCoverage: number;
-  benchmarkSymbol: string;
-  benchmarkName: string;
+  /**
+   * Buy-and-hold references. `values` are positionally aligned to `series`,
+   * values only, so a benchmark cannot drift out of step with the portfolio.
+   */
+  benchmarks: { symbol: string; name: string; values: number[] }[];
   /** [date, portfolio value] per session, oldest first. */
   series: [string, number][];
-  /**
-   * The benchmark's value on the same dates, positionally aligned to `series`.
-   * Values only, so the two cannot drift apart.
-   */
-  benchmark: number[];
   formations: { measured: string; entered: string; holdings: string[] }[];
 };
 

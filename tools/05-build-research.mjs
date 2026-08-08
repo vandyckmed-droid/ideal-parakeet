@@ -64,6 +64,13 @@ const COVERAGE_FLOOR = 0.85;
 // exactly on the cap is treated as truncation rather than trusted.
 const ROW_CAP = 5000;
 
+// SPY is the familiar reference; RSP is the like-for-like one, since this
+// portfolio is equally weighted too. Both are held from the same start.
+const BENCHMARKS = [
+  { symbol: 'SPY', name: 'S&P 500, cap-weighted' },
+  { symbol: 'RSP', name: 'S&P 500, equal-weighted' },
+];
+
 function iso(d) {
   return d.toISOString().slice(0, 10);
 }
@@ -162,32 +169,43 @@ async function main() {
     px.set(sym, a);
   }
 
-  // --- benchmark: $10,000 held in SPY over the identical window --------------
+  // --- benchmarks: $10,000 held, over the identical window -------------------
   // Dividend-adjusted like everything else, so this compares total return with
   // total return. A price-return benchmark would hand the strategy a free few
   // points a year that it did not earn.
-  const spyRows = await fmp('historical-price-eod/dividend-adjusted', {
-    symbol: 'SPY',
-    from: iso(from),
-    to,
-  });
-  const spyByDate = new Map(
-    (Array.isArray(spyRows) ? spyRows : [])
-      .filter((r) => r.date && Number.isFinite(r.adjClose) && r.adjClose > 0)
-      .map((r) => [r.date, r.adjClose])
-  );
-  if (spyByDate.size < 200) {
-    console.error(`  SPY returned only ${spyByDate.size} usable bars`);
-    process.exit(1);
-  }
-  // Forward-filled onto the master calendar so a missing print never leaves a
-  // hole the comparison would have to guess at.
-  const spy = new Array(N).fill(null);
-  let carried = null;
-  for (let i = 0; i < N; i++) {
-    const v = spyByDate.get(DATES[i]);
-    if (v != null) carried = v;
-    spy[i] = carried;
+  //
+  // Two of them, because one alone answers the wrong question. This portfolio
+  // holds 50 names in equal amounts; SPY does not - it is dominated by
+  // whichever companies are largest, and over this particular decade those did
+  // most of the market's work. Measured against SPY alone the weighting scheme
+  // and the momentum signal are tangled together, and the signal takes the
+  // blame for both. RSP is the same index equally weighted, so it isolates the
+  // part this strategy actually chose: which 50 names, not how to size them.
+  for (const b of BENCHMARKS) {
+    const rows = await fmp('historical-price-eod/dividend-adjusted', {
+      symbol: b.symbol,
+      from: iso(from),
+      to,
+    });
+    const byDate = new Map(
+      (Array.isArray(rows) ? rows : [])
+        .filter((r) => r.date && Number.isFinite(r.adjClose) && r.adjClose > 0)
+        .map((r) => [r.date, r.adjClose])
+    );
+    if (byDate.size < 200) {
+      console.error(`  ${b.symbol} returned only ${byDate.size} usable bars`);
+      process.exit(1);
+    }
+    // Forward-filled onto the master calendar so a missing print never leaves
+    // a hole the comparison would have to guess at.
+    const filled = new Array(N).fill(null);
+    let carried = null;
+    for (let i = 0; i < N; i++) {
+      const v = byDate.get(DATES[i]);
+      if (v != null) carried = v;
+      filled[i] = carried;
+    }
+    b.aligned = filled;
   }
 
   // --- formation dates: last trading day of each month -----------------------
@@ -295,22 +313,25 @@ async function main() {
     }
   }
 
-  // The benchmark rides the same dates as the portfolio, so it is stored as
+  // Each benchmark rides the same dates as the portfolio, so it is stored as
   // bare values positionally aligned to `series` - alignment by construction
   // rather than by two date columns that could drift apart.
-  const spyStart = spy[dIdx.get(series[0][0])];
-  if (!(spyStart > 0)) {
-    console.error(`  no SPY price at the start date ${series[0][0]}`);
-    process.exit(1);
-  }
-  const benchmark = series.map(([d]) => {
-    const v = spy[dIdx.get(d)];
-    return Math.round(START_CASH * (v / spyStart) * 100) / 100;
+  const benchmarks = BENCHMARKS.map((b) => {
+    const base = b.aligned[dIdx.get(series[0][0])];
+    if (!(base > 0)) {
+      console.error(`  no ${b.symbol} price at the start date ${series[0][0]}`);
+      process.exit(1);
+    }
+    const values = series.map(([d]) => {
+      const v = b.aligned[dIdx.get(d)];
+      return Math.round(START_CASH * (v / base) * 100) / 100;
+    });
+    if (values.length !== series.length || values.some((v) => !Number.isFinite(v) || v <= 0)) {
+      console.error(`  ${b.symbol} series is misaligned or has bad values`);
+      process.exit(1);
+    }
+    return { symbol: b.symbol, name: b.name, values };
   });
-  if (benchmark.length !== series.length || benchmark.some((v) => !Number.isFinite(v) || v <= 0)) {
-    console.error('  benchmark series is misaligned or has bad values');
-    process.exit(1);
-  }
 
   const out = {
     // The last covered session, not the wall clock: a run that adds no new
@@ -325,10 +346,8 @@ async function main() {
     // The worst roster coverage any formation ran at - the honest reader's
     // first question about a backtest this long.
     minCoverage: Math.round(Math.min(...coverage.map((c) => c.share)) * 1000) / 1000,
-    benchmarkSymbol: 'SPY',
-    benchmarkName: 'S&P 500 ETF, dividends reinvested',
+    benchmarks,
     series,
-    benchmark,
     formations: formationLog,
   };
   writeFileSync('assets/data/research.json', JSON.stringify(out));
@@ -350,13 +369,16 @@ async function main() {
     return { mdd, at };
   };
   const pd = drawdown(series.map(([, v]) => v));
-  const bd = drawdown(benchmark);
   console.log(`  max drawdown ${(pd.mdd * 100).toFixed(1)}% (trough ${series[pd.at][0]})`);
-  console.log(
-    `  SPY $${START_CASH.toLocaleString()} -> $${benchmark[benchmark.length - 1].toLocaleString()} ` +
-      `(${(((benchmark[benchmark.length - 1] / START_CASH) - 1) * 100).toFixed(1)}%), ` +
-      `max drawdown ${(bd.mdd * 100).toFixed(1)}% (trough ${series[bd.at][0]})`
-  );
+  for (const b of benchmarks) {
+    const end = b.values[b.values.length - 1];
+    const bd = drawdown(b.values);
+    console.log(
+      `  ${b.symbol} $${START_CASH.toLocaleString()} -> $${end.toLocaleString()} ` +
+        `(${(((end / START_CASH) - 1) * 100).toFixed(1)}%), ` +
+        `max drawdown ${(bd.mdd * 100).toFixed(1)}% (trough ${series[bd.at][0]})`
+    );
+  }
 
   const worst = coverage.reduce((a, b) => (b.share < a.share ? b : a));
   const mean = coverage.reduce((s, c) => s + c.share, 0) / coverage.length;

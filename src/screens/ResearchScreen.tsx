@@ -44,7 +44,7 @@ export function ResearchScreen() {
   // the same money over this stretch. Comparing a re-based line against an
   // absolute one would be a rigged race.
   const view = useMemo(() => {
-    const { series, benchmark, startValue } = RESEARCH;
+    const { series, benchmarks, startValue } = RESEARCH;
     let start = 0;
     if (spec.months != null) {
       const last = new Date(`${series[series.length - 1][0]}T00:00:00`);
@@ -59,22 +59,40 @@ export function ResearchScreen() {
     if (start > series.length - 2) start = Math.max(0, series.length - 2);
 
     const pBase = series[start][1];
-    const bBase = benchmark[start];
     const dates = series.slice(start).map(([d]) => d);
     const values = series.slice(start).map(([, v]) => (v / pBase) * startValue);
-    const compare = benchmark.slice(start).map((v) => (v / bBase) * startValue);
-    return { dates, values, compare, truncated: spec.months != null && start === 0 };
+    const refs = benchmarks.map((b) => {
+      const bBase = b.values[start];
+      return {
+        symbol: b.symbol,
+        name: b.name,
+        values: b.values.slice(start).map((v) => (v / bBase) * startValue),
+      };
+    });
+    return { dates, values, refs, truncated: spec.months != null && start === 0 };
   }, [spec]);
 
-  const { dates, values, compare } = view;
+  const { dates, values, refs } = view;
+
+  // Both references stay in neutral greys: up/down carry return sign
+  // everywhere else in the app and must not be spent on a legend. They are
+  // told apart by weight and dash rather than by hue.
+  const refStyles = [
+    { color: colors.textFaint, dash: '2 3' },
+    { color: colors.textMuted, dash: '6 3' },
+  ];
+  const refStyle = (i: number) => refStyles[Math.min(i, refStyles.length - 1)];
   const i = scrub ?? values.length - 1;
   const date = dates[i];
   const value = values[i];
-  const benchValue = compare[i];
   const ret = value / RESEARCH.startValue - 1;
-  const benchRet = benchValue / RESEARCH.startValue - 1;
-  const gap = (ret - benchRet) * 100;
   const tone = ret >= 0 ? colors.up : colors.down;
+
+  const rows = refs.map((r, n) => {
+    const rv = r.values[i];
+    const rr = rv / RESEARCH.startValue - 1;
+    return { ...r, value: rv, ret: rr, gap: (ret - rr) * 100, style: refStyle(n) };
+  });
 
   const latest = RESEARCH.formations[RESEARCH.formations.length - 1];
 
@@ -99,8 +117,12 @@ export function ResearchScreen() {
     ['Selection', `Top ${RESEARCH.top}, equally weighted`],
     ['Rebalance', 'Measured at the last trading day of each month, traded at the next trading day’s close, held untouched in between'],
     ['Period', periodRule],
-    ['Benchmark', `${RESEARCH.benchmarkSymbol} bought once at the same start and held - ${RESEARCH.benchmarkName}`],
-    ['Dividends', 'Reinvested on both sides, via adjusted closes'],
+    [
+      'Benchmarks',
+      `${refs.map((r) => `${r.symbol} (${r.name})`).join(' and ')}, each bought once at the same start and held. ` +
+        'RSP is the like-for-like one: this portfolio is equally weighted too, so measuring it against a cap-weighted index would score the weighting scheme as well as the stock picking.',
+    ],
+    ['Dividends', 'Reinvested on every side, via adjusted closes'],
     ['Costs', 'No taxes or fees'],
     ['Delistings', 'A holding that stops trading is frozen at its last close until the next rebalance'],
   ];
@@ -111,7 +133,7 @@ export function ResearchScreen() {
         <View style={styles.header}>
           <Text style={[type.hero, { color: colors.text }]}>Research</Text>
           <Text style={[type.caption, { color: colors.textMuted }]}>
-            Top-{RESEARCH.top} momentum vs {RESEARCH.benchmarkSymbol} · through{' '}
+            Top-{RESEARCH.top} momentum vs {refs.map((r) => r.symbol).join(' and ')} · through{' '}
             {formatDate(RESEARCH.series[RESEARCH.series.length - 1][0])}
           </Text>
         </View>
@@ -123,7 +145,12 @@ export function ResearchScreen() {
           </Text>
         </View>
 
-        <PriceChart values={values} compare={compare} height={240} onScrub={setScrub} />
+        <PriceChart
+          values={values}
+          compare={rows.map((r) => ({ values: r.values, ...r.style }))}
+          height={240}
+          onScrub={setScrub}
+        />
 
         <View style={styles.picker}>
           <SegmentedControl
@@ -152,46 +179,59 @@ export function ResearchScreen() {
               </Text>
               <Text style={[type.caption, mono, styles.h2hPct, { color: tone }]}>{pct(ret)}</Text>
             </View>
-            <View style={[styles.h2hRow, { borderBottomColor: colors.hairline }]}>
-              <View style={[styles.swatch, { backgroundColor: colors.textMuted }]} />
-              <Text style={[type.caption, styles.h2hName, { color: colors.text }]}>
-                {RESEARCH.benchmarkSymbol}, held
-              </Text>
-              <Text style={[type.caption, mono, styles.h2hMoney, { color: colors.text }]}>
-                {money(benchValue)}
-              </Text>
-              <Text
+            {rows.map((r) => (
+              <View
+                key={r.symbol}
+                style={[styles.h2hRow, { borderBottomColor: colors.hairline }]}
+              >
+                <View style={[styles.swatch, { backgroundColor: r.style.color }]} />
+                <Text style={[type.caption, styles.h2hName, { color: colors.text }]}>
+                  {r.symbol}, held
+                </Text>
+                <Text style={[type.caption, mono, styles.h2hMoney, { color: colors.text }]}>
+                  {money(r.value)}
+                </Text>
+                <Text
+                  style={[
+                    type.caption,
+                    mono,
+                    styles.h2hPct,
+                    { color: r.ret >= 0 ? colors.up : colors.down },
+                  ]}
+                >
+                  {pct(r.ret)}
+                </Text>
+              </View>
+            ))}
+            {rows.map((r, n) => (
+              <View
+                key={`gap-${r.symbol}`}
                 style={[
-                  type.caption,
-                  mono,
-                  styles.h2hPct,
-                  { color: benchRet >= 0 ? colors.up : colors.down },
+                  styles.h2hRow,
+                  n === rows.length - 1 ? styles.h2hLast : { borderBottomColor: colors.hairline },
                 ]}
               >
-                {pct(benchRet)}
-              </Text>
-            </View>
-            <View style={[styles.h2hRow, styles.h2hLast]}>
-              <View style={styles.swatch} />
-              <Text style={[type.caption, styles.h2hName, { color: colors.textMuted }]}>
-                Difference
-              </Text>
-              <Text style={[type.caption, mono, styles.h2hMoney, { color: colors.textMuted }]}>
-                {gap >= 0 ? '+' : '−'}
-                {money(Math.abs(value - benchValue)).slice(1)}
-              </Text>
-              <Text
-                style={[
-                  type.caption,
-                  mono,
-                  styles.h2hPct,
-                  { color: gap >= 0 ? colors.up : colors.down },
-                ]}
-              >
-                {gap >= 0 ? '+' : ''}
-                {gap.toFixed(1)} pts
-              </Text>
-            </View>
+                <View style={styles.swatch} />
+                <Text style={[type.caption, styles.h2hName, { color: colors.textMuted }]}>
+                  vs {r.symbol}
+                </Text>
+                <Text style={[type.caption, mono, styles.h2hMoney, { color: colors.textMuted }]}>
+                  {r.gap >= 0 ? '+' : '−'}
+                  {money(Math.abs(value - r.value)).slice(1)}
+                </Text>
+                <Text
+                  style={[
+                    type.caption,
+                    mono,
+                    styles.h2hPct,
+                    { color: r.gap >= 0 ? colors.up : colors.down },
+                  ]}
+                >
+                  {r.gap >= 0 ? '+' : ''}
+                  {r.gap.toFixed(1)} pts
+                </Text>
+              </View>
+            ))}
           </View>
         </View>
 
