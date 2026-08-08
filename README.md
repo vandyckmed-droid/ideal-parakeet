@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/As55s2DnYvs-nYdMdtYx6), so it can be opened in
+Snack](https://snack.expo.dev/GjQS5XUcVDvj4MGk7p8_q), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -804,9 +804,12 @@ drawn as $10,000 equally weighted across the family's **point-in-time index
 members**, rebalanced monthly per the standard, over the trailing two years.
 A member that left the index contributes for exactly the months it was in.
 
-Tap family chips to draw up to four on one shared axis (the oldest pick rolls
-off); each line's colour keys the legend, which tracks the scrub. The window
-selector re-bases every line to $10,000 at the window's start.
+The section carries its own window selector (3M–Max); changing it re-bases
+every line to $10,000 at the window's start and **re-ranks the family chips by
+their return over that window**, best first, each chip showing its rank and
+return — the chip row doubles as a league table for the period on screen. Tap
+chips to draw up to four families on one shared axis (the oldest pick rolls
+off); each line's colour keys the legend, which tracks the scrub.
 
 The taxonomy behind the families is in `tools/lib/families.mjs`, derived by
 correlating each industry's market-residual returns: industries merged when
