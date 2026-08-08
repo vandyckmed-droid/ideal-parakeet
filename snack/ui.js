@@ -1,8 +1,8 @@
 // Shared presentational pieces: segmented control, sparkline, price chart, row.
 
-import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Modal, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle, Defs, LinearGradient, Path, Line as SvgLine, Stop } from 'react-native-svg';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, Modal, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
+import Svg, { Circle, ClipPath, Defs, G, LinearGradient, Path, Rect, Line as SvgLine, Stop } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 
 import { useColors } from './theme';
@@ -10,6 +10,17 @@ import { mixHex, mono, radius, space, type, withAlpha } from './theme';
 import { formatMetric, formatPercentPlain, formatPrice, formatRatio, metricValue } from './stats';
 import { OVERLAP_THRESHOLD } from './overlap';
 import { rankHeat } from './ranks';
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+const AnimatedRect = Animated.createAnimatedComponent(Rect);
+
+// SVG ids share one document-wide namespace, so two charts mounted at once -
+// the ticker pager keeps three - would otherwise share a gradient and a clip
+// path, and the second would paint with the first's colour.
+let chartSeq = 0;
+
+/** Room at the right edge for the leading marker and its halo. */
+const LEAD_PAD = 10;
 
 const haptic = (fn) => {
   try {
@@ -100,48 +111,79 @@ export function PriceChart({ values, height = 220, onScrub, excludeTail = 0, com
   const [width, setWidth] = useState(0);
   const [scrub, setScrub] = useState(null);
 
+  const uid = useRef(0);
+  if (uid.current === 0) uid.current = ++chartSeq;
+  const fillId = `pcfill${uid.current}`;
+  const clipId = `pcclip${uid.current}`;
+
   // Last measured point. The excluded tail is still drawn, but dimmed and
   // fenced off - cropping it would hide the very price action being skipped.
   const cut = Math.max(0, values.length - 1 - Math.max(0, excludeTail));
 
   const widthRef = useRef(0);
   const lenRef = useRef(0);
-  widthRef.current = width;
+  widthRef.current = Math.max(1, width - LEAD_PAD);
   lenRef.current = values.length;
+
+  // A drag delivers touches faster than the screen repaints, and each one used
+  // to set state and re-render the whole screen. Coalescing to one update per
+  // frame is what makes the crosshair track the thumb instead of lurching
+  // behind it; the reported index is unchanged.
+  const pendingX = useRef(null);
+  const frame = useRef(null);
+
+  const flush = useCallback(() => {
+    frame.current = null;
+    const x = pendingX.current;
+    const w = widthRef.current;
+    const len = lenRef.current;
+    if (x == null || !w || len < 2) return;
+    const ratio = Math.max(0, Math.min(1, x / w));
+    const i = Math.round(ratio * (len - 1));
+    setScrub((prev) => {
+      if (prev === i) return prev;
+      if (onScrub) onScrub(i);
+      return i;
+    });
+  }, [onScrub]);
 
   const update = useCallback(
     (x) => {
-      const w = widthRef.current;
-      const len = lenRef.current;
-      if (!w || len < 2) return;
-      const ratio = Math.max(0, Math.min(1, x / w));
-      const i = Math.round(ratio * (len - 1));
-      setScrub((prev) => {
-        if (prev === i) return prev;
-        if (onScrub) onScrub(i);
-        return i;
-      });
+      pendingX.current = x;
+      if (frame.current == null) frame.current = requestAnimationFrame(flush);
     },
-    [onScrub]
+    [flush]
   );
+
+  const release = useCallback(() => {
+    if (frame.current != null) cancelAnimationFrame(frame.current);
+    frame.current = null;
+    pendingX.current = null;
+    setScrub(null);
+    if (onScrub) onScrub(null);
+  }, [onScrub]);
+
+  useEffect(() => () => {
+    if (frame.current != null) cancelAnimationFrame(frame.current);
+  }, []);
 
   const responder = useMemo(
     () =>
       PanResponder.create({
         onStartShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponder: () => true,
+        // Capture phase: the ticker pager scrolls horizontally underneath, and
+        // without claiming the touch before it, a sideways drag on the chart is
+        // read as a page turn and the scrub is lost.
+        onStartShouldSetPanResponderCapture: () => true,
+        onMoveShouldSetPanResponderCapture: () => true,
+        onPanResponderTerminationRequest: () => false,
         onPanResponderGrant: (e) => update(e.nativeEvent.locationX),
         onPanResponderMove: (e) => update(e.nativeEvent.locationX),
-        onPanResponderRelease: () => {
-          setScrub(null);
-          if (onScrub) onScrub(null);
-        },
-        onPanResponderTerminate: () => {
-          setScrub(null);
-          if (onScrub) onScrub(null);
-        },
+        onPanResponderRelease: release,
+        onPanResponderTerminate: release,
       }),
-    [update, onScrub]
+    [update, release]
   );
 
   // Judged on the measured stretch so the colour agrees with the reported return.
@@ -167,10 +209,14 @@ export function PriceChart({ values, height = 220, onScrub, excludeTail = 0, com
     const span = max - min || Math.abs(max) * 0.01 || 1;
     const padY = 12;
     const usable = height - padY * 2;
-    const xAt = (i) => (i / (values.length - 1)) * width;
+    // The newest point carries a marker and a halo, which would be sliced in
+    // half by the frame if the line ran to the very edge. Everything measured
+    // in x - including where a finger maps to - uses this inset width.
+    const plotW = Math.max(1, width - LEAD_PAD);
+    const xAt = (i) => (i / (values.length - 1)) * plotW;
     const yAt = (v) => padY + (1 - (v - min) / span) * usable;
 
-    const n = Math.min(values.length, Math.max(2, Math.floor(width)));
+    const n = Math.min(values.length, Math.max(2, Math.floor(plotW)));
     const step = (values.length - 1) / (n - 1);
     // Two paths sharing the vertex at `cut`, so the excluded tail can carry its
     // own style with a seamless join.
@@ -203,8 +249,65 @@ export function PriceChart({ values, height = 220, onScrub, excludeTail = 0, com
       xAt,
       yAt,
       baseY: yAt(values[0]),
+      leadX: cutX,
+      leadY: yAt(values[cut]),
     };
   }, [values, width, height, cut, compare]);
+
+  // --- the line drawing itself in on open ----------------------------------
+  // Keyed on a signature of the data rather than its array identity, so it
+  // replays when the window changes and stays put while a finger drags.
+  const reveal = useRef(new Animated.Value(0)).current;
+  const ready = width > 0 && values.length >= 2;
+  const signature = ready ? `${values.length}:${values[0]}:${values[cut]}` : '';
+
+  useEffect(() => {
+    if (!signature) return;
+    reveal.setValue(0);
+    const anim = Animated.timing(reveal, {
+      toValue: 1,
+      duration: 620,
+      easing: Easing.out(Easing.cubic),
+      // Driving an SVG geometry attribute, which the native driver cannot own.
+      useNativeDriver: false,
+    });
+    anim.start();
+    return () => anim.stop();
+  }, [signature, reveal]);
+
+  const revealWidth = reveal.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, Math.max(width, 1)],
+  });
+  // The leading marker arrives only once the line has reached it.
+  const leadOpacity = reveal.interpolate({ inputRange: [0, 0.88, 1], outputRange: [0, 0, 1] });
+
+  // --- the leading pulse ---------------------------------------------------
+  // A slow halo on the newest point. It stops while scrubbing: a beating dot
+  // competing with the crosshair reads as noise, and the frames are better
+  // spent on the drag.
+  const pulse = useRef(new Animated.Value(0)).current;
+  const scrubbing = scrub !== null;
+
+  useEffect(() => {
+    if (scrubbing || !ready) {
+      pulse.setValue(0);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.timing(pulse, {
+        toValue: 1,
+        duration: 2000,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: false,
+      })
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [scrubbing, ready, pulse]);
+
+  const haloRadius = pulse.interpolate({ inputRange: [0, 1], outputRange: [3.5, 14] });
+  const haloOpacity = pulse.interpolate({ inputRange: [0, 0.12, 1], outputRange: [0, 0.3, 0] });
 
   return (
     <View
@@ -215,58 +318,87 @@ export function PriceChart({ values, height = 220, onScrub, excludeTail = 0, com
       {geo && (
         <Svg width={width} height={height}>
           <Defs>
-            <LinearGradient id="pcfill" x1="0" y1="0" x2="0" y2="1">
+            <LinearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
               <Stop offset="0" stopColor={line} stopOpacity={colors.fillOpacity} />
               <Stop offset="1" stopColor={line} stopOpacity={0} />
             </LinearGradient>
+            <ClipPath id={clipId}>
+              <AnimatedRect x={0} y={0} width={revealWidth} height={height} />
+            </ClipPath>
           </Defs>
-          <Path d={geo.area} fill="url(#pcfill)" />
-          <SvgLine
-            x1={0}
-            y1={geo.baseY}
-            x2={width}
-            y2={geo.baseY}
-            stroke={colors.textFaint}
-            strokeWidth={1}
-            strokeDasharray="3 4"
-            opacity={0.6}
-          />
-          {excludeTail > 0 && (
-            <>
+
+          {/* Everything that constitutes the drawing is revealed together by
+              one sweeping clip, so the fill, the baseline and every line arrive
+              as a single gesture rather than as separate effects. */}
+          <G clipPath={`url(#${clipId})`}>
+            <Path d={geo.area} fill={`url(#${fillId})`} />
+            <SvgLine
+              x1={0}
+              y1={geo.baseY}
+              x2={width}
+              y2={geo.baseY}
+              stroke={colors.textFaint}
+              strokeWidth={1}
+              strokeDasharray="3 4"
+              opacity={0.6}
+            />
+            {excludeTail > 0 && (
+              <>
+                <Path
+                  d={geo.tail}
+                  stroke={colors.textFaint}
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                />
+                <SvgLine
+                  x1={geo.cutX}
+                  y1={0}
+                  x2={geo.cutX}
+                  y2={height}
+                  stroke={colors.textFaint}
+                  strokeWidth={1}
+                  strokeDasharray="2 3"
+                />
+              </>
+            )}
+            {/* Under the portfolio line and dashed, so the comparisons read as
+                references rather than as rival protagonists. */}
+            {geo.comparePaths.map((c) => (
               <Path
-                d={geo.tail}
-                stroke={colors.textFaint}
-                strokeWidth={2}
+                key={c.color + c.dash}
+                d={c.d}
+                stroke={c.color}
+                strokeWidth={1.5}
+                strokeDasharray={c.dash}
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 fill="none"
               />
-              <SvgLine
-                x1={geo.cutX}
-                y1={0}
-                x2={geo.cutX}
-                y2={height}
-                stroke={colors.textFaint}
-                strokeWidth={1}
-                strokeDasharray="2 3"
-              />
-            </>
-          )}
-          {/* Under the portfolio line and dashed, so the comparisons read as
-              references rather than as rival protagonists. */}
-          {geo.comparePaths.map((c) => (
-            <Path
-              key={c.color + c.dash}
-              d={c.d}
-              stroke={c.color}
-              strokeWidth={1.5}
-              strokeDasharray={c.dash}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-            />
-          ))}
-          <Path d={geo.path} stroke={line} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            ))}
+            <Path d={geo.path} stroke={line} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          </G>
+
+          {/* The newest point: a halo breathing out of a solid dot. Outside the
+              clip so it can settle after the sweep has passed. */}
+          <AnimatedCircle
+            cx={geo.leadX}
+            cy={geo.leadY}
+            r={haloRadius}
+            fill={line}
+            opacity={Animated.multiply(haloOpacity, leadOpacity)}
+          />
+          <AnimatedCircle
+            cx={geo.leadX}
+            cy={geo.leadY}
+            r={3}
+            fill={line}
+            stroke={colors.bg}
+            strokeWidth={1.5}
+            opacity={leadOpacity}
+          />
+
           {scrub !== null && scrub < values.length && (
             <>
               <SvgLine x1={geo.xAt(scrub)} y1={0} x2={geo.xAt(scrub)} y2={height} stroke={colors.textMuted} strokeWidth={1} />

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { PriceChart } from '../components/PriceChart';
@@ -26,18 +26,32 @@ export function TickerDetail({
   width,
   skipEnabled,
   sessionsStale,
+  onScrubbingChange,
 }: {
   ticker: Ticker;
   initialPreset: PresetKey;
   width: number;
   skipEnabled: boolean;
   sessionsStale: number;
+  /** Lets the pager stop turning pages while a scrub is in progress. */
+  onScrubbingChange?: (active: boolean) => void;
 }) {
   const colors = useColors();
   const [preset, setPreset] = useState<PresetKey>(
     initialPreset === 'CUSTOM' ? '1Y' : initialPreset
   );
   const [scrub, setScrub] = useState<number | null>(null);
+
+  // A scrub is a horizontal drag and so is a page turn. The chart claims the
+  // touch first, and this tells the pager to stand down until the finger
+  // lifts - otherwise a drag across the chart swipes to the next ticker.
+  const handleScrub = useCallback(
+    (index: number | null) => {
+      setScrub(index);
+      onScrubbingChange?.(index !== null);
+    },
+    [onScrubbingChange]
+  );
 
   // "Max" means the most history this particular name has, so it clamps to the
   // listing date. The other presets deliberately do not: reporting six months
@@ -133,7 +147,7 @@ export function TickerDetail({
         </View>
       </View>
 
-      <PriceChart values={series} onScrub={setScrub} excludeTail={excludeTail} />
+      <PriceChart values={series} onScrub={handleScrub} excludeTail={excludeTail} />
 
       <View style={styles.section}>
         <SegmentedControl<PresetKey>

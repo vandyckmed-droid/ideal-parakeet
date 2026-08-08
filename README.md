@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/XLfl4CjN_-1qMKgnzZ95r), so it can be opened in
+Snack](https://snack.expo.dev/wblz_ZSzDOGfqPiJiHvEZ), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -762,6 +762,35 @@ learned by using it.
   follow your finger), every window's return, σ and ratio at once, and
   swipe left/right to move through the list you came from in the order you
   were looking at it.
+
+### The chart
+
+Three details that are easy to get wrong:
+
+**A drag is a scrub, not a page turn.** Both gestures are horizontal, and the
+ticker pager sits underneath the chart, so a drag used to flick through to the
+next ticker instead of moving the crosshair. The chart now claims the touch
+first and the pager stops accepting drags for as long as a finger is down.
+
+**Scrub updates are coalesced to one per frame.** A drag delivers touch events
+faster than the screen repaints, and each one previously set state and
+re-rendered the whole screen, so the crosshair lurched along behind the thumb.
+The reported index is unchanged — it just stops doing the work more often than
+it can be seen.
+
+**The line draws itself in, and the newest point breathes.** On open, one
+animated clip sweeps left to right so the fill, the baseline and every line
+arrive together rather than as separate effects; it replays when the window
+changes but not while a finger is dragging. The most recent point carries a
+solid marker with a slow halo, which stops during a scrub — a beating dot
+competing with the crosshair is noise, and the frames are better spent on the
+drag. The plot is inset ten pixels on the right so that marker isn't sliced in
+half by the frame, and the finger-to-index mapping uses the same inset width so
+the crosshair still lands where it looks like it lands.
+
+SVG ids are per-chart (`pcFill3`, `pcClip3`) rather than fixed strings. Ids
+share one document-wide namespace and the pager keeps three charts mounted, so
+fixed ones would have had all three sharing the first chart's gradient and clip.
 
 In the per-ticker table, *Max* clamps to the name's own listing date, so a 2025
 listing reports its full history rather than a dash. The other presets do not
