@@ -623,7 +623,7 @@ with them:
 | Rule | Setting |
 | --- | --- |
 | Universe | S&P 500 members as of each measurement date — point in time, so names later removed or delisted are included while they were members |
-| Signal | 12-1 momentum: return from 12 months before the measurement date to 1 month before it |
+| Signal | Switchable: **total return** 12-1 momentum, or **market residual** (see below) |
 | Selection | Top 50, equally weighted |
 | Rebalance | Measured at the last trading day of each month, traded at the next trading day's close (per `docs/rebalancing-standard.md`), held untouched in between |
 | Period | Since January 2016, $10,000 at the start — or the selected window, re-based |
@@ -631,6 +631,38 @@ with them:
 | Dividends | Reinvested on every side, via adjusted closes |
 | Costs | No taxes or fees |
 | Delistings | Frozen at the last close until the next rebalance |
+
+### Two signals
+
+The signal is a toggle on the screen, and both are built by the same pipeline
+over the same eligibility test, so switching changes the signal and nothing
+else — not the universe, not the selection size, not the rebalance.
+
+**Total return** is plain 12-1 momentum: the return from twelve months before
+the measurement date to one month before it.
+
+**Market residual** measures the same window on what the market does *not*
+explain. Each name is regressed on `SPY` over the trailing three years of daily
+log returns, giving an alpha and a beta, and the signal accumulates
+`r − alpha − beta × market` instead of `r`.
+
+Why it matters is visible in the realised beta of the two portfolios. Ranking
+on raw return quietly favours high-beta names, so total momentum ran at a beta
+of **1.18** at top-25 — a chunk of what looked like stock picking was leveraged
+market exposure. The residual version ran at **1.03** and still returned more:
+
+| Since Jan 2016, top 50 | Final | CAGR | Ann σ | Sharpe | Max DD | Beta |
+| --- | --- | --- | --- | --- | --- | --- |
+| Total return | $41,665 | 14.4% | 22.5% | 0.51 | −36.5% | 1.07 |
+| Market residual | $43,665 | 14.9% | 21.1% | 0.56 | −37.0% | 1.00 |
+
+At a top-25 concentration the gap is much wider — 18.2% CAGR and 0.62 Sharpe
+for residual against 15.2% and 0.45 for total, measured separately — but the
+app ships the top-50 rule unchanged so the toggle isolates one variable.
+
+Requiring three years of history to estimate a beta costs a little coverage:
+the worst formation scores 452 of 505 members rather than 456. Both signals are
+held to that same restricted universe, so the comparison stays honest.
 
 ### The head-to-head
 
