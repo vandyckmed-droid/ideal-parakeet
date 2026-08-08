@@ -38,6 +38,7 @@ export type Ticker = {
 const dataset = raw as unknown as {
   generatedAt: string;
   dates: string[];
+  market: { s: string; o: number; p: number[] };
   tickers: RawTicker[];
 };
 
@@ -60,6 +61,28 @@ export const TICKERS: Ticker[] = dataset.tickers.map((t) => ({
 }));
 
 export const BY_SYMBOL = new Map(TICKERS.map((t) => [t.symbol, t]));
+
+/**
+ * The market every name is measured against for the residual metric - SPY,
+ * packed on the same calendar by stage 3 but deliberately outside `TICKERS`:
+ * it is the yardstick, not a constituent, and must never appear in a ranking
+ * of index members.
+ *
+ * Shaped like a Ticker so `closeAt` and `slice` work on it unchanged.
+ */
+export const MARKET: Ticker = {
+  symbol: dataset.market.s,
+  name: dataset.market.s,
+  sector: '',
+  industry: '',
+  country: '',
+  exchange: '',
+  marketCap: 0,
+  dollarVolume: 0,
+  offset: dataset.market.o,
+  closes: dataset.market.p,
+  lastClose: dataset.market.p[dataset.market.p.length - 1],
+};
 
 export const SECTORS = [...new Set(TICKERS.map((t) => t.sector))].sort();
 

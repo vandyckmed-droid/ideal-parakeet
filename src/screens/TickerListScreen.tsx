@@ -34,6 +34,7 @@ type SortKey = 'metric' | 'cap' | 'symbol' | 'overlap';
 const METRIC_SEGMENTS: { key: MetricKey; label: string }[] = [
   { key: 'return', label: 'Return' },
   { key: 'ratio', label: 'Return ÷ σ' },
+  { key: 'residual', label: 'Residual' },
 ];
 
 export function TickerListScreen({
@@ -226,7 +227,12 @@ export function TickerListScreen({
   // overlap.ts): with too few names or too short a window every score is
   // null, and a sort with nothing to rank by is a control that does nothing.
   const sortChips: { key: SortKey; label: string }[] = [
-    { key: 'metric', label: metric === 'return' ? 'Return' : 'Ratio' },
+    // The chip names whatever the metric control is set to, so the sort and
+    // its label can never describe different columns.
+    {
+      key: 'metric',
+      label: metric === 'return' ? 'Return' : metric === 'residual' ? 'Residual' : 'Ratio',
+    },
     { key: 'cap', label: 'Size' },
     { key: 'symbol', label: 'A–Z' },
     ...(overlap && overlap.reason === 'ok'

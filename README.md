@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/ZIunEOpUE6knNVd_ZZ39Q), so it can be opened in
+Snack](https://snack.expo.dev/Wl-I_JRiFnW0sYOKh04AF), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -183,6 +183,41 @@ Mixing that into a cross-sectional ranking silently compares live prices
 against yesterday's closes, so stage 3 detects such a session by its abnormally
 low turnover and drops it everywhere. Every series ends on the same completed
 session.
+
+## Ranking by market residual
+
+Alongside **Return** and **Return ÷ σ**, the lists rank by **Residual**: the
+window's return with the market's contribution removed.
+
+Each name is regressed on `SPY` over exactly the window on screen, and what is
+accumulated is `r − beta × r_market` rather than `r`. Ranking on plain return
+quietly favours high-beta names — in a rising market a beta of 1.4 earns 40%
+more than the market for taking 40% more of its risk, which is leverage rather
+than selection. The residual strips that out and leaves what the name did that
+the market does not account for.
+
+The effect is large in this universe. Over the trailing year the top of the
+plain-return list runs betas of 2.4 to 4.4, and their residuals are a fraction
+of their headline returns: `SNDK` +2779% becomes +1048% residual, `WDC` +490%
+becomes +209%. Names with negative beta move the other way — `APA` returned
++116% at a beta of −0.65 and scores +147% residual, since subtracting a
+negative beta's market contribution *adds* to it.
+
+Two deliberate choices:
+
+- **No intercept.** Fitting an alpha term over the very window being measured
+  would absorb the drift into it and leave a residual summing to zero for every
+  name, which is precisely the quantity being ranked.
+- **Beta over the displayed window**, so the figure answers "over *this*
+  stretch" for every window the picker offers. The Research tab's backtest uses
+  a fixed three-year beta instead, because it has fifteen years of history to
+  regress against; the bundled dataset holds about two. Same idea, different
+  measurement, and worth knowing before comparing a number on one screen to a
+  number on the other.
+
+`SPY` is packed into `market.json` beside the universe as a `market` field — it
+is the yardstick, not a constituent, and stage 4 fails the build if it ever
+appears among the ranked names. It adds about 3KB to the asset.
 
 ## The numbers
 

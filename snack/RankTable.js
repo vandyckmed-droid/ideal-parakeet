@@ -11,6 +11,7 @@ import { useTheme, mono, radius, space, type } from './theme';
 const METRICS = [
   { key: 'return', label: 'Return' },
   { key: 'ratio', label: 'Return ÷ σ' },
+  { key: 'residual', label: 'Residual' },
 ];
 
 /** Default sort column: the longest horizon, where rank is least noisy. */

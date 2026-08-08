@@ -18,6 +18,11 @@ import { writeFileSync, readFileSync, mkdirSync } from 'node:fs';
 
 const ADV_WINDOW = 60;
 
+// The market the app measures each name against for the residual metric. It is
+// packed beside the universe, never inside it: SPY is not an index member and
+// must not appear in a ranking of constituents.
+const MARKET_SYMBOL = 'SPY';
+
 function median(xs) {
   if (!xs.length) return 0;
   const s = [...xs].sort((a, b) => a - b);
@@ -143,10 +148,41 @@ function main() {
     };
   });
 
+  // --- the market reference -------------------------------------------------
+  // Same master calendar, same forward-fill, so the app can line a name up
+  // against it by index arithmetic exactly as it does with any other series.
+  let market = null;
+  try {
+    let mBars = JSON.parse(readFileSync(`data/prices/${MARKET_SYMBOL}.json`, 'utf8'));
+    if (partial.size) mBars = mBars.filter((b) => !partial.has(b.d));
+    const first = mBars.findIndex((b) => dateIndex.has(b.d));
+    if (first >= 0) {
+      const offset = dateIndex.get(mBars[first].d);
+      const closes = new Array(dates.length - offset);
+      let cursor = first;
+      let last = mBars[first].c;
+      for (let i = 0; i < closes.length; i++) {
+        const d = dates[offset + i];
+        while (cursor < mBars.length && mBars[cursor].d < d) cursor++;
+        if (cursor < mBars.length && mBars[cursor].d === d) last = mBars[cursor].c;
+        closes[i] = Math.round(last * 1000) / 1000;
+      }
+      market = { s: MARKET_SYMBOL, o: offset, p: closes };
+    }
+  } catch {
+    /* reported below */
+  }
+  if (!market) {
+    console.error(`  no usable ${MARKET_SYMBOL} history - the residual metric needs it`);
+    process.exit(1);
+  }
+  console.log(`  market reference ${MARKET_SYMBOL}: ${market.p.length} closes from index ${market.o}`);
+
   mkdirSync('assets/data', { recursive: true });
   const payload = {
     generatedAt: new Date().toISOString().slice(0, 10),
     dates,
+    market,
     tickers,
   };
   writeFileSync('assets/data/market.json', JSON.stringify(payload));

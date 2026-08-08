@@ -9,6 +9,7 @@ import { PRESETS, computeWindowStats, formatDateShort, metricValue, slice, withS
 const METRICS = [
   { key: 'return', label: 'Return' },
   { key: 'ratio', label: 'Return ÷ σ' },
+  { key: 'residual', label: 'Residual' },
 ];
 
 export function ListScreen({
@@ -133,7 +134,12 @@ export function ListScreen({
   // names or too short a window every score is null, and a sort with nothing
   // to rank by is a control that does nothing.
   const sortChips = [
-    { key: 'metric', label: metric === 'return' ? 'Return' : 'Ratio' },
+    // The chip names whatever the metric control is set to, so the sort and
+    // its label can never describe different columns.
+    {
+      key: 'metric',
+      label: metric === 'return' ? 'Return' : metric === 'residual' ? 'Residual' : 'Ratio',
+    },
     { key: 'cap', label: 'Size' },
     { key: 'symbol', label: 'A–Z' },
     ...(overlap && overlap.reason === 'ok' ? [{ key: 'overlap', label: 'Overlap' }] : []),

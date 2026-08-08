@@ -1,4 +1,4 @@
-import { Ticker, closeAt } from './market';
+import { MARKET, Ticker, closeAt } from './market';
 
 export const TRADING_DAYS_PER_YEAR = 252;
 
@@ -47,6 +47,27 @@ export type WindowStats = {
    * the picker offers.
    */
   ratio: number | null;
+  /**
+   * The window's return with the market's contribution taken out: the name is
+   * regressed on the market over this same window, and what is accumulated is
+   * `r - beta * r_market` rather than `r`, expressed back as a percentage.
+   *
+   * Ranking on plain return quietly favours high-beta names, because in a
+   * rising market a beta of 1.4 earns 40% more than the market for taking 40%
+   * more of its risk - which is leverage, not selection. This strips that out
+   * and leaves what the name did that the market does not account for.
+   *
+   * Beta is measured over the displayed window, so the figure answers "over
+   * *this* stretch" for every window the picker offers. That differs from the
+   * Research tab's backtest, which has fifteen years to work with and uses a
+   * fixed three-year beta; the bundled dataset holds about two.
+   *
+   * Null when the window is too short to fit a beta, or when the market never
+   * moved within it.
+   */
+  residualReturn: number | null;
+  /** Slope of the name against the market over the window. */
+  beta: number | null;
   /** Number of daily observations in the window. */
   observations: number;
 };
@@ -105,6 +126,36 @@ export function computeWindowStats(
       ? annualizedReturn / divisor
       : null;
 
+  // --- the market-residual return --------------------------------------------
+  // One pass of ordinary least squares of the name on the market over exactly
+  // the window being displayed, then the residual accumulated in log space and
+  // converted back. Log returns matter twice here: they make the regression
+  // linear and they make the residual summable.
+  let beta: number | null = null;
+  let residualReturn: number | null = null;
+  if (observations >= MIN_VOL_OBSERVATIONS) {
+    const mLo = startIndex - MARKET.offset;
+    const mHi = endIndex - MARKET.offset;
+    if (mLo >= 0 && mHi < MARKET.closes.length) {
+      let n = 0, sx = 0, sy = 0, sxx = 0, sxy = 0;
+      for (let i = 1; i <= hi - lo; i++) {
+        const y = Math.log(ticker.closes[lo + i] / ticker.closes[lo + i - 1]);
+        const x = Math.log(MARKET.closes[mLo + i] / MARKET.closes[mLo + i - 1]);
+        if (!Number.isFinite(y) || !Number.isFinite(x)) continue;
+        n++; sx += x; sy += y; sxx += x * x; sxy += x * y;
+      }
+      const varX = n > 1 ? sxx / n - (sx / n) ** 2 : 0;
+      if (n >= MIN_VOL_OBSERVATIONS && varX > 1e-12) {
+        beta = (sxy / n - (sx / n) * (sy / n)) / varX;
+        // Deliberately no alpha term. Fitting an intercept over the very window
+        // being measured would absorb the drift into it and leave a residual
+        // that sums to zero for every name, which is precisely the thing being
+        // ranked.
+        residualReturn = Math.expm1(sy - beta * sx);
+      }
+    }
+  }
+
   return {
     startPrice,
     endPrice,
@@ -113,11 +164,13 @@ export function computeWindowStats(
     annualizedVol,
     volFloored: annualizedVol !== null && annualizedVol < VOL_FLOOR,
     ratio,
+    residualReturn,
+    beta,
     observations,
   };
 }
 
-export type MetricKey = 'return' | 'ratio';
+export type MetricKey = 'return' | 'ratio' | 'residual';
 
 /** The value a given metric ranks and displays on the list rows. */
 export function metricValue(
@@ -125,7 +178,9 @@ export function metricValue(
   metric: MetricKey
 ): number | null {
   if (!stats) return null;
-  return metric === 'return' ? stats.totalReturn : stats.ratio;
+  if (metric === 'return') return stats.totalReturn;
+  if (metric === 'residual') return stats.residualReturn;
+  return stats.ratio;
 }
 
 // --- formatting --------------------------------------------------------------
@@ -146,7 +201,7 @@ export function formatRatio(v: number | null): string {
 }
 
 export function formatMetric(v: number | null, metric: MetricKey): string {
-  return metric === 'return' ? formatPercent(v) : formatRatio(v);
+  return metric === 'ratio' ? formatRatio(v) : formatPercent(v);
 }
 
 export function formatPrice(v: number | null): string {

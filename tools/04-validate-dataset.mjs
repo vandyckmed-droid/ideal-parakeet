@@ -106,6 +106,36 @@ for (const t of tickers) {
   checked++;
 }
 
+// --- the market reference ----------------------------------------------------
+// The residual metric divides by this series' variance, so a missing or short
+// one would silently turn every residual figure into a null on the phone.
+
+const market = data.market;
+if (!market || typeof market !== 'object') {
+  fail('market reference is missing');
+} else {
+  if (market.s !== 'SPY') fail(`market reference is ${market.s}, expected SPY`);
+  if (!Array.isArray(market.p) || market.p.length === 0) fail('market reference has no closes');
+  if (!Number.isInteger(market.o) || market.o < 0) fail(`market reference has bad offset ${market.o}`);
+  if (Array.isArray(market.p) && Number.isInteger(market.o)) {
+    if (market.o + market.p.length - 1 !== lastIndex) {
+      fail(
+        `market reference ends at index ${market.o + market.p.length - 1}, ` +
+          `calendar ends at ${lastIndex}`
+      );
+    }
+    // It has to span the whole calendar, or the longest windows would measure
+    // some names against a market that had not started yet.
+    if (market.o !== 0) fail(`market reference starts at index ${market.o}, expected 0`);
+    for (let i = 0; i < market.p.length; i++) {
+      const v = market.p[i];
+      if (!Number.isFinite(v) || v <= 0) { fail(`market reference: bad close ${v} at ${i}`); break; }
+    }
+  }
+  // SPY is the yardstick, not a constituent; it must never rank in the list.
+  if (symbols.has('SPY')) fail('SPY appears in the universe, it is not an index member');
+}
+
 // --- universe landmarks ------------------------------------------------------
 
 for (const s of MUST_INCLUDE) if (!symbols.has(s)) fail(`expected ${s} in the universe`);

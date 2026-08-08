@@ -14,7 +14,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { ThemeProvider, useTheme, radius, space, type } from './theme';
-import { sessionsSinceSnapshot, windowForPreset } from './stats';
+import { sessionsSinceSnapshot, setMarket, windowForPreset } from './stats';
 import { computeOverlap, describeCandidateOverlap } from './overlap';
 import { ListScreen } from './ListScreen';
 import { ResearchScreen } from './Research';
@@ -68,6 +68,9 @@ function Shell() {
       })
       .then((json) => {
         if (cancelled) return;
+        // The residual metric measures each name against this; hand it over
+        // before anything computes a window.
+        setMarket(json.market);
         // Cache the last close per name so rows do not walk the array to find it.
         const tickers = json.tickers.map((t) => ({ ...t, last: t.p[t.p.length - 1] }));
         setData({
