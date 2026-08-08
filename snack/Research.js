@@ -170,6 +170,7 @@ export function ResearchScreen({ research }) {
               setScrub(null);
               setSignalKey(k);
             }}
+            compact
           />
         </View>
 

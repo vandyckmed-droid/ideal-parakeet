@@ -31,10 +31,56 @@ const haptic = (fn) => {
   }
 };
 
+// The active state is a single thumb that glides between positions, rather
+// than each segment repainting its own background - one moving object reads as
+// a physical part. Thumb geometry is arithmetic on the measured track width,
+// so the first paint is correct before any animation has run.
 export function SegmentedControl({ segments, value, onChange, compact }) {
   const colors = useColors();
+  const [trackWidth, setTrackWidth] = useState(0);
+
+  const pad = compact ? 2 : 3;
+  const gap = 2;
+  const n = segments.length;
+  const index = Math.max(0, segments.findIndex((s) => s.key === value));
+  const segWidth = n > 0 ? (trackWidth - pad * 2 - gap * (n - 1)) / n : 0;
+
+  const x = useRef(new Animated.Value(0)).current;
+  const mounted = useRef(false);
+
+  useEffect(() => {
+    if (trackWidth <= 0) return;
+    const target = pad + index * (segWidth + gap);
+    if (!mounted.current) {
+      // First layout: appear in place. Sliding in from 0 on mount would
+      // animate something the user never changed.
+      x.setValue(target);
+      mounted.current = true;
+      return;
+    }
+    Animated.spring(x, { toValue: target, speed: 26, bounciness: 5, useNativeDriver: true }).start();
+  }, [index, segWidth, trackWidth, pad, x]);
+
   return (
-    <View style={[sc.track, { backgroundColor: colors.surface, padding: compact ? 2 : 3 }]}>
+    <View
+      onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
+      style={[sc.track, { backgroundColor: colors.surface, padding: pad }]}
+    >
+      {trackWidth > 0 && segWidth > 0 && (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            sc.thumb,
+            {
+              width: segWidth,
+              top: pad,
+              bottom: pad,
+              backgroundColor: colors.bg,
+              transform: [{ translateX: x }],
+            },
+          ]}
+        />
+      )}
       {segments.map((seg) => {
         const active = seg.key === value;
         return (
@@ -42,13 +88,7 @@ export function SegmentedControl({ segments, value, onChange, compact }) {
             key={seg.key}
             onPress={() => onChange(seg.key)}
             hitSlop={4}
-            style={[
-              sc.segment,
-              {
-                paddingVertical: compact ? space(1.25) : space(1.75),
-                backgroundColor: active ? colors.bg : 'transparent',
-              },
-            ]}
+            style={[sc.segment, { paddingVertical: compact ? space(1.25) : space(1.75) }]}
           >
             <Text
               numberOfLines={1}
@@ -65,7 +105,17 @@ export function SegmentedControl({ segments, value, onChange, compact }) {
 
 const sc = StyleSheet.create({
   track: { flexDirection: 'row', borderRadius: radius.md, gap: 2 },
-  segment: { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm + 1 },
+  thumb: {
+    position: 'absolute',
+    left: 0,
+    borderRadius: radius.sm + 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 2,
+    shadowOpacity: 0.12,
+    elevation: 1,
+  },
+  segment: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });
 
 export const Sparkline = React.memo(function Sparkline({ values, color, width = 64, height = 26 }) {

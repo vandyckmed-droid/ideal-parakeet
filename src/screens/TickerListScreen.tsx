@@ -278,22 +278,26 @@ export function TickerListScreen({
           </Pressable>
         </View>
 
-        {headerAccessory}
-
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Search symbol or company"
-          placeholderTextColor={colors.textFaint}
-          autoCapitalize="characters"
-          autoCorrect={false}
-          clearButtonMode="while-editing"
-          style={[
-            styles.search,
-            type.body,
-            { backgroundColor: colors.surface, color: colors.text },
-          ]}
-        />
+        {/* Search and the view switch share a row: they are both "what am I
+            looking at" controls, and stacking them cost a full row of chrome
+            before the first piece of data. */}
+        <View style={styles.searchRow}>
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search symbol or company"
+            placeholderTextColor={colors.textFaint}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            clearButtonMode="while-editing"
+            style={[
+              styles.search,
+              type.body,
+              { backgroundColor: colors.surface, color: colors.text },
+            ]}
+          />
+          {headerAccessory ? <View style={styles.accessory}>{headerAccessory}</View> : null}
+        </View>
 
         <View style={styles.windowRow}>
           <View style={{ flex: 1 }}>
@@ -331,6 +335,7 @@ export function TickerListScreen({
               segments={METRIC_SEGMENTS}
               value={metric}
               onChange={setMetric}
+              compact
             />
           </View>
           <Pressable
@@ -473,7 +478,7 @@ export function TickerListScreen({
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { paddingHorizontal: space(4), paddingBottom: space(3), gap: space(2.5) },
+  header: { paddingHorizontal: space(4), paddingBottom: space(2.5), gap: space(2) },
   headerTop: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -486,11 +491,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  searchRow: { flexDirection: 'row', alignItems: 'stretch', gap: space(2) },
   search: {
+    flex: 1,
+    // Without this the placeholder's own width is the field's minimum and
+    // the view switch gets shoved off the right edge.
+    minWidth: 0,
     borderRadius: radius.md,
     paddingHorizontal: space(3.5),
     paddingVertical: space(2.75),
   },
+  // Wide enough for "Card / Table" without wrapping, no wider - the search
+  // field keeps the rest.
+  accessory: { width: 148, justifyContent: 'center' },
   windowRow: { flexDirection: 'row', alignItems: 'center', gap: space(2) },
   customButton: {
     paddingHorizontal: space(3.5),

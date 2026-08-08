@@ -164,6 +164,7 @@ export function ResearchScreen() {
               setScrub(null);
               setSignalKey(k);
             }}
+            compact
           />
         </View>
 

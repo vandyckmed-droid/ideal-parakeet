@@ -181,18 +181,22 @@ export function ListScreen({
           </Pressable>
         </View>
 
-        {headerAccessory}
-
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Search symbol or company"
-          placeholderTextColor={colors.textFaint}
-          autoCapitalize="characters"
-          autoCorrect={false}
-          clearButtonMode="while-editing"
-          style={[s.search, type.body, { backgroundColor: colors.surface, color: colors.text }]}
-        />
+        {/* Search and the view switch share a row: both are "what am I looking
+            at" controls, and stacking them cost a full row of chrome before
+            the first piece of data. */}
+        <View style={s.searchRow}>
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search symbol or company"
+            placeholderTextColor={colors.textFaint}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            clearButtonMode="while-editing"
+            style={[s.search, type.body, { backgroundColor: colors.surface, color: colors.text }]}
+          />
+          {headerAccessory ? <View style={s.accessory}>{headerAccessory}</View> : null}
+        </View>
 
         <View style={s.windowRow}>
           <View style={{ flex: 1 }}>
@@ -216,7 +220,7 @@ export function ListScreen({
 
         <View style={s.windowRow}>
           <View style={{ flex: 1 }}>
-            <SegmentedControl segments={METRICS} value={metric} onChange={setMetric} />
+            <SegmentedControl segments={METRICS} value={metric} onChange={setMetric} compact />
           </View>
           <Pressable
             onPress={() => setSkipEnabled(!skipEnabled)}
@@ -333,10 +337,14 @@ export function ListScreen({
 
 const s = StyleSheet.create({
   root: { flex: 1 },
-  header: { paddingHorizontal: space(4), paddingBottom: space(3), gap: space(2.5) },
+  header: { paddingHorizontal: space(4), paddingBottom: space(2.5), gap: space(2) },
   headerTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   themeButton: { width: 36, height: 36, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
-  search: { borderRadius: radius.md, paddingHorizontal: space(3.5), paddingVertical: space(2.75) },
+  searchRow: { flexDirection: 'row', alignItems: 'stretch', gap: space(2) },
+  // minWidth 0: otherwise the placeholder's width is the field's minimum and
+  // the view switch gets shoved off the right edge.
+  search: { flex: 1, minWidth: 0, borderRadius: radius.md, paddingHorizontal: space(3.5), paddingVertical: space(2.75) },
+  accessory: { width: 148, justifyContent: 'center' },
   windowRow: { flexDirection: 'row', alignItems: 'center', gap: space(2) },
   customButton: { paddingHorizontal: space(3.5), paddingVertical: space(2), borderRadius: radius.md, borderWidth: 1 },
   chipRow: { gap: space(2), paddingRight: space(4), alignItems: 'center' },

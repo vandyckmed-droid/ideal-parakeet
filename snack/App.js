@@ -253,7 +253,7 @@ function Shell() {
   // setting, and this is a glance.
   const viewSwitch =
     tab === 'market' ? (
-      <SegmentedControl segments={MARKET_VIEWS} value={marketView} onChange={setMarketView} />
+      <SegmentedControl segments={MARKET_VIEWS} value={marketView} onChange={setMarketView} compact />
     ) : null;
 
   if (tab === 'market' && marketView === 'table') {
