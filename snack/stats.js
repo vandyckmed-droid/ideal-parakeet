@@ -54,6 +54,10 @@ let MARKET = null;
 export function setMarket(m) {
   MARKET = m && Array.isArray(m.p) ? m : null;
 }
+/** Whether the loaded dataset carries the market reference at all. */
+export function hasMarket() {
+  return MARKET != null;
+}
 
 export function computeWindowStats(ticker, startIndex, endIndex) {
   if (endIndex <= startIndex) return null;

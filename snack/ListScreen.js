@@ -4,13 +4,19 @@ import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } fr
 import { ROW_HEIGHT, SegmentedControl, TickerRow } from './ui';
 import { WindowPicker } from './WindowPicker';
 import { useTheme, radius, space, type, mono } from './theme';
-import { PRESETS, computeWindowStats, formatDateShort, metricValue, slice, withSkip } from './stats';
+import { PRESETS, computeWindowStats, formatDateShort, hasMarket, metricValue, slice, withSkip } from './stats';
 
 const METRICS = [
   { key: 'return', label: 'Return' },
   { key: 'ratio', label: 'Return ÷ σ' },
   { key: 'residual', label: 'Residual' },
 ];
+
+// Residual drops out when the loaded dataset has no market reference (a
+// payload from before the field existed): every value would be a dash, and a
+// control that only produces dashes is worse than none. Evaluated per render,
+// NOT at module scope - the module loads before the data arrives.
+const availableMetrics = () => METRICS.filter((m) => m.key !== 'residual' || hasMarket());
 
 export function ListScreen({
   title, universe, dates, sectors, win, setPreset, setCustomWindow,
@@ -220,7 +226,7 @@ export function ListScreen({
 
         <View style={s.windowRow}>
           <View style={{ flex: 1 }}>
-            <SegmentedControl segments={METRICS} value={metric} onChange={setMetric} compact />
+            <SegmentedControl segments={availableMetrics()} value={metric} onChange={setMetric} compact />
           </View>
           <Pressable
             onPress={() => setSkipEnabled(!skipEnabled)}

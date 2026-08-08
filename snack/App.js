@@ -27,10 +27,13 @@ const MARKET_VIEWS = [
   { key: 'table', label: 'Table' },
 ];
 
-const DATA_URL =
-  'https://raw.githubusercontent.com/vandyckmed-droid/ideal-parakeet/main/assets/data/market.json';
-// Main first; the working branch second so the tab works before the merge
-// lands. Once research.json is on main the first URL always wins.
+// Main first; the working branch second so a payload shape that has not
+// merged yet still reaches the phone. Once main carries it the first URL
+// always wins - and main is the one the nightly job refreshes.
+const DATA_URLS = [
+  'https://raw.githubusercontent.com/vandyckmed-droid/ideal-parakeet/main/assets/data/market.json',
+  'https://raw.githubusercontent.com/vandyckmed-droid/ideal-parakeet/claude/stock-watchlist-app-ju7qxb/assets/data/market.json',
+];
 const RESEARCH_URLS = [
   'https://raw.githubusercontent.com/vandyckmed-droid/ideal-parakeet/main/assets/data/research.json',
   'https://raw.githubusercontent.com/vandyckmed-droid/ideal-parakeet/claude/stock-watchlist-app-ju7qxb/assets/data/research.json',
@@ -61,32 +64,40 @@ function Shell() {
   useEffect(() => {
     let cancelled = false;
     setError(null);
-    fetch(DATA_URL)
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((json) => {
-        if (cancelled) return;
-        // The residual metric measures each name against this; hand it over
-        // before anything computes a window.
-        setMarket(json.market);
-        // Cache the last close per name so rows do not walk the array to find it.
-        const tickers = json.tickers.map((t) => ({ ...t, last: t.p[t.p.length - 1] }));
-        setData({
-          dates: json.dates,
-          tickers,
-          bySymbol: new Map(tickers.map((t) => [t.s, t])),
-          sectors: Array.from(new Set(tickers.map((t) => t.se))).sort(),
-          generatedAt: json.generatedAt,
-        });
-        // Read once per load: window maths must not depend on wall-clock time.
-        setSessionsStale(sessionsSinceSnapshot(json.dates));
-        setWin(windowForPreset('1Y', json.dates));
-      })
-      .catch((e) => {
-        if (!cancelled) setError(e.message || String(e));
-      });
+    (async () => {
+      let lastErr = null;
+      for (let u = 0; u < DATA_URLS.length; u++) {
+        try {
+          const r = await fetch(DATA_URLS[u]);
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          const json = await r.json();
+          // A payload without the market reference predates the residual
+          // metric - the branch's copy has it, so keep looking before
+          // settling for a shape that would leave every residual blank.
+          if (!json.market && u < DATA_URLS.length - 1) continue;
+          if (cancelled) return;
+          // The residual metric measures each name against this; hand it over
+          // before anything computes a window.
+          setMarket(json.market);
+          // Cache the last close per name so rows do not walk the array to find it.
+          const tickers = json.tickers.map((t) => ({ ...t, last: t.p[t.p.length - 1] }));
+          setData({
+            dates: json.dates,
+            tickers,
+            bySymbol: new Map(tickers.map((t) => [t.s, t])),
+            sectors: Array.from(new Set(tickers.map((t) => t.se))).sort(),
+            generatedAt: json.generatedAt,
+          });
+          // Read once per load: window maths must not depend on wall-clock time.
+          setSessionsStale(sessionsSinceSnapshot(json.dates));
+          setWin(windowForPreset('1Y', json.dates));
+          return;
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+      if (!cancelled) setError((lastErr && lastErr.message) || String(lastErr || 'no data'));
+    })();
     // Optional: the app is fully usable without it, so a failure here only
     // leaves the Research tab explaining itself.
     (async () => {

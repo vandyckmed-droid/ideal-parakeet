@@ -6,6 +6,7 @@ import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } fr
 
 import { RANK_ROW_HEIGHT, RankRow, SegmentedControl } from './ui';
 import { HORIZONS, buildRankTable } from './ranks';
+import { hasMarket } from './stats';
 import { useTheme, mono, radius, space, type } from './theme';
 
 const METRICS = [
@@ -13,6 +14,12 @@ const METRICS = [
   { key: 'ratio', label: 'Return ÷ σ' },
   { key: 'residual', label: 'Residual' },
 ];
+
+// Residual drops out when the loaded dataset has no market reference (a
+// payload from before the field existed): every value would be a dash, and a
+// control that only produces dashes is worse than none. Evaluated per render,
+// NOT at module scope - the module loads before the data arrives.
+const availableMetrics = () => METRICS.filter((m) => m.key !== 'residual' || hasMarket());
 
 /** Default sort column: the longest horizon, where rank is least noisy. */
 const DEFAULT_SORT = HORIZONS.length - 1;
@@ -138,7 +145,7 @@ export function RankTable({
 
         <View style={s.controlRow}>
           <View style={{ flex: 1 }}>
-            <SegmentedControl segments={METRICS} value={metric} onChange={setMetric} compact />
+            <SegmentedControl segments={availableMetrics()} value={metric} onChange={setMetric} compact />
           </View>
           <Pressable
             onPress={() => setSkipEnabled(!skipEnabled)}
