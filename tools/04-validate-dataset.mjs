@@ -16,13 +16,18 @@
 import { readFileSync } from 'node:fs';
 
 const PATH = 'assets/data/market.json';
-const EXPECT_TICKERS = 500;
 
-// Companies whose baby bonds or preferred series impersonate them in a
-// market-cap screen. Presence of a parent and absence of its impostor is the
-// cheapest proof stage 1's filters still ran.
-const MUST_INCLUDE = ['AAPL', 'MSFT', 'NVDA', 'BRK-B', 'MU', 'SO', 'APO'];
-const MUST_EXCLUDE = ['SOJE', 'SOMN', 'CCZ', 'APOS', 'PPLC', 'STRC', 'STRD', 'STRK', 'RZC'];
+// The S&P 500 holds ~503 lines because a few companies list two share
+// classes. A count outside this band means the constituent endpoint broke.
+const MIN_TICKERS = 495;
+const MAX_TICKERS = 515;
+
+// Landmarks. GOOG alongside GOOGL proves dual share classes survive the
+// build; the excludes are baby bonds and preferreds that impersonate their
+// parent in screeners, plus foreign ADRs (ASML, TSM) that are large but are
+// not index members and so must be absent now.
+const MUST_INCLUDE = ['AAPL', 'MSFT', 'NVDA', 'BRK-B', 'GOOG', 'GOOGL', 'MU', 'SO', 'APO'];
+const MUST_EXCLUDE = ['SOJE', 'SOMN', 'CCZ', 'APOS', 'PPLC', 'STRC', 'STRD', 'STRK', 'RZC', 'ASML', 'TSM'];
 
 const problems = [];
 const fail = (msg) => problems.push(msg);
@@ -40,8 +45,8 @@ const dates = data.dates ?? [];
 const tickers = data.tickers ?? [];
 const lastIndex = dates.length - 1;
 
-if (tickers.length !== EXPECT_TICKERS) {
-  fail(`expected ${EXPECT_TICKERS} tickers, got ${tickers.length}`);
+if (tickers.length < MIN_TICKERS || tickers.length > MAX_TICKERS) {
+  fail(`expected ${MIN_TICKERS}-${MAX_TICKERS} tickers, got ${tickers.length}`);
 }
 
 // --- calendar ----------------------------------------------------------------
@@ -99,6 +104,36 @@ for (const t of tickers) {
   if (!(t.adv > 0)) fail(`${s}: non-positive dollar volume ${t.adv}`);
   if (!t.se) fail(`${s}: no sector`);
   checked++;
+}
+
+// --- the market reference ----------------------------------------------------
+// The residual metric divides by this series' variance, so a missing or short
+// one would silently turn every residual figure into a null on the phone.
+
+const market = data.market;
+if (!market || typeof market !== 'object') {
+  fail('market reference is missing');
+} else {
+  if (market.s !== 'SPY') fail(`market reference is ${market.s}, expected SPY`);
+  if (!Array.isArray(market.p) || market.p.length === 0) fail('market reference has no closes');
+  if (!Number.isInteger(market.o) || market.o < 0) fail(`market reference has bad offset ${market.o}`);
+  if (Array.isArray(market.p) && Number.isInteger(market.o)) {
+    if (market.o + market.p.length - 1 !== lastIndex) {
+      fail(
+        `market reference ends at index ${market.o + market.p.length - 1}, ` +
+          `calendar ends at ${lastIndex}`
+      );
+    }
+    // It has to span the whole calendar, or the longest windows would measure
+    // some names against a market that had not started yet.
+    if (market.o !== 0) fail(`market reference starts at index ${market.o}, expected 0`);
+    for (let i = 0; i < market.p.length; i++) {
+      const v = market.p[i];
+      if (!Number.isFinite(v) || v <= 0) { fail(`market reference: bad close ${v} at ${i}`); break; }
+    }
+  }
+  // SPY is the yardstick, not a constituent; it must never rank in the list.
+  if (symbols.has('SPY')) fail('SPY appears in the universe, it is not an index member');
 }
 
 // --- universe landmarks ------------------------------------------------------

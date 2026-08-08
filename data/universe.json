@@ -9,7 +9,6 @@
     "marketCap": 5424535160000,
     "beta": 2.211,
     "adv": 29746223385.870003,
-    "lastClose": 223.96,
     "bars": 509
   },
   {
@@ -22,7 +21,18 @@
     "marketCap": 4601989255480,
     "beta": 1.097,
     "adv": 15341141602.35,
-    "lastClose": 313.33,
+    "bars": 509
+  },
+  {
+    "symbol": "GOOG",
+    "name": "Alphabet Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Communication Services",
+    "industry": "Internet Content & Information",
+    "country": "US",
+    "marketCap": 4289677439708,
+    "beta": 1.247,
+    "adv": 7066289601.1,
     "bars": 509
   },
   {
@@ -35,7 +45,6 @@
     "marketCap": 4287778028630,
     "beta": 1.247,
     "adv": 10440155146.5,
-    "lastClose": 354.3,
     "bars": 509
   },
   {
@@ -48,7 +57,6 @@
     "marketCap": 3712700744500,
     "beta": 1.13,
     "adv": 13757600772.3,
-    "lastClose": 499.99,
     "bars": 509
   },
   {
@@ -61,20 +69,6 @@
     "marketCap": 2952608808000,
     "beta": 1.461,
     "adv": 10675872134.475,
-    "lastClose": 274.48,
-    "bars": 509
-  },
-  {
-    "symbol": "TSM",
-    "name": "Taiwan Semiconductor Manufacturing Company Limited",
-    "exchange": "NYSE",
-    "sector": "Technology",
-    "industry": "Semiconductors",
-    "country": "TW",
-    "marketCap": 2178529059200,
-    "beta": 1.369,
-    "adv": 5328184750.5,
-    "lastClose": 420.04,
     "bars": 509
   },
   {
@@ -87,7 +81,6 @@
     "marketCap": 2035102420800,
     "beta": 1.462,
     "adv": 8817947591.005001,
-    "lastClose": 427.76,
     "bars": 509
   },
   {
@@ -100,7 +93,6 @@
     "marketCap": 1508366798097,
     "beta": 1.246,
     "adv": 10106371359.5,
-    "lastClose": 592.1,
     "bars": 509
   },
   {
@@ -113,7 +105,6 @@
     "marketCap": 1297742282721,
     "beta": 1.802,
     "adv": 17535977249.5,
-    "lastClose": 328.58,
     "bars": 509
   },
   {
@@ -126,7 +117,6 @@
     "marketCap": 1125446205871,
     "beta": 0.615,
     "adv": 2223644025.33,
-    "lastClose": 521.8,
     "bars": 509
   },
   {
@@ -139,7 +129,6 @@
     "marketCap": 1116631721110,
     "beta": 0.506,
     "adv": 3174087180.1800003,
-    "lastClose": 1185.71,
     "bars": 509
   },
   {
@@ -152,7 +141,6 @@
     "marketCap": 991118782300,
     "beta": 2.142,
     "adv": 47182763938.2,
-    "lastClose": 877.57,
     "bars": 509
   },
   {
@@ -165,7 +153,6 @@
     "marketCap": 957978415200,
     "beta": 0.982,
     "adv": 2644706698.545,
-    "lastClose": 357.52,
     "bars": 509
   },
   {
@@ -178,7 +165,6 @@
     "marketCap": 890111248000,
     "beta": 0.603,
     "adv": 2585087081.1099997,
-    "lastClose": 111.85,
     "bars": 509
   },
   {
@@ -191,7 +177,6 @@
     "marketCap": 788166816000,
     "beta": 2.469,
     "adv": 14681272834.380001,
-    "lastClose": 483.36,
     "bars": 509
   },
   {
@@ -204,20 +189,6 @@
     "marketCap": 676804613988,
     "beta": 0.754,
     "adv": 2608941249.5249996,
-    "lastClose": 362.5,
-    "bars": 509
-  },
-  {
-    "symbol": "ASML",
-    "name": "ASML Holding N.V.",
-    "exchange": "NASDAQ",
-    "sector": "Technology",
-    "industry": "Semiconductors",
-    "country": "NL",
-    "marketCap": 671008868151,
-    "beta": 1.394,
-    "adv": 3194628849.5,
-    "lastClose": 1740.99,
     "bars": 509
   },
   {
@@ -230,7 +201,6 @@
     "marketCap": 633853712400,
     "beta": 0.162,
     "adv": 2214278504.34,
-    "lastClose": 153.04,
     "bars": 509
   },
   {
@@ -243,7 +213,6 @@
     "marketCap": 624742065364,
     "beta": 0.235,
     "adv": 1873592712.97,
-    "lastClose": 259.24,
     "bars": 509
   },
   {
@@ -256,7 +225,6 @@
     "marketCap": 512722574283,
     "beta": 2.187,
     "adv": 13340472676.52,
-    "lastClose": 101.65,
     "bars": 509
   },
   {
@@ -269,7 +237,6 @@
     "marketCap": 493727416200,
     "beta": 0.729,
     "adv": 1784982185.44,
-    "lastClose": 562.95,
     "bars": 509
   },
   {
@@ -282,7 +249,6 @@
     "marketCap": 478608411371,
     "beta": 1.007,
     "adv": 2698158904.5299997,
-    "lastClose": 121.43,
     "bars": 509
   },
   {
@@ -295,7 +261,6 @@
     "marketCap": 448291590300,
     "beta": 1.175,
     "adv": 1862760912,
-    "lastClose": 63.17,
     "bars": 509
   },
   {
@@ -308,7 +273,6 @@
     "marketCap": 434701705679,
     "beta": 0.283,
     "adv": 1296030872.3,
-    "lastClose": 246.04,
     "bars": 509
   },
   {
@@ -321,7 +285,6 @@
     "marketCap": 428055055260,
     "beta": 1.567,
     "adv": 4531970101.73,
-    "lastClose": 539.14,
     "bars": 509
   },
   {
@@ -334,7 +297,6 @@
     "marketCap": 423256261800,
     "beta": 1.712,
     "adv": 5049059628.325,
-    "lastClose": 146.94,
     "bars": 509
   },
   {
@@ -347,7 +309,6 @@
     "marketCap": 420338265780,
     "beta": 0.872,
     "adv": 2109886011.12,
-    "lastClose": 947.82,
     "bars": 509
   },
   {
@@ -360,7 +321,6 @@
     "marketCap": 394947000700,
     "beta": 1.562,
     "adv": 4953375926,
-    "lastClose": 172.01,
     "bars": 509
   },
   {
@@ -373,7 +333,6 @@
     "marketCap": 389364969500,
     "beta": 1.805,
     "adv": 3568803768,
-    "lastClose": 311.35,
     "bars": 509
   },
   {
@@ -386,7 +345,6 @@
     "marketCap": 387943875030,
     "beta": 1.565,
     "adv": 2606233158.9,
-    "lastClose": 842.19,
     "bars": 509
   },
   {
@@ -399,7 +357,6 @@
     "marketCap": 383981134811,
     "beta": 1.348,
     "adv": 1479519287.94,
-    "lastClose": 370.08,
     "bars": 509
   },
   {
@@ -412,7 +369,6 @@
     "marketCap": 374536884705,
     "beta": 0.349,
     "adv": 1342656504.2549999,
-    "lastClose": 87.05,
     "bars": 509
   },
   {
@@ -425,7 +381,6 @@
     "marketCap": 371562854000,
     "beta": 0.488,
     "adv": 1530079019.525,
-    "lastClose": 186.56,
     "bars": 509
   },
   {
@@ -438,20 +393,6 @@
     "marketCap": 369687423980,
     "beta": 0.633,
     "adv": 2349544852.76,
-    "lastClose": 407.08,
-    "bars": 509
-  },
-  {
-    "symbol": "HSBC",
-    "name": "HSBC Holdings plc",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Diversified",
-    "country": "GB",
-    "marketCap": 356490965600,
-    "beta": 0.568,
-    "adv": 137068945.005,
-    "lastClose": 103.73,
     "bars": 509
   },
   {
@@ -464,7 +405,6 @@
     "marketCap": 354594747540,
     "beta": 0.951,
     "adv": 1476449773.4850001,
-    "lastClose": 355.62,
     "bars": 509
   },
   {
@@ -477,7 +417,6 @@
     "marketCap": 346525746746,
     "beta": 0.38,
     "adv": 1227879333.9,
-    "lastClose": 145.79,
     "bars": 509
   },
   {
@@ -490,7 +429,6 @@
     "marketCap": 341102572800,
     "beta": 1.218,
     "adv": 1162084093.575,
-    "lastClose": 216.26,
     "bars": 509
   },
   {
@@ -503,7 +441,6 @@
     "marketCap": 317544757400,
     "beta": 0.205,
     "adv": 1169176193.365,
-    "lastClose": 128.57,
     "bars": 509
   },
   {
@@ -516,20 +453,6 @@
     "marketCap": 308714511526,
     "beta": 1.517,
     "adv": 3083105282.5,
-    "lastClose": 74.14,
-    "bars": 509
-  },
-  {
-    "symbol": "BABA",
-    "name": "Alibaba Group Holding Limited",
-    "exchange": "NYSE",
-    "sector": "Consumer Cyclical",
-    "industry": "Specialty Retail",
-    "country": "CN",
-    "marketCap": 307782348544,
-    "beta": 0.496,
-    "adv": 1270668643.065,
-    "lastClose": 128.41,
     "bars": 509
   },
   {
@@ -542,7 +465,6 @@
     "marketCap": 306692227270,
     "beta": 1.292,
     "adv": 2192223807.2799997,
-    "lastClose": 1039.61,
     "bars": 509
   },
   {
@@ -555,7 +477,6 @@
     "marketCap": 301420471660,
     "beta": 1.376,
     "adv": 2910957090.295,
-    "lastClose": 453.77,
     "bars": 509
   },
   {
@@ -568,20 +489,6 @@
     "marketCap": 300590489266,
     "beta": 0.298,
     "adv": 962757685.745,
-    "lastClose": 223.03,
-    "bars": 509
-  },
-  {
-    "symbol": "NVS",
-    "name": "Novartis AG",
-    "exchange": "NYSE",
-    "sector": "Healthcare",
-    "industry": "Drug Manufacturers - General",
-    "country": "CH",
-    "marketCap": 297138750937,
-    "beta": 0.46,
-    "adv": 252080378,
-    "lastClose": 156.33,
     "bars": 509
   },
   {
@@ -594,7 +501,6 @@
     "marketCap": 296545900000,
     "beta": 0.908,
     "adv": 2123522216.235,
-    "lastClose": 363.86,
     "bars": 509
   },
   {
@@ -607,20 +513,6 @@
     "marketCap": 295465697700,
     "beta": 0.405,
     "adv": 873716092.5,
-    "lastClose": 189.57,
-    "bars": 509
-  },
-  {
-    "symbol": "RY",
-    "name": "Royal Bank of Canada",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Diversified",
-    "country": "CA",
-    "marketCap": 293354762400,
-    "beta": 0.932,
-    "adv": 296030393.125,
-    "lastClose": 211.08,
     "bars": 509
   },
   {
@@ -633,7 +525,6 @@
     "marketCap": 263844000000,
     "beta": 0.917,
     "adv": 1210481218.1799998,
-    "lastClose": 87.25,
     "bars": 509
   },
   {
@@ -646,7 +537,6 @@
     "marketCap": 263755490752,
     "beta": 0.935,
     "adv": 2792850265.16,
-    "lastClose": 990.32,
     "bars": 509
   },
   {
@@ -659,7 +549,6 @@
     "marketCap": 261261898011,
     "beta": 1.31,
     "adv": 2324564424.25,
-    "lastClose": 286.08,
     "bars": 509
   },
   {
@@ -672,59 +561,6 @@
     "marketCap": 258787130800,
     "beta": 1.407,
     "adv": 3655225883.5,
-    "lastClose": 198.11,
-    "bars": 509
-  },
-  {
-    "symbol": "MUFG",
-    "name": "Mitsubishi UFJ Financial Group, Inc.",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Diversified",
-    "country": "JP",
-    "marketCap": 253616865224,
-    "beta": 0.321,
-    "adv": 68894458.19500001,
-    "lastClose": 22.49,
-    "bars": 509
-  },
-  {
-    "symbol": "AZN",
-    "name": "AstraZeneca PLC",
-    "exchange": "NYSE",
-    "sector": "Healthcare",
-    "industry": "Drug Manufacturers - General",
-    "country": "GB",
-    "marketCap": 250341831363,
-    "beta": 0.225,
-    "adv": 378902587.395,
-    "lastClose": 161.42,
-    "bars": 509
-  },
-  {
-    "symbol": "SHEL",
-    "name": "Shell plc",
-    "exchange": "NYSE",
-    "sector": "Energy",
-    "industry": "Oil & Gas Integrated",
-    "country": "GB",
-    "marketCap": 246746407500,
-    "beta": -0.235,
-    "adv": 573364556.91,
-    "lastClose": 88.5,
-    "bars": 509
-  },
-  {
-    "symbol": "SAP",
-    "name": "SAP SE",
-    "exchange": "NYSE",
-    "sector": "Technology",
-    "industry": "Software - Application",
-    "country": "DE",
-    "marketCap": 240224881410,
-    "beta": 0.743,
-    "adv": 492277379.37,
-    "lastClose": 206.16,
     "bars": 509
   },
   {
@@ -737,7 +573,6 @@
     "marketCap": 237567497867,
     "beta": 1.601,
     "adv": 1401873869.5,
-    "lastClose": 188.67,
     "bars": 509
   },
   {
@@ -750,7 +585,6 @@
     "marketCap": 231487126350,
     "beta": 1.094,
     "adv": 1507607159.5,
-    "lastClose": 135,
     "bars": 509
   },
   {
@@ -763,20 +597,6 @@
     "marketCap": 230219932100,
     "beta": 1.045,
     "adv": 945494078.1000001,
-    "lastClose": 340.91,
-    "bars": 509
-  },
-  {
-    "symbol": "BHP",
-    "name": "BHP Group Limited",
-    "exchange": "NYSE",
-    "sector": "Basic Materials",
-    "industry": "Industrial Materials",
-    "country": "AU",
-    "marketCap": 229672599768,
-    "beta": 0.831,
-    "adv": 213576973.39999998,
-    "lastClose": 90.41,
     "bars": 509
   },
   {
@@ -789,20 +609,6 @@
     "marketCap": 226664748000,
     "beta": 0.723,
     "adv": 1131850234.8,
-    "lastClose": 489.98,
-    "bars": 509
-  },
-  {
-    "symbol": "TM",
-    "name": "Toyota Motor Corporation",
-    "exchange": "NYSE",
-    "sector": "Consumer Cyclical",
-    "industry": "Auto - Manufacturers",
-    "country": "JP",
-    "marketCap": 225101654416,
-    "beta": 0.335,
-    "adv": 87106485.675,
-    "lastClose": 190.09,
     "bars": 509
   },
   {
@@ -815,7 +621,6 @@
     "marketCap": 223549555520,
     "beta": 0.675,
     "adv": 2148194608,
-    "lastClose": 237.28,
     "bars": 509
   },
   {
@@ -828,7 +633,6 @@
     "marketCap": 221790304060,
     "beta": 0.403,
     "adv": 881492514.47,
-    "lastClose": 410.95,
     "bars": 509
   },
   {
@@ -841,7 +645,6 @@
     "marketCap": 220742874000,
     "beta": 0.868,
     "adv": 1048788358.45,
-    "lastClose": 594,
     "bars": 509
   },
   {
@@ -854,33 +657,6 @@
     "marketCap": 218335154818,
     "beta": 1.237,
     "adv": 1805107628.62,
-    "lastClose": 214.42,
-    "bars": 509
-  },
-  {
-    "symbol": "SAN",
-    "name": "Banco Santander, S.A.",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Diversified",
-    "country": "ES",
-    "marketCap": 215769873822,
-    "beta": 0.934,
-    "adv": 110883381.50999999,
-    "lastClose": 14.7,
-    "bars": 509
-  },
-  {
-    "symbol": "NVO",
-    "name": "Novo Nordisk A/S",
-    "exchange": "NYSE",
-    "sector": "Healthcare",
-    "industry": "Drug Manufacturers - General",
-    "country": "DK",
-    "marketCap": 209863163192,
-    "beta": 0.349,
-    "adv": 518844132,
-    "lastClose": 47.26,
     "bars": 509
   },
   {
@@ -893,33 +669,6 @@
     "marketCap": 208595556400,
     "beta": 1.243,
     "adv": 1286491347.49,
-    "lastClose": 169.18,
-    "bars": 509
-  },
-  {
-    "symbol": "TD",
-    "name": "The Toronto-Dominion Bank",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Diversified",
-    "country": "CA",
-    "marketCap": 204953245000,
-    "beta": 0.875,
-    "adv": 269769154.405,
-    "lastClose": 121.31,
-    "bars": 509
-  },
-  {
-    "symbol": "SHOP",
-    "name": "Shopify Inc.",
-    "exchange": "NASDAQ",
-    "sector": "Technology",
-    "industry": "Software - Application",
-    "country": "CA",
-    "marketCap": 196685520302,
-    "beta": 2.585,
-    "adv": 962599113.5649998,
-    "lastClose": 151.57,
     "bars": 509
   },
   {
@@ -932,7 +681,6 @@
     "marketCap": 196501853600,
     "beta": 0.238,
     "adv": 1113849728.5300002,
-    "lastClose": 47.06,
     "bars": 509
   },
   {
@@ -945,7 +693,6 @@
     "marketCap": 195019686880,
     "beta": 0.418,
     "adv": 1173351935.9099998,
-    "lastClose": 274.48,
     "bars": 509
   },
   {
@@ -958,20 +705,6 @@
     "marketCap": 191547539520,
     "beta": 2.197,
     "adv": 6487910725.5,
-    "lastClose": 218.72,
-    "bars": 509
-  },
-  {
-    "symbol": "TTE",
-    "name": "TotalEnergies SE",
-    "exchange": "NYSE",
-    "sector": "Energy",
-    "industry": "Oil & Gas Integrated",
-    "country": "FR",
-    "marketCap": 191143663027,
-    "beta": 0.05,
-    "adv": 112630520.75999999,
-    "lastClose": 85.83,
     "bars": 509
   },
   {
@@ -984,7 +717,6 @@
     "marketCap": 190066683107,
     "beta": 0.319,
     "adv": 947408119.1700001,
-    "lastClose": 177.19,
     "bars": 509
   },
   {
@@ -997,7 +729,6 @@
     "marketCap": 189929833910,
     "beta": 1.188,
     "adv": 1817276970.695,
-    "lastClose": 389.93,
     "bars": 509
   },
   {
@@ -1010,7 +741,6 @@
     "marketCap": 189901320000,
     "beta": 0.368,
     "adv": 1181217819.5,
-    "lastClose": 139.02,
     "bars": 509
   },
   {
@@ -1023,7 +753,6 @@
     "marketCap": 187131464000,
     "beta": 0.762,
     "adv": 934363898.4000001,
-    "lastClose": 107.6,
     "bars": 509
   },
   {
@@ -1036,7 +765,6 @@
     "marketCap": 186535327502,
     "beta": 0.607,
     "adv": 1053828808.66,
-    "lastClose": 107.81,
     "bars": 509
   },
   {
@@ -1049,7 +777,6 @@
     "marketCap": 185278535400,
     "beta": 1.205,
     "adv": 1333054875.9,
-    "lastClose": 234.42,
     "bars": 509
   },
   {
@@ -1062,7 +789,6 @@
     "marketCap": 182244362040,
     "beta": 2.067,
     "adv": 3912223507.5,
-    "lastClose": 812.76,
     "bars": 509
   },
   {
@@ -1075,7 +801,6 @@
     "marketCap": 182151216450,
     "beta": 1.398,
     "adv": 991820029.5,
-    "lastClose": 104.91,
     "bars": 509
   },
   {
@@ -1088,7 +813,6 @@
     "marketCap": 179515875848,
     "beta": 5.1932244,
     "adv": 20887590374.7,
-    "lastClose": 1212.21,
     "bars": 372
   },
   {
@@ -1101,7 +825,6 @@
     "marketCap": 178255109407,
     "beta": 0.623,
     "adv": 892298142.655,
-    "lastClose": 161.36,
     "bars": 509
   },
   {
@@ -1114,7 +837,6 @@
     "marketCap": 176578054122,
     "beta": 0.667,
     "adv": 994550616,
-    "lastClose": 84.65,
     "bars": 509
   },
   {
@@ -1127,20 +849,6 @@
     "marketCap": 176253000000,
     "beta": 1.638,
     "adv": 3606319137.2,
-    "lastClose": 167.86,
-    "bars": 509
-  },
-  {
-    "symbol": "UBS",
-    "name": "UBS Group AG",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Diversified",
-    "country": "CH",
-    "marketCap": 176214792607,
-    "beta": 0.831,
-    "adv": 95500147.11,
-    "lastClose": 53.76,
     "bars": 509
   },
   {
@@ -1153,7 +861,6 @@
     "marketCap": 176134768050,
     "beta": 1.443,
     "adv": 774476044.695,
-    "lastClose": 1136.39,
     "bars": 509
   },
   {
@@ -1166,7 +873,6 @@
     "marketCap": 174222444000,
     "beta": 1.181,
     "adv": 934838350.6200001,
-    "lastClose": 448.68,
     "bars": 509
   },
   {
@@ -1179,7 +885,6 @@
     "marketCap": 174141350729,
     "beta": 0.965,
     "adv": 767851589.28,
-    "lastClose": 293.13,
     "bars": 509
   },
   {
@@ -1192,7 +897,6 @@
     "marketCap": 170717920846,
     "beta": 0.763,
     "adv": 693528931.04,
-    "lastClose": 236.92,
     "bars": 509
   },
   {
@@ -1205,7 +909,6 @@
     "marketCap": 167585251563,
     "beta": 0.897,
     "adv": 695521474.11,
-    "lastClose": 620.83,
     "bars": 509
   },
   {
@@ -1218,20 +921,6 @@
     "marketCap": 166149340760,
     "beta": 1.075,
     "adv": 1215192237.135,
-    "lastClose": 214.42,
-    "bars": 509
-  },
-  {
-    "symbol": "SCCO",
-    "name": "Southern Copper Corporation",
-    "exchange": "NYSE",
-    "sector": "Basic Materials",
-    "industry": "Copper",
-    "country": "US",
-    "marketCap": 166082069396,
-    "beta": 1.124,
-    "adv": 234645523.5,
-    "lastClose": 199.06,
     "bars": 509
   },
   {
@@ -1244,7 +933,6 @@
     "marketCap": 165652055407,
     "beta": 1.58,
     "adv": 581797053.66,
-    "lastClose": 137.13,
     "bars": 509
   },
   {
@@ -1257,33 +945,6 @@
     "marketCap": 165389522916,
     "beta": 0.343,
     "adv": 912448709.0999999,
-    "lastClose": 133.21,
-    "bars": 509
-  },
-  {
-    "symbol": "BUD",
-    "name": "Anheuser-Busch InBev SA/NV",
-    "exchange": "NYSE",
-    "sector": "Consumer Defensive",
-    "industry": "Beverages - Alcoholic",
-    "country": "BE",
-    "marketCap": 164959942776,
-    "beta": 0.788,
-    "adv": 143240974.235,
-    "lastClose": 83.76,
-    "bars": 509
-  },
-  {
-    "symbol": "RIO",
-    "name": "Rio Tinto Group",
-    "exchange": "NYSE",
-    "sector": "Basic Materials",
-    "industry": "Industrial Materials",
-    "country": "GB",
-    "marketCap": 164289497938,
-    "beta": 0.649,
-    "adv": 254504520.875,
-    "lastClose": 101.1,
     "bars": 509
   },
   {
@@ -1296,7 +957,6 @@
     "marketCap": 163052620050,
     "beta": 0.422,
     "adv": 1267046041,
-    "lastClose": 23.79,
     "bars": 509
   },
   {
@@ -1309,20 +969,6 @@
     "marketCap": 157854060000,
     "beta": 1.178,
     "adv": 2258866823.2799997,
-    "lastClose": 192.74,
-    "bars": 509
-  },
-  {
-    "symbol": "BBVA",
-    "name": "Banco Bilbao Vizcaya Argentaria, S.A.",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Diversified",
-    "country": "ES",
-    "marketCap": 156641848007,
-    "beta": 0.883,
-    "adv": 33440362.5,
-    "lastClose": 28.35,
     "bars": 509
   },
   {
@@ -1335,7 +981,6 @@
     "marketCap": 152710637955,
     "beta": 1.113,
     "adv": 1318002132.33,
-    "lastClose": 75.02,
     "bars": 509
   },
   {
@@ -1348,7 +993,6 @@
     "marketCap": 152403025600,
     "beta": 0.307,
     "adv": 1002034376.0000001,
-    "lastClose": 26.76,
     "bars": 509
   },
   {
@@ -1361,7 +1005,6 @@
     "marketCap": 151773088854,
     "beta": 1.329,
     "adv": 417538624.695,
-    "lastClose": 87.83,
     "bars": 509
   },
   {
@@ -1374,7 +1017,6 @@
     "marketCap": 149695392600,
     "beta": 2.166,
     "adv": 4105280866.69,
-    "lastClose": 434.3,
     "bars": 509
   },
   {
@@ -1387,7 +1029,6 @@
     "marketCap": 143943424417,
     "beta": 0.823,
     "adv": 757105097.31,
-    "lastClose": 204.76,
     "bars": 509
   },
   {
@@ -1400,7 +1041,6 @@
     "marketCap": 143283558163,
     "beta": 0.122,
     "adv": 743962653.985,
-    "lastClose": 117.61,
     "bars": 509
   },
   {
@@ -1413,20 +1053,6 @@
     "marketCap": 142723377720,
     "beta": 1.086,
     "adv": 2267718748.6800003,
-    "lastClose": 165.68,
-    "bars": 509
-  },
-  {
-    "symbol": "SONY",
-    "name": "Sony Group Corporation",
-    "exchange": "NYSE",
-    "sector": "Technology",
-    "industry": "Consumer Electronics",
-    "country": "JP",
-    "marketCap": 137768046354,
-    "beta": 0.744,
-    "adv": 115839639.615,
-    "lastClose": 23.46,
     "bars": 509
   },
   {
@@ -1439,20 +1065,6 @@
     "marketCap": 135693568450,
     "beta": 0.113,
     "adv": 583427917.14,
-    "lastClose": 587.95,
-    "bars": 509
-  },
-  {
-    "symbol": "UL",
-    "name": "Unilever PLC",
-    "exchange": "NYSE",
-    "sector": "Consumer Defensive",
-    "industry": "Household & Personal Products",
-    "country": "GB",
-    "marketCap": 135636449578,
-    "beta": 0.454,
-    "adv": 234654942.83499998,
-    "lastClose": 62.96,
     "bars": 509
   },
   {
@@ -1465,7 +1077,6 @@
     "marketCap": 135400390555,
     "beta": 1.11,
     "adv": 590171227.665,
-    "lastClose": 1073.87,
     "bars": 509
   },
   {
@@ -1478,7 +1089,6 @@
     "marketCap": 135149598000,
     "beta": 0.406,
     "adv": 542603254.71,
-    "lastClose": 350.31,
     "bars": 509
   },
   {
@@ -1491,7 +1101,6 @@
     "marketCap": 133825239180,
     "beta": 1.46,
     "adv": 1046531338.8,
-    "lastClose": 378.81,
     "bars": 509
   },
   {
@@ -1504,7 +1113,6 @@
     "marketCap": 133592493600,
     "beta": 1.022,
     "adv": 859421314.395,
-    "lastClose": 217.76,
     "bars": 509
   },
   {
@@ -1517,7 +1125,6 @@
     "marketCap": 132204191200,
     "beta": 0.235,
     "adv": 646008976.36,
-    "lastClose": 64.72,
     "bars": 509
   },
   {
@@ -1530,33 +1137,6 @@
     "marketCap": 130779932160,
     "beta": 1.34,
     "adv": 515690974.26500005,
-    "lastClose": 140.16,
-    "bars": 509
-  },
-  {
-    "symbol": "PDD",
-    "name": "PDD Holdings Inc.",
-    "exchange": "NASDAQ",
-    "sector": "Consumer Cyclical",
-    "industry": "Specialty Retail",
-    "country": "IE",
-    "marketCap": 130610858160,
-    "beta": -0.008,
-    "adv": 619718312.48,
-    "lastClose": 91.76,
-    "bars": 509
-  },
-  {
-    "symbol": "MFG",
-    "name": "Mizuho Financial Group, Inc.",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Regional",
-    "country": "JP",
-    "marketCap": 130471286430,
-    "beta": 0.377,
-    "adv": 36150858.2,
-    "lastClose": 10.71,
     "bars": 509
   },
   {
@@ -1569,7 +1149,6 @@
     "marketCap": 129970799141,
     "beta": 0.778,
     "adv": 847322307.4100001,
-    "lastClose": 339.03,
     "bars": 509
   },
   {
@@ -1582,33 +1161,6 @@
     "marketCap": 129108686560,
     "beta": 0.959,
     "adv": 2570378326.835,
-    "lastClose": 124.88,
-    "bars": 509
-  },
-  {
-    "symbol": "BTI",
-    "name": "British American Tobacco p.l.c.",
-    "exchange": "NYSE",
-    "sector": "Consumer Defensive",
-    "industry": "Tobacco",
-    "country": "GB",
-    "marketCap": 127970528095,
-    "beta": 0.128,
-    "adv": 236214769.60000002,
-    "lastClose": 59.33,
-    "bars": 509
-  },
-  {
-    "symbol": "BMO",
-    "name": "Bank of Montreal",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Diversified",
-    "country": "CA",
-    "marketCap": 127160637179,
-    "beta": 1.154,
-    "adv": 110396069.5,
-    "lastClose": 181.55,
     "bars": 509
   },
   {
@@ -1621,7 +1173,6 @@
     "marketCap": 125905046350,
     "beta": 0.292,
     "adv": 649914179.045,
-    "lastClose": 496.07,
     "bars": 509
   },
   {
@@ -1634,7 +1185,6 @@
     "marketCap": 125233908450,
     "beta": 0.85,
     "adv": 644056696.1800001,
-    "lastClose": 223.35,
     "bars": 509
   },
   {
@@ -1647,7 +1197,6 @@
     "marketCap": 125192862000,
     "beta": 0.246,
     "adv": 591729108.435,
-    "lastClose": 215.33,
     "bars": 509
   },
   {
@@ -1660,20 +1209,6 @@
     "marketCap": 122106501000,
     "beta": 0.598,
     "adv": 748516255.1500001,
-    "lastClose": 95.7,
-    "bars": 509
-  },
-  {
-    "symbol": "HDB",
-    "name": "HDFC Bank Limited",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Regional",
-    "country": "IN",
-    "marketCap": 121206268259,
-    "beta": 0.422,
-    "adv": 206379798.5,
-    "lastClose": 23.63,
     "bars": 509
   },
   {
@@ -1686,7 +1221,6 @@
     "marketCap": 120361200000,
     "beta": 0.969,
     "adv": 725023596,
-    "lastClose": 105.58,
     "bars": 509
   },
   {
@@ -1699,7 +1233,6 @@
     "marketCap": 120334412000,
     "beta": 1.079,
     "adv": 874775802.295,
-    "lastClose": 408.19,
     "bars": 509
   },
   {
@@ -1712,7 +1245,6 @@
     "marketCap": 119046152778,
     "beta": 0.482,
     "adv": 777291420.9449999,
-    "lastClose": 112.98,
     "bars": 509
   },
   {
@@ -1725,7 +1257,6 @@
     "marketCap": 117130047565,
     "beta": 1.09,
     "adv": 803566917.045,
-    "lastClose": 159.64,
     "bars": 509
   },
   {
@@ -1738,33 +1269,6 @@
     "marketCap": 116503821721,
     "beta": 2.483,
     "adv": 2584956983.84,
-    "lastClose": 346.8,
-    "bars": 509
-  },
-  {
-    "symbol": "PBR",
-    "name": "Petróleo Brasileiro S.A. - Petrobras",
-    "exchange": "NYSE",
-    "sector": "Energy",
-    "industry": "Oil & Gas Integrated",
-    "country": "BR",
-    "marketCap": 115740815587,
-    "beta": -0.218,
-    "adv": 267763629.48,
-    "lastClose": 17.96,
-    "bars": 509
-  },
-  {
-    "symbol": "SNOW",
-    "name": "Snowflake Inc.",
-    "exchange": "NYSE",
-    "sector": "Technology",
-    "industry": "Software - Application",
-    "country": "US",
-    "marketCap": 114547834000,
-    "beta": 1.353,
-    "adv": 1435001448,
-    "lastClose": 330.49,
     "bars": 509
   },
   {
@@ -1777,7 +1281,6 @@
     "marketCap": 114126999734,
     "beta": 0.494,
     "adv": 527063732.97,
-    "lastClose": 68.35,
     "bars": 509
   },
   {
@@ -1790,20 +1293,6 @@
     "marketCap": 112782297308,
     "beta": 1.189,
     "adv": 621178471.98,
-    "lastClose": 281.88,
-    "bars": 509
-  },
-  {
-    "symbol": "ENB",
-    "name": "Enbridge Inc.",
-    "exchange": "NYSE",
-    "sector": "Energy",
-    "industry": "Oil & Gas Midstream",
-    "country": "CA",
-    "marketCap": 111980136000,
-    "beta": 0.795,
-    "adv": 200730369.23000002,
-    "lastClose": 51.28,
     "bars": 509
   },
   {
@@ -1816,33 +1305,6 @@
     "marketCap": 111569158000,
     "beta": 0.583,
     "adv": 703644661.05,
-    "lastClose": 87.16,
-    "bars": 509
-  },
-  {
-    "symbol": "CM",
-    "name": "Canadian Imperial Bank of Commerce",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Diversified",
-    "country": "CA",
-    "marketCap": 109988725700,
-    "beta": 1.274,
-    "adv": 115023626.58000001,
-    "lastClose": 118.7,
-    "bars": 509
-  },
-  {
-    "symbol": "BP",
-    "name": "BP p.l.c.",
-    "exchange": "NYSE",
-    "sector": "Energy",
-    "industry": "Oil & Gas Integrated",
-    "country": "GB",
-    "marketCap": 109174883150,
-    "beta": -0.212,
-    "adv": 338378774.4,
-    "lastClose": 41.63,
     "bars": 509
   },
   {
@@ -1855,20 +1317,6 @@
     "marketCap": 108455828880,
     "beta": 0.841,
     "adv": 596405566.5699999,
-    "lastClose": 271.32,
-    "bars": 509
-  },
-  {
-    "symbol": "BNS",
-    "name": "The Bank of Nova Scotia",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Diversified",
-    "country": "CA",
-    "marketCap": 108316456053,
-    "beta": 1.21,
-    "adv": 195411080.64,
-    "lastClose": 88.85,
     "bars": 509
   },
   {
@@ -1881,20 +1329,6 @@
     "marketCap": 108207649350,
     "beta": 1.058,
     "adv": 487095448.645,
-    "lastClose": 157.61,
-    "bars": 509
-  },
-  {
-    "symbol": "IBN",
-    "name": "ICICI Bank Limited",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Regional",
-    "country": "IN",
-    "marketCap": 108079134195,
-    "beta": 0.235,
-    "adv": 192783812.425,
-    "lastClose": 30.22,
     "bars": 509
   },
   {
@@ -1907,7 +1341,6 @@
     "marketCap": 107530467393,
     "beta": 1.122,
     "adv": 986009701.1700001,
-    "lastClose": 175.72,
     "bars": 509
   },
   {
@@ -1920,20 +1353,6 @@
     "marketCap": 106626868400,
     "beta": 0.332,
     "adv": 519009060.76,
-    "lastClose": 92.69,
-    "bars": 509
-  },
-  {
-    "symbol": "NET",
-    "name": "Cloudflare, Inc.",
-    "exchange": "NYSE",
-    "sector": "Technology",
-    "industry": "Software - Infrastructure",
-    "country": "US",
-    "marketCap": 106577692973,
-    "beta": 1.671,
-    "adv": 797620401.5,
-    "lastClose": 300.27,
     "bars": 509
   },
   {
@@ -1946,20 +1365,6 @@
     "marketCap": 106119381393,
     "beta": 1.195,
     "adv": 572992001.625,
-    "lastClose": 482.31,
-    "bars": 509
-  },
-  {
-    "symbol": "GSK",
-    "name": "GSK plc",
-    "exchange": "NYSE",
-    "sector": "Healthcare",
-    "industry": "Drug Manufacturers - General",
-    "country": "GB",
-    "marketCap": 106105360000,
-    "beta": 0.3,
-    "adv": 200079304.31,
-    "lastClose": 52.96,
     "bars": 509
   },
   {
@@ -1972,7 +1377,6 @@
     "marketCap": 106071871850,
     "beta": 0.338,
     "adv": 411049686.68500006,
-    "lastClose": 392.05,
     "bars": 509
   },
   {
@@ -1985,7 +1389,6 @@
     "marketCap": 105686971916,
     "beta": 1.143,
     "adv": 484739250.82500005,
-    "lastClose": 178.07,
     "bars": 509
   },
   {
@@ -1998,7 +1401,6 @@
     "marketCap": 105420975000,
     "beta": 1.433,
     "adv": 1285534882.7,
-    "lastClose": 265.21,
     "bars": 509
   },
   {
@@ -2011,20 +1413,6 @@
     "marketCap": 104870731200,
     "beta": 2.029,
     "adv": 1727536663.81,
-    "lastClose": 272.4,
-    "bars": 509
-  },
-  {
-    "symbol": "SNY",
-    "name": "Sanofi",
-    "exchange": "NASDAQ",
-    "sector": "Healthcare",
-    "industry": "Drug Manufacturers - General",
-    "country": "FR",
-    "marketCap": 104356152000,
-    "beta": 0.278,
-    "adv": 120911751.41,
-    "lastClose": 43.46,
     "bars": 509
   },
   {
@@ -2037,20 +1425,6 @@
     "marketCap": 102877073257,
     "beta": 0.971,
     "adv": 570604164.3,
-    "lastClose": 1042.62,
-    "bars": 509
-  },
-  {
-    "symbol": "ING",
-    "name": "ING Groep N.V.",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Diversified",
-    "country": "NL",
-    "marketCap": 101922739148,
-    "beta": 0.866,
-    "adv": 83908932.38,
-    "lastClose": 35.68,
     "bars": 509
   },
   {
@@ -2063,7 +1437,6 @@
     "marketCap": 101808687240,
     "beta": 0.315,
     "adv": 871834233.35,
-    "lastClose": 869.58,
     "bars": 509
   },
   {
@@ -2076,7 +1449,6 @@
     "marketCap": 101009447980,
     "beta": 1.215,
     "adv": 735563884.3599999,
-    "lastClose": 671.86,
     "bars": 509
   },
   {
@@ -2089,20 +1461,6 @@
     "marketCap": 100771440000,
     "beta": 0.897,
     "adv": 449404417.46500003,
-    "lastClose": 252.56,
-    "bars": 509
-  },
-  {
-    "symbol": "SPOT",
-    "name": "Spotify Technology S.A.",
-    "exchange": "NYSE",
-    "sector": "Communication Services",
-    "industry": "Internet Content & Information",
-    "country": "SE",
-    "marketCap": 100353873829,
-    "beta": 1.564,
-    "adv": 851162278.55,
-    "lastClose": 488.14,
     "bars": 509
   },
   {
@@ -2115,20 +1473,6 @@
     "marketCap": 100082927200,
     "beta": 1.364,
     "adv": 890775837.9,
-    "lastClose": 69.62,
-    "bars": 509
-  },
-  {
-    "symbol": "SMFG",
-    "name": "Sumitomo Mitsui Financial Group, Inc.",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Diversified",
-    "country": "JP",
-    "marketCap": 99723555360,
-    "beta": 0.384,
-    "adv": 45288994.16500001,
-    "lastClose": 25.74,
     "bars": 509
   },
   {
@@ -2141,20 +1485,6 @@
     "marketCap": 99601366688,
     "beta": 0.979,
     "adv": 484806839.985,
-    "lastClose": 63.94,
-    "bars": 509
-  },
-  {
-    "symbol": "BN",
-    "name": "Brookfield Corporation",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Asset Management",
-    "country": "CA",
-    "marketCap": 98456892505,
-    "beta": 1.837,
-    "adv": 173954324,
-    "lastClose": 44.08,
     "bars": 509
   },
   {
@@ -2167,7 +1497,6 @@
     "marketCap": 97332560600,
     "beta": 0.373,
     "adv": 445479665.84,
-    "lastClose": 124.85,
     "bars": 509
   },
   {
@@ -2180,20 +1509,6 @@
     "marketCap": 96918044178,
     "beta": 1.121,
     "adv": 880101491.03,
-    "lastClose": 269.89,
-    "bars": 509
-  },
-  {
-    "symbol": "CNQ",
-    "name": "Canadian Natural Resources Limited",
-    "exchange": "NYSE",
-    "sector": "Energy",
-    "industry": "Oil & Gas Exploration & Production",
-    "country": "CA",
-    "marketCap": 94920662100,
-    "beta": 0.881,
-    "adv": 337010771,
-    "lastClose": 45.51,
     "bars": 509
   },
   {
@@ -2206,7 +1521,6 @@
     "marketCap": 94806672701,
     "beta": 0.276,
     "adv": 784569706.29,
-    "lastClose": 263.66,
     "bars": 509
   },
   {
@@ -2219,7 +1533,6 @@
     "marketCap": 94320472845,
     "beta": 1.081,
     "adv": 538954871.3999999,
-    "lastClose": 182.9,
     "bars": 509
   },
   {
@@ -2232,20 +1545,6 @@
     "marketCap": 94228528657,
     "beta": 1.779,
     "adv": 748022858.88,
-    "lastClose": 216.26,
-    "bars": 509
-  },
-  {
-    "symbol": "BCS",
-    "name": "Barclays PLC",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Diversified",
-    "country": "GB",
-    "marketCap": 94170965423,
-    "beta": 0.878,
-    "adv": 124833562.995,
-    "lastClose": 27.93,
     "bars": 509
   },
   {
@@ -2258,7 +1557,6 @@
     "marketCap": 93424321320,
     "beta": 1.148,
     "adv": 739390515.375,
-    "lastClose": 339.24,
     "bars": 509
   },
   {
@@ -2271,20 +1569,6 @@
     "marketCap": 93124169600,
     "beta": 1.211,
     "adv": 583815314.88,
-    "lastClose": 50.27,
-    "bars": 509
-  },
-  {
-    "symbol": "EQNR",
-    "name": "Equinor ASA",
-    "exchange": "NYSE",
-    "sector": "Energy",
-    "industry": "Oil & Gas Integrated",
-    "country": "NO",
-    "marketCap": 93047990000,
-    "beta": -0.75,
-    "adv": 132819674.64499998,
-    "lastClose": 38.92,
     "bars": 509
   },
   {
@@ -2297,20 +1581,6 @@
     "marketCap": 92310317064,
     "beta": 1.794,
     "adv": 380865065.03999996,
-    "lastClose": 102.81,
-    "bars": 509
-  },
-  {
-    "symbol": "MELI",
-    "name": "MercadoLibre, Inc.",
-    "exchange": "NASDAQ",
-    "sector": "Consumer Cyclical",
-    "industry": "Specialty Retail",
-    "country": "UY",
-    "marketCap": 92303852296,
-    "beta": 1.345,
-    "adv": 766218711.5,
-    "lastClose": 1820.69,
     "bars": 509
   },
   {
@@ -2323,7 +1593,6 @@
     "marketCap": 92287796986,
     "beta": 1.106,
     "adv": 578476648.275,
-    "lastClose": 353.91,
     "bars": 509
   },
   {
@@ -2336,7 +1605,6 @@
     "marketCap": 92199909149,
     "beta": 1.319,
     "adv": 544972018.855,
-    "lastClose": 152.21,
     "bars": 509
   },
   {
@@ -2349,20 +1617,6 @@
     "marketCap": 91457539512,
     "beta": 0.603,
     "adv": 414933814,
-    "lastClose": 191.65,
-    "bars": 509
-  },
-  {
-    "symbol": "LYG",
-    "name": "Lloyds Banking Group plc",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Regional",
-    "country": "GB",
-    "marketCap": 91147082060,
-    "beta": 0.896,
-    "adv": 108160896.19,
-    "lastClose": 6.28,
     "bars": 509
   },
   {
@@ -2375,20 +1629,6 @@
     "marketCap": 91007153093,
     "beta": 0.448,
     "adv": 468349103.875,
-    "lastClose": 227.68,
-    "bars": 509
-  },
-  {
-    "symbol": "AEM",
-    "name": "Agnico Eagle Mines Limited",
-    "exchange": "NYSE",
-    "sector": "Basic Materials",
-    "industry": "Gold",
-    "country": "CA",
-    "marketCap": 90548164980,
-    "beta": 0.595,
-    "adv": 411878802.82500005,
-    "lastClose": 178.82,
     "bars": 509
   },
   {
@@ -2401,7 +1641,6 @@
     "marketCap": 89993424506,
     "beta": 0.657,
     "adv": 794512181.24,
-    "lastClose": 25.36,
     "bars": 509
   },
   {
@@ -2414,7 +1653,6 @@
     "marketCap": 89754971169,
     "beta": 1.1,
     "adv": 735741730.6,
-    "lastClose": 369.73,
     "bars": 509
   },
   {
@@ -2427,7 +1665,6 @@
     "marketCap": 89493060867,
     "beta": 1.128,
     "adv": 615263723.845,
-    "lastClose": 413.36,
     "bars": 509
   },
   {
@@ -2440,7 +1677,6 @@
     "marketCap": 88967909250,
     "beta": 0.996,
     "adv": 1402756351.665,
-    "lastClose": 325.25,
     "bars": 509
   },
   {
@@ -2453,7 +1689,6 @@
     "marketCap": 88900793140,
     "beta": 1.222,
     "adv": 613246099.1,
-    "lastClose": 644.26,
     "bars": 509
   },
   {
@@ -2466,7 +1701,6 @@
     "marketCap": 88755986304,
     "beta": 1.03,
     "adv": 531434043,
-    "lastClose": 104.5,
     "bars": 509
   },
   {
@@ -2479,7 +1713,6 @@
     "marketCap": 88641426000,
     "beta": 1.244,
     "adv": 396291099.135,
-    "lastClose": 158.26,
     "bars": 509
   },
   {
@@ -2492,20 +1725,6 @@
     "marketCap": 88372812820,
     "beta": 0.527,
     "adv": 488465803.525,
-    "lastClose": 90.36,
-    "bars": 509
-  },
-  {
-    "symbol": "ITUB",
-    "name": "Itaú Unibanco Holding S.A.",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Regional",
-    "country": "BR",
-    "marketCap": 87511994168,
-    "beta": 0.159,
-    "adv": 172800097.6,
-    "lastClose": 7.94,
     "bars": 509
   },
   {
@@ -2518,7 +1737,6 @@
     "marketCap": 87055613400,
     "beta": 0.52,
     "adv": 587000235.3,
-    "lastClose": 298.2,
     "bars": 509
   },
   {
@@ -2531,7 +1749,6 @@
     "marketCap": 86110990029,
     "beta": 0.595,
     "adv": 475521948.03000003,
-    "lastClose": 70.4,
     "bars": 509
   },
   {
@@ -2544,7 +1761,6 @@
     "marketCap": 85891641189,
     "beta": 0.545,
     "adv": 755243120.265,
-    "lastClose": 298.31,
     "bars": 509
   },
   {
@@ -2557,7 +1773,6 @@
     "marketCap": 85822400000,
     "beta": 1.764,
     "adv": 673141431.2550001,
-    "lastClose": 320,
     "bars": 509
   },
   {
@@ -2570,7 +1785,6 @@
     "marketCap": 85489874118,
     "beta": 0.683,
     "adv": 583854160.39,
-    "lastClose": 394.2,
     "bars": 509
   },
   {
@@ -2583,20 +1797,6 @@
     "marketCap": 85349082000,
     "beta": 1.011,
     "adv": 342677408.82,
-    "lastClose": 296.66,
-    "bars": 509
-  },
-  {
-    "symbol": "NTES",
-    "name": "NetEase, Inc.",
-    "exchange": "NASDAQ",
-    "sector": "Technology",
-    "industry": "Electronic Gaming & Multimedia",
-    "country": "CN",
-    "marketCap": 84412068781,
-    "beta": 0.79,
-    "adv": 105113463.61999999,
-    "lastClose": 132.22,
     "bars": 509
   },
   {
@@ -2609,7 +1809,6 @@
     "marketCap": 84377668500,
     "beta": 0.948,
     "adv": 610389922.06,
-    "lastClose": 150.3,
     "bars": 509
   },
   {
@@ -2622,20 +1821,6 @@
     "marketCap": 83875389166,
     "beta": 2.336,
     "adv": 2171166779.54,
-    "lastClose": 93.29,
-    "bars": 509
-  },
-  {
-    "symbol": "BAM",
-    "name": "Brookfield Asset Management Ltd.",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Asset Management",
-    "country": "US",
-    "marketCap": 83815318871,
-    "beta": 1.259,
-    "adv": 121879835.63,
-    "lastClose": 52.49,
     "bars": 509
   },
   {
@@ -2648,7 +1833,6 @@
     "marketCap": 83269763504,
     "beta": 1.543,
     "adv": 1145226836.46,
-    "lastClose": 233.93,
     "bars": 509
   },
   {
@@ -2661,20 +1845,6 @@
     "marketCap": 82746300000,
     "beta": 1.335,
     "adv": 438957238.88,
-    "lastClose": 477.75,
-    "bars": 509
-  },
-  {
-    "symbol": "ASX",
-    "name": "ASE Technology Holding Co., Ltd.",
-    "exchange": "NYSE",
-    "sector": "Technology",
-    "industry": "Semiconductors",
-    "country": "TW",
-    "marketCap": 82213674155,
-    "beta": 1.462,
-    "adv": 403606491.5,
-    "lastClose": 37.39,
     "bars": 509
   },
   {
@@ -2687,7 +1857,6 @@
     "marketCap": 81872954027,
     "beta": 0.879,
     "adv": 633227231.6800001,
-    "lastClose": 255.23,
     "bars": 509
   },
   {
@@ -2700,33 +1869,6 @@
     "marketCap": 81754659928,
     "beta": 0.681,
     "adv": 471413286.79,
-    "lastClose": 203.91,
-    "bars": 509
-  },
-  {
-    "symbol": "EPD",
-    "name": "Enterprise Products Partners L.P.",
-    "exchange": "NYSE",
-    "sector": "Energy",
-    "industry": "Oil & Gas Midstream",
-    "country": "US",
-    "marketCap": 81672814730,
-    "beta": 0.469,
-    "adv": 109299259.62,
-    "lastClose": 37.75,
-    "bars": 509
-  },
-  {
-    "symbol": "NGG",
-    "name": "National Grid plc",
-    "exchange": "NYSE",
-    "sector": "Utilities",
-    "industry": "Regulated Electric",
-    "country": "GB",
-    "marketCap": 81313397098,
-    "beta": 0.592,
-    "adv": 73340689.47999999,
-    "lastClose": 80.88,
     "bars": 509
   },
   {
@@ -2739,7 +1881,6 @@
     "marketCap": 81254429361,
     "beta": 0.933,
     "adv": 422820616.955,
-    "lastClose": 203.05,
     "bars": 509
   },
   {
@@ -2752,7 +1893,6 @@
     "marketCap": 81200369540,
     "beta": -0.102,
     "adv": 482484323.875,
-    "lastClose": 571.58,
     "bars": 509
   },
   {
@@ -2765,20 +1905,6 @@
     "marketCap": 80806335920,
     "beta": 0.236,
     "adv": 616095949.425,
-    "lastClose": 784.36,
-    "bars": 509
-  },
-  {
-    "symbol": "CP",
-    "name": "Canadian Pacific Kansas City Ltd.",
-    "exchange": "NYSE",
-    "sector": "Industrials",
-    "industry": "Railroads",
-    "country": "CA",
-    "marketCap": 80541238503,
-    "beta": 1.216,
-    "adv": 238597465.32,
-    "lastClose": 91.62,
     "bars": 509
   },
   {
@@ -2791,7 +1917,6 @@
     "marketCap": 80396738400,
     "beta": 0.909,
     "adv": 546084887.285,
-    "lastClose": 172.54,
     "bars": 509
   },
   {
@@ -2804,7 +1929,6 @@
     "marketCap": 80257674460,
     "beta": 0.895,
     "adv": 378484578.46000004,
-    "lastClose": 285.17,
     "bars": 509
   },
   {
@@ -2817,7 +1941,6 @@
     "marketCap": 80157466705,
     "beta": 0.473,
     "adv": 560233729.75,
-    "lastClose": 384.31,
     "bars": 509
   },
   {
@@ -2830,7 +1953,6 @@
     "marketCap": 79909769100,
     "beta": 0.408,
     "adv": 521892093.18999994,
-    "lastClose": 62.61,
     "bars": 509
   },
   {
@@ -2843,7 +1965,6 @@
     "marketCap": 79653484407,
     "beta": 1.222,
     "adv": 816944305.835,
-    "lastClose": 415.99,
     "bars": 509
   },
   {
@@ -2856,7 +1977,6 @@
     "marketCap": 79211865961,
     "beta": 1.309,
     "adv": 612274437.47,
-    "lastClose": 87.58,
     "bars": 509
   },
   {
@@ -2869,7 +1989,6 @@
     "marketCap": 78033797400,
     "beta": 0.93,
     "adv": 985325044,
-    "lastClose": 246.21,
     "bars": 509
   },
   {
@@ -2882,20 +2001,6 @@
     "marketCap": 77710807007,
     "beta": 3.462,
     "adv": 653251126.9000001,
-    "lastClose": 70.85,
-    "bars": 509
-  },
-  {
-    "symbol": "E",
-    "name": "Eni S.p.A.",
-    "exchange": "NYSE",
-    "sector": "Energy",
-    "industry": "Oil & Gas Integrated",
-    "country": "IT",
-    "marketCap": 77667845293,
-    "beta": 0.232,
-    "adv": 18677782.6,
-    "lastClose": 53.61,
     "bars": 509
   },
   {
@@ -2908,7 +2013,6 @@
     "marketCap": 77611429800,
     "beta": 0.885,
     "adv": 423856259.71999997,
-    "lastClose": 467.55,
     "bars": 509
   },
   {
@@ -2921,20 +2025,6 @@
     "marketCap": 77509713950,
     "beta": 0.513,
     "adv": 597436040.67,
-    "lastClose": 93.53,
-    "bars": 509
-  },
-  {
-    "symbol": "CNI",
-    "name": "Canadian National Railway Company",
-    "exchange": "NYSE",
-    "sector": "Industrials",
-    "industry": "Railroads",
-    "country": "CA",
-    "marketCap": 76580340000,
-    "beta": 0.972,
-    "adv": 177082964.125,
-    "lastClose": 126.6,
     "bars": 509
   },
   {
@@ -2947,7 +2037,6 @@
     "marketCap": 76004543002,
     "beta": 0.705,
     "adv": 478291692,
-    "lastClose": 358.3,
     "bars": 509
   },
   {
@@ -2960,7 +2049,6 @@
     "marketCap": 75367669061,
     "beta": 1.337,
     "adv": 547397878.99,
-    "lastClose": 318.57,
     "bars": 509
   },
   {
@@ -2973,7 +2061,6 @@
     "marketCap": 75099930880,
     "beta": 1.263,
     "adv": 342183798.04999995,
-    "lastClose": 334.36,
     "bars": 509
   },
   {
@@ -2986,7 +2073,6 @@
     "marketCap": 74993759332,
     "beta": 0.733,
     "adv": 653481020.04,
-    "lastClose": 50.53,
     "bars": 509
   },
   {
@@ -2999,7 +2085,6 @@
     "marketCap": 74645294890,
     "beta": 0.303,
     "adv": 418066717.79999995,
-    "lastClose": 282.49,
     "bars": 509
   },
   {
@@ -3012,7 +2097,6 @@
     "marketCap": 74633628030,
     "beta": 0.319,
     "adv": 453197939.22,
-    "lastClose": 93.27,
     "bars": 509
   },
   {
@@ -3025,20 +2109,6 @@
     "marketCap": 74172735771,
     "beta": 2.037,
     "adv": 1874045138.75,
-    "lastClose": 379.13,
-    "bars": 509
-  },
-  {
-    "symbol": "MFC",
-    "name": "Manulife Financial Corporation",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Insurance - Life",
-    "country": "CA",
-    "marketCap": 73965204800,
-    "beta": 0.782,
-    "adv": 69945461.18,
-    "lastClose": 44.32,
     "bars": 509
   },
   {
@@ -3051,7 +2121,6 @@
     "marketCap": 73401845045,
     "beta": 1.499,
     "adv": 453766972.29499996,
-    "lastClose": 127.44,
     "bars": 509
   },
   {
@@ -3064,33 +2133,6 @@
     "marketCap": 73292411600,
     "beta": 0.577,
     "adv": 891633963.94,
-    "lastClose": 49.31,
-    "bars": 509
-  },
-  {
-    "symbol": "B",
-    "name": "Barrick Mining Corporation",
-    "exchange": "NYSE",
-    "sector": "Basic Materials",
-    "industry": "Gold",
-    "country": "CA",
-    "marketCap": 73203031900,
-    "beta": 1.098,
-    "adv": 397364180.185,
-    "lastClose": 43.68,
-    "bars": 509
-  },
-  {
-    "symbol": "RACE",
-    "name": "Ferrari N.V.",
-    "exchange": "NYSE",
-    "sector": "Consumer Cyclical",
-    "industry": "Auto - Manufacturers",
-    "country": "IT",
-    "marketCap": 72523142940,
-    "beta": 0.591,
-    "adv": 193602918.32,
-    "lastClose": 412.26,
     "bars": 509
   },
   {
@@ -3103,7 +2145,6 @@
     "marketCap": 72378068700,
     "beta": 1.794,
     "adv": 500431282.2,
-    "lastClose": 1162.84,
     "bars": 509
   },
   {
@@ -3116,7 +2157,6 @@
     "marketCap": 72285700620,
     "beta": 1.327,
     "adv": 366108484.75,
-    "lastClose": 222.91,
     "bars": 509
   },
   {
@@ -3129,7 +2169,6 @@
     "marketCap": 71766431460,
     "beta": 0.261,
     "adv": 427760880.27000004,
-    "lastClose": 134.74,
     "bars": 509
   },
   {
@@ -3142,20 +2181,6 @@
     "marketCap": 71701349188,
     "beta": 1.053,
     "adv": 479043770.365,
-    "lastClose": 193.8,
-    "bars": 509
-  },
-  {
-    "symbol": "DB",
-    "name": "Deutsche Bank AG",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Regional",
-    "country": "DE",
-    "marketCap": 71517784800,
-    "beta": 0.943,
-    "adv": 75219732.15,
-    "lastClose": 38.06,
     "bars": 509
   },
   {
@@ -3168,33 +2193,6 @@
     "marketCap": 71480644000,
     "beta": 1.052,
     "adv": 562620381.9300001,
-    "lastClose": 317.6,
-    "bars": 509
-  },
-  {
-    "symbol": "AMX",
-    "name": "América Móvil, S.A.B. de C.V.",
-    "exchange": "NYSE",
-    "sector": "Communication Services",
-    "industry": "Telecommunications Services",
-    "country": "MX",
-    "marketCap": 71274343370,
-    "beta": 0.265,
-    "adv": 35954821.35,
-    "lastClose": 23.75,
-    "bars": 509
-  },
-  {
-    "symbol": "SU",
-    "name": "Suncor Energy Inc.",
-    "exchange": "NYSE",
-    "sector": "Energy",
-    "industry": "Oil & Gas Integrated",
-    "country": "CA",
-    "marketCap": 70963075000,
-    "beta": 0.572,
-    "adv": 245739207.04000002,
-    "lastClose": 60.1,
     "bars": 509
   },
   {
@@ -3207,7 +2205,6 @@
     "marketCap": 70474641069,
     "beta": 1.438,
     "adv": 918749192.285,
-    "lastClose": 53.22,
     "bars": 509
   },
   {
@@ -3220,20 +2217,6 @@
     "marketCap": 70064438894,
     "beta": 0.976,
     "adv": 368946927.955,
-    "lastClose": 133.11,
-    "bars": 509
-  },
-  {
-    "symbol": "ET",
-    "name": "Energy Transfer LP",
-    "exchange": "NYSE",
-    "sector": "Energy",
-    "industry": "Oil & Gas Midstream",
-    "country": "US",
-    "marketCap": 69270550800,
-    "beta": 0.545,
-    "adv": 174618655.41500002,
-    "lastClose": 20.13,
     "bars": 509
   },
   {
@@ -3246,7 +2229,6 @@
     "marketCap": 69255226000,
     "beta": 1.482,
     "adv": 3946168625.75,
-    "lastClose": 890.17,
     "bars": 509
   },
   {
@@ -3259,7 +2241,6 @@
     "marketCap": 68857660200,
     "beta": 1.71,
     "adv": 1218501858.9950001,
-    "lastClose": 1401.54,
     "bars": 509
   },
   {
@@ -3272,7 +2253,6 @@
     "marketCap": 68731407000,
     "beta": 0.166,
     "adv": 365127571.32,
-    "lastClose": 267,
     "bars": 509
   },
   {
@@ -3285,7 +2265,6 @@
     "marketCap": 68696780000,
     "beta": 0.533,
     "adv": 283553150.26,
-    "lastClose": 30.85,
     "bars": 509
   },
   {
@@ -3298,7 +2277,6 @@
     "marketCap": 68532643400,
     "beta": 0.884,
     "adv": 480113886.06,
-    "lastClose": 1225.25,
     "bars": 509
   },
   {
@@ -3311,20 +2289,6 @@
     "marketCap": 68447034810,
     "beta": 0.504,
     "adv": 620790229.235,
-    "lastClose": 125.73,
-    "bars": 509
-  },
-  {
-    "symbol": "SE",
-    "name": "Sea Limited",
-    "exchange": "NYSE",
-    "sector": "Consumer Cyclical",
-    "industry": "Specialty Retail",
-    "country": "SG",
-    "marketCap": 68097619511,
-    "beta": 1.552,
-    "adv": 375180819.5,
-    "lastClose": 113.43,
     "bars": 509
   },
   {
@@ -3337,7 +2301,6 @@
     "marketCap": 67992392700,
     "beta": 0.981,
     "adv": 565402894.165,
-    "lastClose": 149.7,
     "bars": 509
   },
   {
@@ -3350,7 +2313,6 @@
     "marketCap": 67571697223,
     "beta": 0.736,
     "adv": 347172717.985,
-    "lastClose": 303.44,
     "bars": 509
   },
   {
@@ -3363,7 +2325,6 @@
     "marketCap": 67141120880,
     "beta": 1.548,
     "adv": 545126270.095,
-    "lastClose": 26.78,
     "bars": 509
   },
   {
@@ -3376,20 +2337,6 @@
     "marketCap": 67140756096,
     "beta": 1.189,
     "adv": 439325759.02,
-    "lastClose": 100.48,
-    "bars": 509
-  },
-  {
-    "symbol": "NU",
-    "name": "Nu Holdings Ltd.",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Regional",
-    "country": "BR",
-    "marketCap": 67028780800,
-    "beta": 0.949,
-    "adv": 792575604,
-    "lastClose": 13.84,
     "bars": 509
   },
   {
@@ -3402,20 +2349,6 @@
     "marketCap": 66012387840,
     "beta": 0.405,
     "adv": 328371577.75,
-    "lastClose": 214.56,
-    "bars": 509
-  },
-  {
-    "symbol": "TRP",
-    "name": "TC Energy Corporation",
-    "exchange": "NYSE",
-    "sector": "Energy",
-    "industry": "Oil & Gas Midstream",
-    "country": "CA",
-    "marketCap": 65822632968,
-    "beta": 0.977,
-    "adv": 168567901.48000002,
-    "lastClose": 63.23,
     "bars": 509
   },
   {
@@ -3428,20 +2361,6 @@
     "marketCap": 65221818000,
     "beta": 0.875,
     "adv": 393888179.025,
-    "lastClose": 52.35,
-    "bars": 509
-  },
-  {
-    "symbol": "BE",
-    "name": "Bloom Energy Corporation",
-    "exchange": "NYSE",
-    "sector": "Industrials",
-    "industry": "Electrical Equipment & Parts",
-    "country": "US",
-    "marketCap": 64601552180,
-    "beta": 3.737,
-    "adv": 3152011433.31,
-    "lastClose": 219.34,
     "bars": 509
   },
   {
@@ -3454,7 +2373,6 @@
     "marketCap": 63742027752,
     "beta": 0.508,
     "adv": 371676471.87,
-    "lastClose": 248.12,
     "bars": 509
   },
   {
@@ -3467,7 +2385,6 @@
     "marketCap": 63424620850,
     "beta": 0.603,
     "adv": 254554275.78,
-    "lastClose": 124.61,
     "bars": 509
   },
   {
@@ -3480,20 +2397,6 @@
     "marketCap": 62908813883,
     "beta": 0.778,
     "adv": 319239155.885,
-    "lastClose": 97.77,
-    "bars": 509
-  },
-  {
-    "symbol": "VALE",
-    "name": "Vale S.A.",
-    "exchange": "NYSE",
-    "sector": "Basic Materials",
-    "industry": "Steel",
-    "country": "BR",
-    "marketCap": 62731295155,
-    "beta": 0.504,
-    "adv": 346728273.88,
-    "lastClose": 14.71,
     "bars": 509
   },
   {
@@ -3506,7 +2409,6 @@
     "marketCap": 62722865574,
     "beta": 1.169,
     "adv": 492060276.44499993,
-    "lastClose": 216.33,
     "bars": 509
   },
   {
@@ -3519,7 +2421,6 @@
     "marketCap": 62349037288,
     "beta": 0.581,
     "adv": 417170020.185,
-    "lastClose": 320.46,
     "bars": 509
   },
   {
@@ -3532,20 +2433,6 @@
     "marketCap": 62089028830,
     "beta": 1.922,
     "adv": 347039787.37,
-    "lastClose": 272.63,
-    "bars": 509
-  },
-  {
-    "symbol": "RELX",
-    "name": "RELX Plc",
-    "exchange": "NYSE",
-    "sector": "Industrials",
-    "industry": "Specialty Business Services",
-    "country": "GB",
-    "marketCap": 62014180099,
-    "beta": 0.256,
-    "adv": 88405583.72,
-    "lastClose": 35.52,
     "bars": 509
   },
   {
@@ -3558,7 +2445,6 @@
     "marketCap": 61708128083,
     "beta": 1.128,
     "adv": 888602049.14,
-    "lastClose": 41.7,
     "bars": 509
   },
   {
@@ -3571,20 +2457,6 @@
     "marketCap": 61238718400,
     "beta": 0.952,
     "adv": 300119961.725,
-    "lastClose": 328.4,
-    "bars": 509
-  },
-  {
-    "symbol": "IMO",
-    "name": "Imperial Oil Limited",
-    "exchange": "AMEX",
-    "sector": "Energy",
-    "industry": "Oil & Gas Integrated",
-    "country": "CA",
-    "marketCap": 61213464691,
-    "beta": 0.818,
-    "adv": 62392600.31,
-    "lastClose": 124.95,
     "bars": 509
   },
   {
@@ -3597,20 +2469,6 @@
     "marketCap": 61099084700,
     "beta": 0.96,
     "adv": 457827645.105,
-    "lastClose": 61.55,
-    "bars": 509
-  },
-  {
-    "symbol": "WPM",
-    "name": "Wheaton Precious Metals Corp.",
-    "exchange": "NYSE",
-    "sector": "Basic Materials",
-    "industry": "Gold",
-    "country": "CA",
-    "marketCap": 60943575000,
-    "beta": 1.187,
-    "adv": 207617877.8,
-    "lastClose": 134.2,
     "bars": 509
   },
   {
@@ -3623,7 +2481,6 @@
     "marketCap": 60446274150,
     "beta": 1.805,
     "adv": 1131169812.1100001,
-    "lastClose": 239.71,
     "bars": 509
   },
   {
@@ -3636,7 +2493,6 @@
     "marketCap": 60317095905,
     "beta": 1.035,
     "adv": 371545148.59000003,
-    "lastClose": 1277.55,
     "bars": 509
   },
   {
@@ -3649,7 +2505,6 @@
     "marketCap": 60067284820,
     "beta": 1.288,
     "adv": 577839270.9200001,
-    "lastClose": 91.34,
     "bars": 509
   },
   {
@@ -3662,20 +2517,6 @@
     "marketCap": 59956069170,
     "beta": 0.914,
     "adv": 184865086.72,
-    "lastClose": 310.89,
-    "bars": 509
-  },
-  {
-    "symbol": "MPLX",
-    "name": "MPLX Lp",
-    "exchange": "NYSE",
-    "sector": "Energy",
-    "industry": "Oil & Gas Midstream",
-    "country": "US",
-    "marketCap": 59716860500,
-    "beta": 0.452,
-    "adv": 86042529,
-    "lastClose": 58.85,
     "bars": 509
   },
   {
@@ -3688,7 +2529,6 @@
     "marketCap": 59638501065,
     "beta": 1.66,
     "adv": 841509915.48,
-    "lastClose": 1694.55,
     "bars": 509
   },
   {
@@ -3701,7 +2541,6 @@
     "marketCap": 59486400000,
     "beta": 0.713,
     "adv": 342433946.33000004,
-    "lastClose": 51.84,
     "bars": 509
   },
   {
@@ -3714,7 +2553,6 @@
     "marketCap": 59301704710,
     "beta": 1.742,
     "adv": 1365929515.88,
-    "lastClose": 379.31,
     "bars": 509
   },
   {
@@ -3727,7 +2565,6 @@
     "marketCap": 59271253703,
     "beta": 0.636,
     "adv": 368858181.76,
-    "lastClose": 67.39,
     "bars": 509
   },
   {
@@ -3740,7 +2577,18 @@
     "marketCap": 58375009504,
     "beta": 1.274,
     "adv": 1016683944.34,
-    "lastClose": 412.39,
+    "bars": 509
+  },
+  {
+    "symbol": "O",
+    "name": "Realty Income Corporation",
+    "exchange": "NYSE",
+    "sector": "Real Estate",
+    "industry": "REIT - Retail",
+    "country": "US",
+    "marketCap": 58290137430,
+    "beta": 0.729,
+    "adv": 340006491,
     "bars": 509
   },
   {
@@ -3753,7 +2601,6 @@
     "marketCap": 58270193627,
     "beta": 1.214,
     "adv": 458530121.52,
-    "lastClose": 340.97,
     "bars": 509
   },
   {
@@ -3766,33 +2613,6 @@
     "marketCap": 58139632980,
     "beta": 0.99,
     "adv": 255649997.745,
-    "lastClose": 253.66,
-    "bars": 509
-  },
-  {
-    "symbol": "ALAB",
-    "name": "Astera Labs, Inc. Common Stock",
-    "exchange": "NASDAQ",
-    "sector": "Technology",
-    "industry": "Semiconductors",
-    "country": "US",
-    "marketCap": 57279390976,
-    "beta": 3.671,
-    "adv": 1924665112.7,
-    "lastClose": 334.17,
-    "bars": 509
-  },
-  {
-    "symbol": "MT",
-    "name": "ArcelorMittal S.A.",
-    "exchange": "NYSE",
-    "sector": "Basic Materials",
-    "industry": "Steel",
-    "country": "LU",
-    "marketCap": 55781019000,
-    "beta": 1.737,
-    "adv": 122249262.185,
-    "lastClose": 73.29,
     "bars": 509
   },
   {
@@ -3805,7 +2625,6 @@
     "marketCap": 55746589186,
     "beta": 1.828,
     "adv": 790885207.27,
-    "lastClose": 13.98,
     "bars": 509
   },
   {
@@ -3818,20 +2637,6 @@
     "marketCap": 55610026133,
     "beta": 0.15,
     "adv": 497810208.5,
-    "lastClose": 55.91,
-    "bars": 509
-  },
-  {
-    "symbol": "TAK",
-    "name": "Takeda Pharmaceutical Company Limited",
-    "exchange": "NYSE",
-    "sector": "Healthcare",
-    "industry": "Drug Manufacturers - Specialty & Generic",
-    "country": "JP",
-    "marketCap": 55528452830,
-    "beta": 0.088,
-    "adv": 55138781.400000006,
-    "lastClose": 17.45,
     "bars": 509
   },
   {
@@ -3844,7 +2649,6 @@
     "marketCap": 55366298400,
     "beta": 0.493,
     "adv": 492259060.84000003,
-    "lastClose": 236.4,
     "bars": 509
   },
   {
@@ -3857,7 +2661,6 @@
     "marketCap": 55135604280,
     "beta": 0.704,
     "adv": 302664123.5,
-    "lastClose": 256.87,
     "bars": 509
   },
   {
@@ -3870,7 +2673,6 @@
     "marketCap": 54832943160,
     "beta": 0.568,
     "adv": 290331941.625,
-    "lastClose": 83.88,
     "bars": 509
   },
   {
@@ -3883,47 +2685,19 @@
     "marketCap": 54457303740,
     "beta": 0.707,
     "adv": 305102133.75,
-    "lastClose": 86.42,
     "bars": 509
   },
   {
-    "symbol": "ARGX",
-    "name": "argenx SE",
+    "symbol": "HONA",
+    "name": "Honeywell Aerospace Inc",
     "exchange": "NASDAQ",
-    "sector": "Healthcare",
-    "industry": "Biotechnology",
-    "country": "NL",
-    "marketCap": 53794909426,
-    "beta": -0.022,
-    "adv": 256044637.70999998,
-    "lastClose": 865.04,
-    "bars": 509
-  },
-  {
-    "symbol": "LNG",
-    "name": "Cheniere Energy, Inc.",
-    "exchange": "NYSE",
-    "sector": "Energy",
-    "industry": "Oil & Gas Midstream",
+    "sector": "Industrials",
+    "industry": "Aerospace & Defense",
     "country": "US",
-    "marketCap": 53674649280,
-    "beta": -0.008,
-    "adv": 490254329.35,
-    "lastClose": 256.14,
-    "bars": 509
-  },
-  {
-    "symbol": "DEO",
-    "name": "Diageo plc",
-    "exchange": "NYSE",
-    "sector": "Consumer Defensive",
-    "industry": "Beverages - Alcoholic",
-    "country": "GB",
-    "marketCap": 53560483250,
-    "beta": 0.307,
-    "adv": 83635129.68,
-    "lastClose": 96.35,
-    "bars": 509
+    "marketCap": 53407517273,
+    "beta": 0.08,
+    "adv": 604732834.5,
+    "bars": 38
   },
   {
     "symbol": "LHX",
@@ -3935,21 +2709,7 @@
     "marketCap": 53382254050,
     "beta": 0.746,
     "adv": 364552117.06,
-    "lastClose": 286.67,
     "bars": 509
-  },
-  {
-    "symbol": "EA",
-    "name": "Electronic Arts Inc.",
-    "exchange": "NASDAQ",
-    "sector": "Technology",
-    "industry": "Electronic Gaming & Multimedia",
-    "country": "US",
-    "marketCap": 52924891248,
-    "beta": 0.641,
-    "adv": 411514902.82000005,
-    "lastClose": 209.7,
-    "bars": 506
   },
   {
     "symbol": "FANG",
@@ -3961,7 +2721,6 @@
     "marketCap": 52898096520,
     "beta": 0.407,
     "adv": 389067137.975,
-    "lastClose": 188.04,
     "bars": 509
   },
   {
@@ -3974,7 +2733,6 @@
     "marketCap": 52873669617,
     "beta": 0.997,
     "adv": 324626469.875,
-    "lastClose": 94.59,
     "bars": 509
   },
   {
@@ -3987,7 +2745,6 @@
     "marketCap": 52765046899,
     "beta": 1.309,
     "adv": 390504401.475,
-    "lastClose": 64.01,
     "bars": 509
   },
   {
@@ -4000,20 +2757,6 @@
     "marketCap": 52592059119,
     "beta": 1.318,
     "adv": 481061064.26,
-    "lastClose": 249.08,
-    "bars": 509
-  },
-  {
-    "symbol": "CVE",
-    "name": "Cenovus Energy Inc.",
-    "exchange": "NYSE",
-    "sector": "Energy",
-    "industry": "Oil & Gas Integrated",
-    "country": "CA",
-    "marketCap": 52099921250,
-    "beta": 0.499,
-    "adv": 211766798.405,
-    "lastClose": 28.25,
     "bars": 509
   },
   {
@@ -4026,7 +2769,6 @@
     "marketCap": 51741352080,
     "beta": 0.922,
     "adv": 342294039.09000003,
-    "lastClose": 57.09,
     "bars": 509
   },
   {
@@ -4039,7 +2781,6 @@
     "marketCap": 51660776000,
     "beta": 0.855,
     "adv": 392127222.96500003,
-    "lastClose": 89.72,
     "bars": 509
   },
   {
@@ -4052,20 +2793,6 @@
     "marketCap": 51385440600,
     "beta": 0.558,
     "adv": 309677116.88,
-    "lastClose": 76.83,
-    "bars": 509
-  },
-  {
-    "symbol": "HEI",
-    "name": "HEICO Corporation",
-    "exchange": "NYSE",
-    "sector": "Industrials",
-    "industry": "Aerospace & Defense",
-    "country": "US",
-    "marketCap": 51211124299,
-    "beta": 1.03,
-    "adv": 170814220.77999997,
-    "lastClose": 367.58,
     "bars": 509
   },
   {
@@ -4078,7 +2805,6 @@
     "marketCap": 51113329560,
     "beta": 1.433,
     "adv": 342742184,
-    "lastClose": 184.68,
     "bars": 509
   },
   {
@@ -4091,33 +2817,6 @@
     "marketCap": 51054257039,
     "beta": 0.335,
     "adv": 861947510.22,
-    "lastClose": 3127.29,
-    "bars": 509
-  },
-  {
-    "symbol": "INFY",
-    "name": "Infosys Limited",
-    "exchange": "NYSE",
-    "sector": "Technology",
-    "industry": "Information Technology Services",
-    "country": "IN",
-    "marketCap": 50841477400,
-    "beta": 0.131,
-    "adv": 248615186.325,
-    "lastClose": 12.53,
-    "bars": 509
-  },
-  {
-    "symbol": "NOK",
-    "name": "Nokia Oyj",
-    "exchange": "NYSE",
-    "sector": "Technology",
-    "industry": "Communication Equipment",
-    "country": "FI",
-    "marketCap": 50606358040,
-    "beta": 0.794,
-    "adv": 1256761945.4,
-    "lastClose": 9.36,
     "bars": 509
   },
   {
@@ -4130,20 +2829,6 @@
     "marketCap": 50532081270,
     "beta": 1.332,
     "adv": 650196137.42,
-    "lastClose": 59.07,
-    "bars": 509
-  },
-  {
-    "symbol": "STM",
-    "name": "STMicroelectronics N.V.",
-    "exchange": "NYSE",
-    "sector": "Technology",
-    "industry": "Semiconductors",
-    "country": "CH",
-    "marketCap": 50071784991,
-    "beta": 1.563,
-    "adv": 804372023.065,
-    "lastClose": 56.1,
     "bars": 509
   },
   {
@@ -4156,7 +2841,6 @@
     "marketCap": 50013563956,
     "beta": 0.489,
     "adv": 344110718.625,
-    "lastClose": 107.18,
     "bars": 509
   },
   {
@@ -4169,7 +2853,6 @@
     "marketCap": 49781899016,
     "beta": 1.118,
     "adv": 316062691.2,
-    "lastClose": 256.69,
     "bars": 509
   },
   {
@@ -4182,7 +2865,6 @@
     "marketCap": 49719120000,
     "beta": 1.365,
     "adv": 441437048.605,
-    "lastClose": 111.98,
     "bars": 509
   },
   {
@@ -4195,21 +2877,7 @@
     "marketCap": 49621401258,
     "beta": 1.159,
     "adv": 291448246.40999997,
-    "lastClose": 551.98,
     "bars": 509
-  },
-  {
-    "symbol": "CRWV",
-    "name": "CoreWeave, Inc. Class A Common Stock",
-    "exchange": "NASDAQ",
-    "sector": "Technology",
-    "industry": "Software - Infrastructure",
-    "country": "US",
-    "marketCap": 49466867080,
-    "beta": 7.4068756,
-    "adv": 2310017221.4049997,
-    "lastClose": 90.67,
-    "bars": 342
   },
   {
     "symbol": "WAB",
@@ -4221,7 +2889,6 @@
     "marketCap": 49289918910,
     "beta": 0.937,
     "adv": 220814746.17999998,
-    "lastClose": 291.81,
     "bars": 509
   },
   {
@@ -4234,7 +2901,6 @@
     "marketCap": 49076284960,
     "beta": 1.54,
     "adv": 324820157.625,
-    "lastClose": 441.04,
     "bars": 509
   },
   {
@@ -4247,7 +2913,6 @@
     "marketCap": 48765176380,
     "beta": 0.405,
     "adv": 400856207.03,
-    "lastClose": 78.07,
     "bars": 509
   },
   {
@@ -4260,59 +2925,6 @@
     "marketCap": 48732004400,
     "beta": 0.271,
     "adv": 333230693.41999996,
-    "lastClose": 176.86,
-    "bars": 509
-  },
-  {
-    "symbol": "AU",
-    "name": "AngloGold Ashanti plc",
-    "exchange": "NYSE",
-    "sector": "Basic Materials",
-    "industry": "Gold",
-    "country": "US",
-    "marketCap": 48662894361,
-    "beta": 0.671,
-    "adv": 209651311.5,
-    "lastClose": 96.22,
-    "bars": 509
-  },
-  {
-    "symbol": "FER",
-    "name": "Ferrovial SE",
-    "exchange": "NASDAQ",
-    "sector": "Industrials",
-    "industry": "Engineering & Construction",
-    "country": "NL",
-    "marketCap": 48241816887,
-    "beta": 0.795,
-    "adv": 108139708,
-    "lastClose": 66.51,
-    "bars": 509
-  },
-  {
-    "symbol": "CCEP",
-    "name": "Coca-Cola Europacific Partners PLC",
-    "exchange": "NASDAQ",
-    "sector": "Consumer Defensive",
-    "industry": "Beverages - Non-Alcoholic",
-    "country": "GB",
-    "marketCap": 47996077220,
-    "beta": 0.488,
-    "adv": 185506211.23000002,
-    "lastClose": 108.29,
-    "bars": 509
-  },
-  {
-    "symbol": "RKLB",
-    "name": "Rocket Lab USA, Inc.",
-    "exchange": "NASDAQ",
-    "sector": "Industrials",
-    "industry": "Aerospace & Defense",
-    "country": "US",
-    "marketCap": 47947592954,
-    "beta": 2.553,
-    "adv": 2208507172.675,
-    "lastClose": 82.83,
     "bars": 509
   },
   {
@@ -4325,7 +2937,6 @@
     "marketCap": 47404483176,
     "beta": 1.409,
     "adv": 686024633.05,
-    "lastClose": 140.59,
     "bars": 509
   },
   {
@@ -4338,7 +2949,6 @@
     "marketCap": 47055280101,
     "beta": 1.104,
     "adv": 597596498,
-    "lastClose": 179.64,
     "bars": 509
   },
   {
@@ -4351,20 +2961,6 @@
     "marketCap": 47019296788,
     "beta": 2.541,
     "adv": 393078853.71000004,
-    "lastClose": 79,
-    "bars": 509
-  },
-  {
-    "symbol": "VIK",
-    "name": "Viking Holdings Ltd",
-    "exchange": "NYSE",
-    "sector": "Consumer Cyclical",
-    "industry": "Travel Services",
-    "country": "BM",
-    "marketCap": 46994982736,
-    "beta": 1.486,
-    "adv": 249801594.3,
-    "lastClose": 105.79,
     "bars": 509
   },
   {
@@ -4377,7 +2973,6 @@
     "marketCap": 46989882796,
     "beta": 0.405,
     "adv": 380424321.9,
-    "lastClose": 45.61,
     "bars": 509
   },
   {
@@ -4390,59 +2985,6 @@
     "marketCap": 46794729260,
     "beta": 0.268,
     "adv": 294754166.51,
-    "lastClose": 17.46,
-    "bars": 509
-  },
-  {
-    "symbol": "UMC",
-    "name": "United Microelectronics Corporation",
-    "exchange": "NYSE",
-    "sector": "Technology",
-    "industry": "Semiconductors",
-    "country": "TW",
-    "marketCap": 46694380075,
-    "beta": 1.534,
-    "adv": 350585094,
-    "lastClose": 18.72,
-    "bars": 509
-  },
-  {
-    "symbol": "CRDO",
-    "name": "Credo Technology Group Holding Ltd",
-    "exchange": "NASDAQ",
-    "sector": "Technology",
-    "industry": "Semiconductors",
-    "country": "KY",
-    "marketCap": 46598961931,
-    "beta": 3.202,
-    "adv": 1657757141,
-    "lastClose": 249.89,
-    "bars": 509
-  },
-  {
-    "symbol": "ABEV",
-    "name": "Ambev S.A.",
-    "exchange": "NYSE",
-    "sector": "Consumer Defensive",
-    "industry": "Beverages - Alcoholic",
-    "country": "BR",
-    "marketCap": 46358490000,
-    "beta": 0.265,
-    "adv": 86765966.67,
-    "lastClose": 3,
-    "bars": 509
-  },
-  {
-    "symbol": "JD",
-    "name": "JD.com, Inc.",
-    "exchange": "NASDAQ",
-    "sector": "Consumer Cyclical",
-    "industry": "Specialty Retail",
-    "country": "CN",
-    "marketCap": 46284929620,
-    "beta": 0.391,
-    "adv": 241325550.785,
-    "lastClose": 32.97,
     "bars": 509
   },
   {
@@ -4455,7 +2997,6 @@
     "marketCap": 46278289610,
     "beta": 1.549,
     "adv": 343940291.87,
-    "lastClose": 586.67,
     "bars": 509
   },
   {
@@ -4468,20 +3009,6 @@
     "marketCap": 46230800000,
     "beta": 0.717,
     "adv": 525778306.97,
-    "lastClose": 385,
-    "bars": 509
-  },
-  {
-    "symbol": "NTRA",
-    "name": "Natera, Inc.",
-    "exchange": "NASDAQ",
-    "sector": "Healthcare",
-    "industry": "Medical - Diagnostics & Research",
-    "country": "US",
-    "marketCap": 46129551500,
-    "beta": 1.505,
-    "adv": 307094146.44,
-    "lastClose": 322.1,
     "bars": 509
   },
   {
@@ -4494,20 +3021,6 @@
     "marketCap": 46090570000,
     "beta": 0.961,
     "adv": 523272182.58500004,
-    "lastClose": 246.5,
-    "bars": 509
-  },
-  {
-    "symbol": "FNV",
-    "name": "Franco-Nevada Corporation",
-    "exchange": "NYSE",
-    "sector": "Basic Materials",
-    "industry": "Gold",
-    "country": "CA",
-    "marketCap": 46025084400,
-    "beta": 0.897,
-    "adv": 164598676.43,
-    "lastClose": 238.65,
     "bars": 509
   },
   {
@@ -4520,7 +3033,6 @@
     "marketCap": 46024591988,
     "beta": 1.378,
     "adv": 462299285.8,
-    "lastClose": 571.01,
     "bars": 509
   },
   {
@@ -4533,7 +3045,6 @@
     "marketCap": 45987347520,
     "beta": 1.727,
     "adv": 1003518603.3100001,
-    "lastClose": 84.69,
     "bars": 509
   },
   {
@@ -4546,34 +3057,7 @@
     "marketCap": 45388831200,
     "beta": 0.724,
     "adv": 319556882.33000004,
-    "lastClose": 93.36,
     "bars": 509
-  },
-  {
-    "symbol": "SLF",
-    "name": "Sun Life Financial Inc.",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Insurance - Diversified",
-    "country": "CA",
-    "marketCap": 45385020440,
-    "beta": 0.823,
-    "adv": 41385235.76,
-    "lastClose": 81.91,
-    "bars": 509
-  },
-  {
-    "symbol": "NBIS",
-    "name": "Nebius Group N.V.",
-    "exchange": "NASDAQ",
-    "sector": "Technology",
-    "industry": "Software - Infrastructure",
-    "country": "NL",
-    "marketCap": 45112800000,
-    "beta": 1.402,
-    "adv": 3974940086.03,
-    "lastClose": 187.97,
-    "bars": 450
   },
   {
     "symbol": "ODFL",
@@ -4585,7 +3069,6 @@
     "marketCap": 44996017710,
     "beta": 1.184,
     "adv": 383208889.055,
-    "lastClose": 216.36,
     "bars": 509
   },
   {
@@ -4598,7 +3081,6 @@
     "marketCap": 44943586729,
     "beta": 1.536,
     "adv": 275624617.16999996,
-    "lastClose": 136.85,
     "bars": 509
   },
   {
@@ -4611,59 +3093,6 @@
     "marketCap": 44827051380,
     "beta": 1.626,
     "adv": 744372184.5,
-    "lastClose": 121.35,
-    "bars": 509
-  },
-  {
-    "symbol": "TRI",
-    "name": "Thomson Reuters Corporation",
-    "exchange": "NASDAQ",
-    "sector": "Industrials",
-    "industry": "Specialty Business Services",
-    "country": "CA",
-    "marketCap": 44452749772,
-    "beta": 0.173,
-    "adv": 154601960.92000002,
-    "lastClose": 101.83,
-    "bars": 509
-  },
-  {
-    "symbol": "HLN",
-    "name": "Haleon plc",
-    "exchange": "NYSE",
-    "sector": "Healthcare",
-    "industry": "Drug Manufacturers - Specialty & Generic",
-    "country": "GB",
-    "marketCap": 44170108985,
-    "beta": 0.242,
-    "adv": 85246153.57000001,
-    "lastClose": 10.03,
-    "bars": 509
-  },
-  {
-    "symbol": "RVMD",
-    "name": "Revolution Medicines, Inc.",
-    "exchange": "NASDAQ",
-    "sector": "Healthcare",
-    "industry": "Biotechnology",
-    "country": "US",
-    "marketCap": 43614069400,
-    "beta": 1.376,
-    "adv": 365948169.18,
-    "lastClose": 205.15,
-    "bars": 509
-  },
-  {
-    "symbol": "KB",
-    "name": "KB Financial Group Inc.",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Regional",
-    "country": "KR",
-    "marketCap": 43540669445,
-    "beta": 0.674,
-    "adv": 30951423,
-    "lastClose": 124.01,
     "bars": 509
   },
   {
@@ -4676,7 +3105,6 @@
     "marketCap": 42909267658,
     "beta": 1.205,
     "adv": 269395492.40999997,
-    "lastClose": 148.18,
     "bars": 509
   },
   {
@@ -4689,33 +3117,6 @@
     "marketCap": 42696170514,
     "beta": 0.819,
     "adv": 335256972,
-    "lastClose": 120.04,
-    "bars": 509
-  },
-  {
-    "symbol": "WDS",
-    "name": "Woodside Energy Group Ltd",
-    "exchange": "NYSE",
-    "sector": "Energy",
-    "industry": "Oil & Gas Exploration & Production",
-    "country": "AU",
-    "marketCap": 42504207051,
-    "beta": -0.231,
-    "adv": 14876811.74,
-    "lastClose": 22.42,
-    "bars": 509
-  },
-  {
-    "symbol": "CCJ",
-    "name": "Cameco Corporation",
-    "exchange": "NYSE",
-    "sector": "Energy",
-    "industry": "Uranium",
-    "country": "CA",
-    "marketCap": 42416558870,
-    "beta": 1.017,
-    "adv": 330779466.225,
-    "lastClose": 97.39,
     "bars": 509
   },
   {
@@ -4728,7 +3129,6 @@
     "marketCap": 42257267418,
     "beta": 1.361,
     "adv": 332649626.075,
-    "lastClose": 151.08,
     "bars": 509
   },
   {
@@ -4741,7 +3141,6 @@
     "marketCap": 42085345116,
     "beta": 0.964,
     "adv": 572336509.5,
-    "lastClose": 32.79,
     "bars": 509
   },
   {
@@ -4754,7 +3153,6 @@
     "marketCap": 42084160000,
     "beta": 0.84,
     "adv": 199471484.07,
-    "lastClose": 121.28,
     "bars": 509
   },
   {
@@ -4767,7 +3165,6 @@
     "marketCap": 42051253960,
     "beta": 1.258,
     "adv": 559798483,
-    "lastClose": 129.56,
     "bars": 509
   },
   {
@@ -4780,20 +3177,6 @@
     "marketCap": 42041930580,
     "beta": 1.107,
     "adv": 363367790.95000005,
-    "lastClose": 180.66,
-    "bars": 509
-  },
-  {
-    "symbol": "WCN",
-    "name": "Waste Connections, Inc.",
-    "exchange": "NYSE",
-    "sector": "Industrials",
-    "industry": "Waste Management",
-    "country": "CA",
-    "marketCap": 42019255500,
-    "beta": 0.484,
-    "adv": 241309692.155,
-    "lastClose": 166.71,
     "bars": 509
   },
   {
@@ -4806,20 +3189,6 @@
     "marketCap": 41769628680,
     "beta": 0.541,
     "adv": 254929622.445,
-    "lastClose": 78.78,
-    "bars": 509
-  },
-  {
-    "symbol": "FMX",
-    "name": "Fomento Económico Mexicano, S.A.B. de C.V.",
-    "exchange": "NYSE",
-    "sector": "Consumer Defensive",
-    "industry": "Beverages - Non-Alcoholic",
-    "country": "MX",
-    "marketCap": 41719795260,
-    "beta": 0.184,
-    "adv": 64130461.6,
-    "lastClose": 122.46,
     "bars": 509
   },
   {
@@ -4832,20 +3201,6 @@
     "marketCap": 41552621960,
     "beta": 0.56,
     "adv": 365322958.38,
-    "lastClose": 150.76,
-    "bars": 509
-  },
-  {
-    "symbol": "HMC",
-    "name": "Honda Motor Co., Ltd.",
-    "exchange": "NYSE",
-    "sector": "Consumer Cyclical",
-    "industry": "Auto - Manufacturers",
-    "country": "JP",
-    "marketCap": 41291930422,
-    "beta": 0.308,
-    "adv": 47653523.76,
-    "lastClose": 31.82,
     "bars": 509
   },
   {
@@ -4858,20 +3213,6 @@
     "marketCap": 41226599040,
     "beta": 1.255,
     "adv": 276625438.71500003,
-    "lastClose": 145.97,
-    "bars": 509
-  },
-  {
-    "symbol": "TEVA",
-    "name": "Teva Pharmaceutical Industries Limited",
-    "exchange": "NYSE",
-    "sector": "Healthcare",
-    "industry": "Drug Manufacturers - Specialty & Generic",
-    "country": "IL",
-    "marketCap": 41181670400,
-    "beta": 0.859,
-    "adv": 169458176.84,
-    "lastClose": 35.36,
     "bars": 509
   },
   {
@@ -4884,7 +3225,6 @@
     "marketCap": 40942459000,
     "beta": 1.241,
     "adv": 354562181.92,
-    "lastClose": 563.17,
     "bars": 509
   },
   {
@@ -4897,7 +3237,6 @@
     "marketCap": 40830389725,
     "beta": 0.407,
     "adv": 391528952.03999996,
-    "lastClose": 30.01,
     "bars": 509
   },
   {
@@ -4910,7 +3249,6 @@
     "marketCap": 40593863250,
     "beta": 0.752,
     "adv": 330642849.645,
-    "lastClose": 402.25,
     "bars": 509
   },
   {
@@ -4923,7 +3261,6 @@
     "marketCap": 40524922061,
     "beta": 3.351,
     "adv": 1308165809.0900002,
-    "lastClose": 153.6,
     "bars": 509
   },
   {
@@ -4936,20 +3273,6 @@
     "marketCap": 40306045070,
     "beta": 0.641,
     "adv": 260660899.745,
-    "lastClose": 84.29,
-    "bars": 509
-  },
-  {
-    "symbol": "ESLT",
-    "name": "Elbit Systems Ltd.",
-    "exchange": "NASDAQ",
-    "sector": "Industrials",
-    "industry": "Aerospace & Defense",
-    "country": "IL",
-    "marketCap": 40251720208,
-    "beta": -0.234,
-    "adv": 67243821.185,
-    "lastClose": 859.14,
     "bars": 509
   },
   {
@@ -4962,7 +3285,6 @@
     "marketCap": 39793869400,
     "beta": 0.264,
     "adv": 241011957.555,
-    "lastClose": 107.98,
     "bars": 509
   },
   {
@@ -4975,7 +3297,6 @@
     "marketCap": 39706127960,
     "beta": 2.322,
     "adv": 563904961.9100001,
-    "lastClose": 28.99,
     "bars": 509
   },
   {
@@ -4988,7 +3309,6 @@
     "marketCap": 39290020000,
     "beta": 1.2,
     "adv": 282280580.6,
-    "lastClose": 238.7,
     "bars": 509
   },
   {
@@ -5001,46 +3321,6 @@
     "marketCap": 39277463890,
     "beta": 0.468,
     "adv": 230318687.58499998,
-    "lastClose": 143.28,
-    "bars": 509
-  },
-  {
-    "symbol": "TEAM",
-    "name": "Atlassian Corporation",
-    "exchange": "NASDAQ",
-    "sector": "Technology",
-    "industry": "Software - Application",
-    "country": "US",
-    "marketCap": 39156860137,
-    "beta": 1.111,
-    "adv": 382974540.05,
-    "lastClose": 149.07,
-    "bars": 509
-  },
-  {
-    "symbol": "RKT",
-    "name": "Rocket Companies, Inc.",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Financial - Mortgages",
-    "country": "US",
-    "marketCap": 38745474604,
-    "beta": 2.176,
-    "adv": 385206748,
-    "lastClose": 13.72,
-    "bars": 509
-  },
-  {
-    "symbol": "NWG",
-    "name": "NatWest Group plc",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Diversified",
-    "country": "GB",
-    "marketCap": 38202182658,
-    "beta": 0.815,
-    "adv": 71282541.73,
-    "lastClose": 19.19,
     "bars": 509
   },
   {
@@ -5053,7 +3333,6 @@
     "marketCap": 37702966860,
     "beta": 0.527,
     "adv": 227229209.125,
-    "lastClose": 75.66,
     "bars": 509
   },
   {
@@ -5066,7 +3345,6 @@
     "marketCap": 37616459058,
     "beta": 1.542,
     "adv": 285141756.69,
-    "lastClose": 262.45,
     "bars": 509
   },
   {
@@ -5079,46 +3357,6 @@
     "marketCap": 37438305277,
     "beta": 0.941,
     "adv": 344343475.62,
-    "lastClose": 230.47,
-    "bars": 509
-  },
-  {
-    "symbol": "BIDU",
-    "name": "Baidu, Inc.",
-    "exchange": "NASDAQ",
-    "sector": "Communication Services",
-    "industry": "Internet Content & Information",
-    "country": "CN",
-    "marketCap": 37315089065,
-    "beta": 0.559,
-    "adv": 265001273.60000002,
-    "lastClose": 109.71,
-    "bars": 509
-  },
-  {
-    "symbol": "VOD",
-    "name": "Vodafone Group Public Limited Company",
-    "exchange": "NASDAQ",
-    "sector": "Communication Services",
-    "industry": "Telecommunications Services",
-    "country": "GB",
-    "marketCap": 37283064581,
-    "beta": 0.317,
-    "adv": 50812542.364999995,
-    "lastClose": 16.19,
-    "bars": 509
-  },
-  {
-    "symbol": "ONC",
-    "name": "BeOne Medicines AG",
-    "exchange": "NASDAQ",
-    "sector": "Healthcare",
-    "industry": "Biotechnology",
-    "country": "CH",
-    "marketCap": 37215600043,
-    "beta": 0.494,
-    "adv": 91503622.33,
-    "lastClose": 348.27,
     "bars": 509
   },
   {
@@ -5131,7 +3369,6 @@
     "marketCap": 37190267680,
     "beta": 1.451,
     "adv": 457355932.28999996,
-    "lastClose": 189.52,
     "bars": 509
   },
   {
@@ -5144,7 +3381,6 @@
     "marketCap": 36982331472,
     "beta": 0.098,
     "adv": 351615173.93,
-    "lastClose": 182.35,
     "bars": 509
   },
   {
@@ -5157,7 +3393,6 @@
     "marketCap": 36921766686,
     "beta": 0.437,
     "adv": 355862694.525,
-    "lastClose": 19.23,
     "bars": 509
   },
   {
@@ -5170,7 +3405,6 @@
     "marketCap": 36913086630,
     "beta": 0.609,
     "adv": 272386946.305,
-    "lastClose": 76.59,
     "bars": 509
   },
   {
@@ -5183,46 +3417,6 @@
     "marketCap": 36889845510,
     "beta": 1.05,
     "adv": 337035809,
-    "lastClose": 284.69,
-    "bars": 509
-  },
-  {
-    "symbol": "TWLO",
-    "name": "Twilio Inc.",
-    "exchange": "NYSE",
-    "sector": "Technology",
-    "industry": "Software - Infrastructure",
-    "country": "US",
-    "marketCap": 36619996941,
-    "beta": 1.362,
-    "adv": 415337887.5,
-    "lastClose": 241.28,
-    "bars": 509
-  },
-  {
-    "symbol": "CLS",
-    "name": "Celestica Inc.",
-    "exchange": "NYSE",
-    "sector": "Technology",
-    "industry": "Hardware, Equipment & Parts",
-    "country": "CA",
-    "marketCap": 36544729060,
-    "beta": 1.515,
-    "adv": 722122585.7349999,
-    "lastClose": 317.83,
-    "bars": 509
-  },
-  {
-    "symbol": "GFI",
-    "name": "Gold Fields Limited",
-    "exchange": "NYSE",
-    "sector": "Basic Materials",
-    "industry": "Gold",
-    "country": "ZA",
-    "marketCap": 36534879680,
-    "beta": 0.597,
-    "adv": 125167895.53,
-    "lastClose": 40.82,
     "bars": 509
   },
   {
@@ -5235,7 +3429,6 @@
     "marketCap": 36407179200,
     "beta": 0.279,
     "adv": 423889029.435,
-    "lastClose": 109.68,
     "bars": 509
   },
   {
@@ -5248,7 +3441,6 @@
     "marketCap": 36298469850,
     "beta": 0.569,
     "adv": 256526111.45,
-    "lastClose": 250.45,
     "bars": 509
   },
   {
@@ -5261,7 +3453,6 @@
     "marketCap": 36045115103,
     "beta": 1.219,
     "adv": 214727809,
-    "lastClose": 121.15,
     "bars": 509
   },
   {
@@ -5274,20 +3465,6 @@
     "marketCap": 36033378127,
     "beta": 1.126,
     "adv": 307717584.155,
-    "lastClose": 816.9,
-    "bars": 509
-  },
-  {
-    "symbol": "SHG",
-    "name": "Shinhan Financial Group Co., Ltd.",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Regional",
-    "country": "KR",
-    "marketCap": 35826592964,
-    "beta": 0.653,
-    "adv": 17054159,
-    "lastClose": 75.81,
     "bars": 509
   },
   {
@@ -5300,20 +3477,6 @@
     "marketCap": 35755450509,
     "beta": 1.279,
     "adv": 384813209.52,
-    "lastClose": 341.22,
-    "bars": 509
-  },
-  {
-    "symbol": "BBD",
-    "name": "Banco Bradesco S.A.",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Regional",
-    "country": "BR",
-    "marketCap": 35640373329,
-    "beta": 0.233,
-    "adv": 99421381.14500001,
-    "lastClose": 3.37,
     "bars": 509
   },
   {
@@ -5326,7 +3489,6 @@
     "marketCap": 35572432815,
     "beta": 1.232,
     "adv": 365073560.985,
-    "lastClose": 310.68,
     "bars": 509
   },
   {
@@ -5339,20 +3501,6 @@
     "marketCap": 35458282864,
     "beta": 0.952,
     "adv": 382931740.71999997,
-    "lastClose": 17.55,
-    "bars": 509
-  },
-  {
-    "symbol": "PUK",
-    "name": "Prudential plc",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Insurance - Life",
-    "country": "HK",
-    "marketCap": 35185693200,
-    "beta": 0.901,
-    "adv": 30903310.4,
-    "lastClose": 28.28,
     "bars": 509
   },
   {
@@ -5365,20 +3513,6 @@
     "marketCap": 35057889380,
     "beta": 0.46,
     "adv": 230757776.095,
-    "lastClose": 107.63,
-    "bars": 509
-  },
-  {
-    "symbol": "ALC",
-    "name": "Alcon Inc.",
-    "exchange": "NYSE",
-    "sector": "Healthcare",
-    "industry": "Medical - Specialties",
-    "country": "CH",
-    "marketCap": 35021737000,
-    "beta": 0.703,
-    "adv": 135713891.36,
-    "lastClose": 71.81,
     "bars": 509
   },
   {
@@ -5391,20 +3525,6 @@
     "marketCap": 34755464310,
     "beta": 0.435,
     "adv": 437602547.34,
-    "lastClose": 56.73,
-    "bars": 509
-  },
-  {
-    "symbol": "EC",
-    "name": "Ecopetrol S.A.",
-    "exchange": "NYSE",
-    "sector": "Energy",
-    "industry": "Oil & Gas Integrated",
-    "country": "CO",
-    "marketCap": 34496906853,
-    "beta": 0.55,
-    "adv": 40726974.605000004,
-    "lastClose": 16.78,
     "bars": 509
   },
   {
@@ -5417,20 +3537,6 @@
     "marketCap": 34407927200,
     "beta": 0.292,
     "adv": 197236353.515,
-    "lastClose": 98.48,
-    "bars": 509
-  },
-  {
-    "symbol": "UI",
-    "name": "Ubiquiti Inc.",
-    "exchange": "NYSE",
-    "sector": "Technology",
-    "industry": "Communication Equipment",
-    "country": "US",
-    "marketCap": 34271841073,
-    "beta": 1.313,
-    "adv": 59074848.725,
-    "lastClose": 566.27,
     "bars": 509
   },
   {
@@ -5443,7 +3549,6 @@
     "marketCap": 34034578890,
     "beta": 1.168,
     "adv": 313316782.5,
-    "lastClose": 86.97,
     "bars": 509
   },
   {
@@ -5456,7 +3561,6 @@
     "marketCap": 33938338000,
     "beta": 1.26,
     "adv": 167395496.88,
-    "lastClose": 185.5,
     "bars": 509
   },
   {
@@ -5469,33 +3573,6 @@
     "marketCap": 33917176000,
     "beta": 0.939,
     "adv": 204028719.97500002,
-    "lastClose": 176.56,
-    "bars": 509
-  },
-  {
-    "symbol": "ERIC",
-    "name": "Telefonaktiebolaget LM Ericsson (publ)",
-    "exchange": "NASDAQ",
-    "sector": "Technology",
-    "industry": "Communication Equipment",
-    "country": "SE",
-    "marketCap": 33329376431,
-    "beta": 0.521,
-    "adv": 122382841,
-    "lastClose": 10.15,
-    "bars": 509
-  },
-  {
-    "symbol": "MSTR",
-    "name": "Strategy Inc",
-    "exchange": "NASDAQ",
-    "sector": "Technology",
-    "industry": "Software - Application",
-    "country": "US",
-    "marketCap": 33084108080,
-    "beta": 3.544,
-    "adv": 2074493246.3600001,
-    "lastClose": 100.01,
     "bars": 509
   },
   {
@@ -5508,7 +3585,6 @@
     "marketCap": 33032830000,
     "beta": 0.972,
     "adv": 338863417.16999996,
-    "lastClose": 75.59,
     "bars": 509
   },
   {
@@ -5521,7 +3597,6 @@
     "marketCap": 32950295906,
     "beta": 1.101,
     "adv": 323236301.67999995,
-    "lastClose": 548.57,
     "bars": 509
   },
   {
@@ -5534,20 +3609,6 @@
     "marketCap": 32804026200,
     "beta": 1.444,
     "adv": 330583979.51,
-    "lastClose": 162.36,
-    "bars": 509
-  },
-  {
-    "symbol": "KGC",
-    "name": "Kinross Gold Corporation",
-    "exchange": "NYSE",
-    "sector": "Basic Materials",
-    "industry": "Gold",
-    "country": "CA",
-    "marketCap": 32787695408,
-    "beta": 1.406,
-    "adv": 194250229.39,
-    "lastClose": 27.64,
     "bars": 509
   },
   {
@@ -5560,7 +3621,6 @@
     "marketCap": 32490051150,
     "beta": 1.077,
     "adv": 311888385.475,
-    "lastClose": 65.77,
     "bars": 509
   },
   {
@@ -5573,21 +3633,7 @@
     "marketCap": 32417522306,
     "beta": 0.839,
     "adv": 296580894.725,
-    "lastClose": 71.77,
     "bars": 509
-  },
-  {
-    "symbol": "VG",
-    "name": "Venture Global, Inc.",
-    "exchange": "NYSE",
-    "sector": "Energy",
-    "industry": "Oil & Gas Midstream",
-    "country": "US",
-    "marketCap": 32378923508,
-    "beta": 0.2199963,
-    "adv": 171203878.61,
-    "lastClose": 13.26,
-    "bars": 386
   },
   {
     "symbol": "EQT",
@@ -5599,33 +3645,6 @@
     "marketCap": 32332922040,
     "beta": 0.55,
     "adv": 350237325.03999996,
-    "lastClose": 51.69,
-    "bars": 509
-  },
-  {
-    "symbol": "TECK",
-    "name": "Teck Resources Limited",
-    "exchange": "NYSE",
-    "sector": "Basic Materials",
-    "industry": "Industrial Materials",
-    "country": "CA",
-    "marketCap": 32105010000,
-    "beta": 1.586,
-    "adv": 199884870.51,
-    "lastClose": 66.47,
-    "bars": 509
-  },
-  {
-    "symbol": "MDB",
-    "name": "MongoDB, Inc.",
-    "exchange": "NASDAQ",
-    "sector": "Technology",
-    "industry": "Software - Infrastructure",
-    "country": "US",
-    "marketCap": 32076252488,
-    "beta": 1.549,
-    "adv": 523587998.47999996,
-    "lastClose": 398.8,
     "bars": 509
   },
   {
@@ -5638,7 +3657,6 @@
     "marketCap": 32044585874,
     "beta": 0.924,
     "adv": 206469461.88,
-    "lastClose": 691.3,
     "bars": 509
   },
   {
@@ -5651,7 +3669,6 @@
     "marketCap": 32024102351,
     "beta": 0.441,
     "adv": 168578058.04000002,
-    "lastClose": 344.82,
     "bars": 509
   },
   {
@@ -5664,7 +3681,6 @@
     "marketCap": 31981344750,
     "beta": 1.453,
     "adv": 386492579.96,
-    "lastClose": 84.75,
     "bars": 509
   },
   {
@@ -5677,7 +3693,6 @@
     "marketCap": 31953954621,
     "beta": 1.261,
     "adv": 254484252.00000003,
-    "lastClose": 88.35,
     "bars": 509
   },
   {
@@ -5690,7 +3705,6 @@
     "marketCap": 31600455040,
     "beta": 2.012,
     "adv": 1214682707.5,
-    "lastClose": 81.17,
     "bars": 509
   },
   {
@@ -5703,72 +3717,6 @@
     "marketCap": 31593249703,
     "beta": 1.2,
     "adv": 156940272.65,
-    "lastClose": 149.54,
-    "bars": 509
-  },
-  {
-    "symbol": "JBS",
-    "name": "Jbs N.V.",
-    "exchange": "NYSE",
-    "sector": "Consumer Defensive",
-    "industry": "Packaged Foods",
-    "country": "NL",
-    "marketCap": 31563655353,
-    "beta": 0.16052818,
-    "adv": 78766333.49000001,
-    "lastClose": 14.23,
-    "bars": 289
-  },
-  {
-    "symbol": "RYAAY",
-    "name": "Ryanair Holdings plc",
-    "exchange": "NASDAQ",
-    "sector": "Industrials",
-    "industry": "Airlines, Airports & Air Services",
-    "country": "IE",
-    "marketCap": 31263588790,
-    "beta": 0.975,
-    "adv": 78363864.45,
-    "lastClose": 60.19,
-    "bars": 509
-  },
-  {
-    "symbol": "RDDT",
-    "name": "Reddit, Inc.",
-    "exchange": "NYSE",
-    "sector": "Communication Services",
-    "industry": "Internet Content & Information",
-    "country": "US",
-    "marketCap": 31126787324,
-    "beta": 1.938,
-    "adv": 732403225.7,
-    "lastClose": 161.7,
-    "bars": 509
-  },
-  {
-    "symbol": "ATI",
-    "name": "ATI Inc.",
-    "exchange": "NYSE",
-    "sector": "Industrials",
-    "industry": "Manufacturing - Metal Fabrication",
-    "country": "US",
-    "marketCap": 31093422088,
-    "beta": 0.962,
-    "adv": 292566803.95000005,
-    "lastClose": 227.84,
-    "bars": 509
-  },
-  {
-    "symbol": "NTR",
-    "name": "Nutrien Ltd.",
-    "exchange": "NYSE",
-    "sector": "Basic Materials",
-    "industry": "Agricultural Inputs",
-    "country": "CA",
-    "marketCap": 30923116962,
-    "beta": 1.063,
-    "adv": 161152665.835,
-    "lastClose": 64.42,
     "bars": 509
   },
   {
@@ -5781,7 +3729,6 @@
     "marketCap": 30860236355,
     "beta": 0.619,
     "adv": 350023993.505,
-    "lastClose": 833.95,
     "bars": 509
   },
   {
@@ -5794,20 +3741,6 @@
     "marketCap": 30743250025,
     "beta": 0.775,
     "adv": 280424667.21000004,
-    "lastClose": 211.94,
-    "bars": 509
-  },
-  {
-    "symbol": "BAP",
-    "name": "Credicorp Ltd.",
-    "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Banks - Diversified",
-    "country": "PE",
-    "marketCap": 30740937297,
-    "beta": 0.839,
-    "adv": 133358390,
-    "lastClose": 386.93,
     "bars": 509
   },
   {
@@ -5820,7 +3753,6 @@
     "marketCap": 30730834940,
     "beta": 0.998,
     "adv": 293772556.09000003,
-    "lastClose": 72.67,
     "bars": 509
   },
   {
@@ -5833,20 +3765,6 @@
     "marketCap": 30723966344,
     "beta": 0.158,
     "adv": 211830293.91,
-    "lastClose": 207.94,
-    "bars": 509
-  },
-  {
-    "symbol": "ZM",
-    "name": "Zoom Communications, Inc.",
-    "exchange": "NASDAQ",
-    "sector": "Technology",
-    "industry": "Software - Application",
-    "country": "US",
-    "marketCap": 30642767304,
-    "beta": 1.014,
-    "adv": 337006959.22,
-    "lastClose": 104.5,
     "bars": 509
   },
   {
@@ -5859,7 +3777,6 @@
     "marketCap": 30461106480,
     "beta": 0.749,
     "adv": 500224898.8,
-    "lastClose": 72.66,
     "bars": 509
   },
   {
@@ -5872,7 +3789,6 @@
     "marketCap": 30429395466,
     "beta": 1.202,
     "adv": 304523290.5,
-    "lastClose": 406.86,
     "bars": 509
   },
   {
@@ -5885,7 +3801,6 @@
     "marketCap": 30121687680,
     "beta": 0.481,
     "adv": 181148992.4,
-    "lastClose": 108.84,
     "bars": 509
   },
   {
@@ -5898,7 +3813,6 @@
     "marketCap": 30097217221,
     "beta": 0.432,
     "adv": 541578238.5,
-    "lastClose": 42.98,
     "bars": 509
   },
   {
@@ -5911,33 +3825,18 @@
     "marketCap": 30023889794,
     "beta": 0.077,
     "adv": 325728549.33,
-    "lastClose": 25.32,
     "bars": 509
   },
   {
-    "symbol": "TCOM",
-    "name": "Trip.com Group Limited",
-    "exchange": "NASDAQ",
-    "sector": "Consumer Cyclical",
-    "industry": "Travel Services",
-    "country": "SG",
-    "marketCap": 29971779783,
-    "beta": -0.044,
-    "adv": 133103707.16499999,
-    "lastClose": 46.14,
-    "bars": 509
-  },
-  {
-    "symbol": "P",
-    "name": "Everpure, Inc.",
-    "exchange": "NYSE",
-    "sector": "Industrials",
-    "industry": "Industrial - Machinery",
+    "symbol": "CBOE",
+    "name": "Cboe Global Markets, Inc.",
+    "exchange": "CBOE",
+    "sector": "Financial Services",
+    "industry": "Financial - Data & Stock Exchanges",
     "country": "US",
-    "marketCap": 29933070250,
-    "beta": 1.447,
-    "adv": 201085048.3,
-    "lastClose": 90.05,
+    "marketCap": 29991743320,
+    "beta": 0.443,
+    "adv": 359861804.04999995,
     "bars": 509
   },
   {
@@ -5950,7 +3849,6 @@
     "marketCap": 29649774116,
     "beta": 1.485,
     "adv": 224373057.315,
-    "lastClose": 251.78,
     "bars": 509
   },
   {
@@ -5963,20 +3861,6 @@
     "marketCap": 29645283192,
     "beta": 0.824,
     "adv": 207693183.08,
-    "lastClose": 45.77,
-    "bars": 509
-  },
-  {
-    "symbol": "GFS",
-    "name": "GLOBALFOUNDRIES Inc.",
-    "exchange": "NASDAQ",
-    "sector": "Technology",
-    "industry": "Semiconductors",
-    "country": "US",
-    "marketCap": 29591435924,
-    "beta": 1.759,
-    "adv": 245350804.88,
-    "lastClose": 53.93,
     "bars": 509
   },
   {
@@ -5989,46 +3873,6 @@
     "marketCap": 29442813634,
     "beta": 0.683,
     "adv": 217253109.59,
-    "lastClose": 26.74,
-    "bars": 509
-  },
-  {
-    "symbol": "ALNY",
-    "name": "Alnylam Pharmaceuticals, Inc.",
-    "exchange": "NASDAQ",
-    "sector": "Healthcare",
-    "industry": "Biotechnology",
-    "country": "US",
-    "marketCap": 29330932800,
-    "beta": 0.269,
-    "adv": 342031166.14,
-    "lastClose": 219.2,
-    "bars": 509
-  },
-  {
-    "symbol": "ASTS",
-    "name": "AST SpaceMobile, Inc.",
-    "exchange": "NASDAQ",
-    "sector": "Communication Services",
-    "industry": "Telecommunications Services",
-    "country": "US",
-    "marketCap": 29271814221,
-    "beta": 2.677,
-    "adv": 1557892350,
-    "lastClose": 71.94,
-    "bars": 509
-  },
-  {
-    "symbol": "CPNG",
-    "name": "Coupang, Inc.",
-    "exchange": "NYSE",
-    "sector": "Consumer Cyclical",
-    "industry": "Specialty Retail",
-    "country": "US",
-    "marketCap": 29173614680,
-    "beta": 1.109,
-    "adv": 349412576,
-    "lastClose": 16.23,
     "bars": 509
   },
   {
@@ -6041,34 +3885,19 @@
     "marketCap": 29105268560,
     "beta": 0.381,
     "adv": 192209913.3,
-    "lastClose": 139.87,
     "bars": 509
   },
   {
-    "symbol": "NMR",
-    "name": "Nomura Holdings, Inc.",
+    "symbol": "Q",
+    "name": "Qnity Electronics, Inc.",
     "exchange": "NYSE",
-    "sector": "Financial Services",
-    "industry": "Financial - Capital Markets",
-    "country": "JP",
-    "marketCap": 29079792878,
-    "beta": 0.601,
-    "adv": 10526495.16,
-    "lastClose": 9.95,
-    "bars": 509
-  },
-  {
-    "symbol": "LPLA",
-    "name": "LPL Financial Holdings Inc.",
-    "exchange": "NASDAQ",
-    "sector": "Financial Services",
-    "industry": "Financial - Capital Markets",
+    "sector": "Technology",
+    "industry": "Semiconductors",
     "country": "US",
-    "marketCap": 29004184884,
-    "beta": 0.507,
-    "adv": 257574570.01,
-    "lastClose": 362.63,
-    "bars": 509
+    "marketCap": 28888809600,
+    "beta": 1.7774878,
+    "adv": 264199855,
+    "bars": 196
   },
   {
     "symbol": "MTD",
@@ -6080,59 +3909,6 @@
     "marketCap": 28885955896,
     "beta": 1.245,
     "adv": 232102020.91000003,
-    "lastClose": 1429.46,
-    "bars": 509
-  },
-  {
-    "symbol": "FTS",
-    "name": "Fortis Inc.",
-    "exchange": "NYSE",
-    "sector": "Utilities",
-    "industry": "Regulated Electric",
-    "country": "CA",
-    "marketCap": 28562361020,
-    "beta": 0.427,
-    "adv": 40688561.05,
-    "lastClose": 56.1,
-    "bars": 509
-  },
-  {
-    "symbol": "TSEM",
-    "name": "Tower Semiconductor Ltd.",
-    "exchange": "NASDAQ",
-    "sector": "Technology",
-    "industry": "Semiconductors",
-    "country": "IL",
-    "marketCap": 28487169101,
-    "beta": 0.873,
-    "adv": 415577361.08000004,
-    "lastClose": 252.49,
-    "bars": 509
-  },
-  {
-    "symbol": "TS",
-    "name": "Tenaris S.A.",
-    "exchange": "NYSE",
-    "sector": "Energy",
-    "industry": "Oil & Gas Equipment & Services",
-    "country": "LU",
-    "marketCap": 28459387551,
-    "beta": 0.476,
-    "adv": 67260322.68,
-    "lastClose": 53.04,
-    "bars": 509
-  },
-  {
-    "symbol": "ILMN",
-    "name": "Illumina, Inc.",
-    "exchange": "NASDAQ",
-    "sector": "Healthcare",
-    "industry": "Medical - Diagnostics & Research",
-    "country": "US",
-    "marketCap": 28438348000,
-    "beta": 1.469,
-    "adv": 331816393.52,
-    "lastClose": 187.96,
     "bars": 509
   },
   {
@@ -6145,20 +3921,6 @@
     "marketCap": 28434988400,
     "beta": 1.16,
     "adv": 210676532.66,
-    "lastClose": 211.13,
-    "bars": 509
-  },
-  {
-    "symbol": "INSM",
-    "name": "Insmed Incorporated",
-    "exchange": "NASDAQ",
-    "sector": "Healthcare",
-    "industry": "Biotechnology",
-    "country": "US",
-    "marketCap": 28416187200,
-    "beta": 0.778,
-    "adv": 329818321.84000003,
-    "lastClose": 131.1,
     "bars": 509
   },
   {
@@ -6171,20 +3933,6 @@
     "marketCap": 28408084506,
     "beta": 0.598,
     "adv": 235938209.19,
-    "lastClose": 170.19,
-    "bars": 509
-  },
-  {
-    "symbol": "CRS",
-    "name": "Carpenter Technology Corporation",
-    "exchange": "NYSE",
-    "sector": "Basic Materials",
-    "industry": "Steel",
-    "country": "US",
-    "marketCap": 28353584496,
-    "beta": 1.22,
-    "adv": 359202989.71000004,
-    "lastClose": 570.66,
     "bars": 509
   },
   {
@@ -6197,7 +3945,6 @@
     "marketCap": 28165724393,
     "beta": 0.891,
     "adv": 247525204.14000002,
-    "lastClose": 73.99,
     "bars": 509
   },
   {
@@ -6210,7 +3957,6 @@
     "marketCap": 28093155840,
     "beta": 1.023,
     "adv": 214135134.695,
-    "lastClose": 120.32,
     "bars": 509
   },
   {
@@ -6223,7 +3969,6 @@
     "marketCap": 28077465097,
     "beta": 0.55,
     "adv": 228587479.575,
-    "lastClose": 64.03,
     "bars": 509
   },
   {
@@ -6236,7 +3981,6 @@
     "marketCap": 27947842140,
     "beta": 0.819,
     "adv": 353712906.82,
-    "lastClose": 52.41,
     "bars": 509
   },
   {
@@ -6249,20 +3993,6 @@
     "marketCap": 27924063644,
     "beta": 0.247,
     "adv": 318815636.76,
-    "lastClose": 126.59,
-    "bars": 509
-  },
-  {
-    "symbol": "PBA",
-    "name": "Pembina Pipeline Corporation",
-    "exchange": "NYSE",
-    "sector": "Energy",
-    "industry": "Oil & Gas Midstream",
-    "country": "CA",
-    "marketCap": 27618162500,
-    "beta": 0.702,
-    "adv": 48544034.585,
-    "lastClose": 47.5,
     "bars": 509
   },
   {
@@ -6275,7 +4005,6 @@
     "marketCap": 27481416150,
     "beta": 1.212,
     "adv": 390899685.18,
-    "lastClose": 30.05,
     "bars": 509
   },
   {
@@ -6288,7 +4017,6 @@
     "marketCap": 27468037572,
     "beta": 0.454,
     "adv": 197816376.195,
-    "lastClose": 47.47,
     "bars": 509
   },
   {
@@ -6301,33 +4029,6 @@
     "marketCap": 27459568556,
     "beta": 1.023,
     "adv": 317000752.5,
-    "lastClose": 29.66,
-    "bars": 509
-  },
-  {
-    "symbol": "FTI",
-    "name": "TechnipFMC plc",
-    "exchange": "NYSE",
-    "sector": "Energy",
-    "industry": "Oil & Gas Equipment & Services",
-    "country": "GB",
-    "marketCap": 27302484971,
-    "beta": 0.696,
-    "adv": 257421524.59,
-    "lastClose": 69.62,
-    "bars": 509
-  },
-  {
-    "symbol": "ZS",
-    "name": "Zscaler, Inc.",
-    "exchange": "NASDAQ",
-    "sector": "Technology",
-    "industry": "Software - Infrastructure",
-    "country": "US",
-    "marketCap": 27277162677,
-    "beta": 0.958,
-    "adv": 445608506.75,
-    "lastClose": 168.68,
     "bars": 509
   },
   {
@@ -6340,7 +4041,6 @@
     "marketCap": 27201868208,
     "beta": 0.714,
     "adv": 173613650.85,
-    "lastClose": 72.33,
     "bars": 509
   },
   {
@@ -6353,7 +4053,6 @@
     "marketCap": 27155413168,
     "beta": 0.892,
     "adv": 316261250.11,
-    "lastClose": 513.99,
     "bars": 509
   },
   {
@@ -6366,20 +4065,6 @@
     "marketCap": 27144127039,
     "beta": 0.553,
     "adv": 128336715.63999999,
-    "lastClose": 176.86,
-    "bars": 509
-  },
-  {
-    "symbol": "RBLX",
-    "name": "Roblox Corporation",
-    "exchange": "NYSE",
-    "sector": "Technology",
-    "industry": "Electronic Gaming & Multimedia",
-    "country": "US",
-    "marketCap": 26996264543,
-    "beta": 1.414,
-    "adv": 450882520.38,
-    "lastClose": 37.79,
     "bars": 509
   },
   {
@@ -6392,7 +4077,6 @@
     "marketCap": 26890019502,
     "beta": 0.599,
     "adv": 261357427.245,
-    "lastClose": 135.31,
     "bars": 509
   },
   {
@@ -6405,7 +4089,6 @@
     "marketCap": 26872820239,
     "beta": 1.73,
     "adv": 493699268.07,
-    "lastClose": 250.05,
     "bars": 509
   },
   {
@@ -6418,7 +4101,6 @@
     "marketCap": 26821733400,
     "beta": 1.012,
     "adv": 291328872.12,
-    "lastClose": 31.43,
     "bars": 509
   },
   {
@@ -6431,7 +4113,6 @@
     "marketCap": 26796729600,
     "beta": 0.454,
     "adv": 271412476.94,
-    "lastClose": 40.68,
     "bars": 509
   },
   {
@@ -6444,7 +4125,6 @@
     "marketCap": 26781757961,
     "beta": 0.78,
     "adv": 172277359.54000002,
-    "lastClose": 187.55,
     "bars": 509
   },
   {
@@ -6457,7 +4137,6 @@
     "marketCap": 26686390349,
     "beta": 0.589,
     "adv": 295930168.83,
-    "lastClose": 35.46,
     "bars": 509
   },
   {
@@ -6470,7 +4149,6 @@
     "marketCap": 26655033200,
     "beta": 0.293,
     "adv": 133145068.76500002,
-    "lastClose": 71.6,
     "bars": 509
   },
   {
@@ -6483,20 +4161,1878 @@
     "marketCap": 26640833769,
     "beta": 0.725,
     "adv": 397702733.94000006,
-    "lastClose": 31.89,
     "bars": 509
   },
   {
-    "symbol": "NVT",
-    "name": "nVent Electric plc",
+    "symbol": "VRSN",
+    "name": "VeriSign, Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Technology",
+    "industry": "Software - Infrastructure",
+    "country": "US",
+    "marketCap": 26628224000,
+    "beta": 0.707,
+    "adv": 214903378,
+    "bars": 509
+  },
+  {
+    "symbol": "PPG",
+    "name": "PPG Industries, Inc.",
+    "exchange": "NYSE",
+    "sector": "Basic Materials",
+    "industry": "Chemicals - Specialty",
+    "country": "US",
+    "marketCap": 26613756359,
+    "beta": 1.045,
+    "adv": 207461823.385,
+    "bars": 509
+  },
+  {
+    "symbol": "EIX",
+    "name": "Edison International",
+    "exchange": "NYSE",
+    "sector": "Utilities",
+    "industry": "Regulated Electric",
+    "country": "US",
+    "marketCap": 26404564280,
+    "beta": 0.649,
+    "adv": 179694768.39499998,
+    "bars": 509
+  },
+  {
+    "symbol": "DGX",
+    "name": "Quest Diagnostics Incorporated",
+    "exchange": "NYSE",
+    "sector": "Healthcare",
+    "industry": "Medical - Diagnostics & Research",
+    "country": "US",
+    "marketCap": 26307404550,
+    "beta": 0.571,
+    "adv": 174778041.72,
+    "bars": 509
+  },
+  {
+    "symbol": "LH",
+    "name": "Labcorp Holdings Inc.",
+    "exchange": "NYSE",
+    "sector": "Healthcare",
+    "industry": "Medical - Diagnostics & Research",
+    "country": "US",
+    "marketCap": 26171940000,
+    "beta": 0.861,
+    "adv": 160579938,
+    "bars": 509
+  },
+  {
+    "symbol": "CTSH",
+    "name": "Cognizant Technology Solutions Corporation",
+    "exchange": "NASDAQ",
+    "sector": "Technology",
+    "industry": "Information Technology Services",
+    "country": "US",
+    "marketCap": 25977117533,
+    "beta": 0.859,
+    "adv": 469656281.58,
+    "bars": 509
+  },
+  {
+    "symbol": "CPAY",
+    "name": "Corpay, Inc.",
+    "exchange": "NYSE",
+    "sector": "Technology",
+    "industry": "Software - Infrastructure",
+    "country": "US",
+    "marketCap": 25683312452,
+    "beta": 0.881,
+    "adv": 197964895.765,
+    "bars": 509
+  },
+  {
+    "symbol": "PHM",
+    "name": "PulteGroup, Inc.",
+    "exchange": "NYSE",
+    "sector": "Consumer Cyclical",
+    "industry": "Residential Construction",
+    "country": "US",
+    "marketCap": 25651134921,
+    "beta": 1.186,
+    "adv": 213814609.88,
+    "bars": 509
+  },
+  {
+    "symbol": "SYF",
+    "name": "Synchrony Financial",
+    "exchange": "NYSE",
+    "sector": "Financial Services",
+    "industry": "Financial - Credit Services",
+    "country": "US",
+    "marketCap": 25570894316,
+    "beta": 1.308,
+    "adv": 242423798.035,
+    "bars": 509
+  },
+  {
+    "symbol": "SW",
+    "name": "Smurfit Westrock plc",
+    "exchange": "NYSE",
+    "sector": "Consumer Cyclical",
+    "industry": "Packaging & Containers",
+    "country": "IE",
+    "marketCap": 25323965612,
+    "beta": 0.978,
+    "adv": 212656881.8,
+    "bars": 509
+  },
+  {
+    "symbol": "JBHT",
+    "name": "J.B. Hunt Transport Services, Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Industrials",
+    "industry": "Integrated Freight & Logistics",
+    "country": "US",
+    "marketCap": 25218028948,
+    "beta": 1.294,
+    "adv": 248111638.98000002,
+    "bars": 509
+  },
+  {
+    "symbol": "DLTR",
+    "name": "Dollar Tree, Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Consumer Defensive",
+    "industry": "Discount Stores",
+    "country": "US",
+    "marketCap": 25155707500,
+    "beta": 0.651,
+    "adv": 325389774.025,
+    "bars": 509
+  },
+  {
+    "symbol": "EQR",
+    "name": "Equity Residential",
+    "exchange": "NYSE",
+    "sector": "Real Estate",
+    "industry": "REIT - Residential",
+    "country": "US",
+    "marketCap": 25147494080,
+    "beta": 0.754,
+    "adv": 180246362.5,
+    "bars": 509
+  },
+  {
+    "symbol": "FOX",
+    "name": "Fox Corporation",
+    "exchange": "NASDAQ",
+    "sector": "Communication Services",
+    "industry": "Entertainment",
+    "country": "US",
+    "marketCap": 25007931196,
+    "beta": 0.579,
+    "adv": 65224392.650000006,
+    "bars": 509
+  },
+  {
+    "symbol": "VRSK",
+    "name": "Verisk Analytics, Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Technology",
+    "industry": "Software - Services",
+    "country": "US",
+    "marketCap": 24966527565,
+    "beta": 0.688,
+    "adv": 349261294.84000003,
+    "bars": 509
+  },
+  {
+    "symbol": "NRG",
+    "name": "NRG Energy, Inc.",
+    "exchange": "NYSE",
+    "sector": "Utilities",
+    "industry": "Independent Power Producers",
+    "country": "US",
+    "marketCap": 24923776180,
+    "beta": 1.201,
+    "adv": 341869336.24,
+    "bars": 509
+  },
+  {
+    "symbol": "WST",
+    "name": "West Pharmaceutical Services, Inc.",
+    "exchange": "NYSE",
+    "sector": "Healthcare",
+    "industry": "Medical - Instruments & Supplies",
+    "country": "US",
+    "marketCap": 24917959506,
+    "beta": 1.159,
+    "adv": 222906893.46999997,
+    "bars": 509
+  },
+  {
+    "symbol": "KEY",
+    "name": "KeyCorp",
+    "exchange": "NYSE",
+    "sector": "Financial Services",
+    "industry": "Banks - Regional",
+    "country": "US",
+    "marketCap": 24534080100,
+    "beta": 1.024,
+    "adv": 244979917.175,
+    "bars": 509
+  },
+  {
+    "symbol": "DRI",
+    "name": "Darden Restaurants, Inc.",
+    "exchange": "NYSE",
+    "sector": "Consumer Cyclical",
+    "industry": "Restaurants",
+    "country": "US",
+    "marketCap": 24483002241,
+    "beta": 0.585,
+    "adv": 253580746.28000003,
+    "bars": 509
+  },
+  {
+    "symbol": "CHD",
+    "name": "Church & Dwight Co., Inc.",
+    "exchange": "NYSE",
+    "sector": "Consumer Defensive",
+    "industry": "Household & Personal Products",
+    "country": "US",
+    "marketCap": 24462098560,
+    "beta": 0.467,
+    "adv": 180402155,
+    "bars": 509
+  },
+  {
+    "symbol": "INCY",
+    "name": "Incyte Corporation",
+    "exchange": "NASDAQ",
+    "sector": "Healthcare",
+    "industry": "Biotechnology",
+    "country": "US",
+    "marketCap": 24437240258,
+    "beta": 0.758,
+    "adv": 186098497.64,
+    "bars": 509
+  },
+  {
+    "symbol": "TROW",
+    "name": "T. Rowe Price Group, Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Financial Services",
+    "industry": "Asset Management",
+    "country": "US",
+    "marketCap": 24430723340,
+    "beta": 1.497,
+    "adv": 215158926.13,
+    "bars": 509
+  },
+  {
+    "symbol": "ULTA",
+    "name": "Ulta Beauty, Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Consumer Cyclical",
+    "industry": "Specialty Retail",
+    "country": "US",
+    "marketCap": 24295409112,
+    "beta": 0.879,
+    "adv": 315378323.88,
+    "bars": 509
+  },
+  {
+    "symbol": "PFG",
+    "name": "Principal Financial Group, Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Financial Services",
+    "industry": "Asset Management",
+    "country": "US",
+    "marketCap": 24279507000,
+    "beta": 0.888,
+    "adv": 133159020.13499999,
+    "bars": 509
+  },
+  {
+    "symbol": "RL",
+    "name": "Ralph Lauren Corporation",
+    "exchange": "NYSE",
+    "sector": "Consumer Cyclical",
+    "industry": "Apparel - Manufacturers",
+    "country": "US",
+    "marketCap": 24127255640,
+    "beta": 1.352,
+    "adv": 248214484.08499998,
+    "bars": 509
+  },
+  {
+    "symbol": "VLTO",
+    "name": "Veralto Corporation",
     "exchange": "NYSE",
     "sector": "Industrials",
-    "industry": "Electrical Equipment & Parts",
+    "industry": "Industrial - Pollution & Treatment Controls",
+    "country": "US",
+    "marketCap": 23974638039,
+    "beta": 0.782,
+    "adv": 173112461.48000002,
+    "bars": 509
+  },
+  {
+    "symbol": "BRO",
+    "name": "Brown & Brown, Inc.",
+    "exchange": "NYSE",
+    "sector": "Financial Services",
+    "industry": "Insurance - Brokers",
+    "country": "US",
+    "marketCap": 23901217801,
+    "beta": 0.599,
+    "adv": 178393308.165,
+    "bars": 509
+  },
+  {
+    "symbol": "L",
+    "name": "Loews Corporation",
+    "exchange": "NYSE",
+    "sector": "Financial Services",
+    "industry": "Insurance - Property & Casualty",
+    "country": "US",
+    "marketCap": 23772492570,
+    "beta": 0.519,
+    "adv": 88871499.16,
+    "bars": 509
+  },
+  {
+    "symbol": "TPL",
+    "name": "Texas Pacific Land Corporation",
+    "exchange": "NYSE",
+    "sector": "Energy",
+    "industry": "Oil & Gas Exploration & Production",
+    "country": "US",
+    "marketCap": 23496129360,
+    "beta": 0.594,
+    "adv": 140360231.4,
+    "bars": 509
+  },
+  {
+    "symbol": "MRNA",
+    "name": "Moderna, Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Healthcare",
+    "industry": "Biotechnology",
+    "country": "US",
+    "marketCap": 23477827620,
+    "beta": 0.942,
+    "adv": 305683496.88,
+    "bars": 509
+  },
+  {
+    "symbol": "OMC",
+    "name": "Omnicom Group Inc.",
+    "exchange": "NYSE",
+    "sector": "Communication Services",
+    "industry": "Advertising Agencies",
+    "country": "US",
+    "marketCap": 23385253040,
+    "beta": 0.656,
+    "adv": 248885009.99999997,
+    "bars": 509
+  },
+  {
+    "symbol": "EXPD",
+    "name": "Expeditors International of Washington, Inc.",
+    "exchange": "NYSE",
+    "sector": "Industrials",
+    "industry": "Integrated Freight & Logistics",
+    "country": "US",
+    "marketCap": 23373659610,
+    "beta": 1.038,
+    "adv": 188158193.1,
+    "bars": 509
+  },
+  {
+    "symbol": "STZ",
+    "name": "Constellation Brands, Inc.",
+    "exchange": "NYSE",
+    "sector": "Consumer Defensive",
+    "industry": "Beverages - Alcoholic",
+    "country": "US",
+    "marketCap": 23188398963,
+    "beta": 0.382,
+    "adv": 288727416.405,
+    "bars": 509
+  },
+  {
+    "symbol": "STE",
+    "name": "STERIS plc",
+    "exchange": "NYSE",
+    "sector": "Healthcare",
+    "industry": "Medical - Specialties",
+    "country": "IE",
+    "marketCap": 23143280019,
+    "beta": 0.922,
+    "adv": 176621739.24,
+    "bars": 509
+  },
+  {
+    "symbol": "LUV",
+    "name": "Southwest Airlines Co.",
+    "exchange": "NYSE",
+    "sector": "Industrials",
+    "industry": "Airlines, Airports & Air Services",
+    "country": "US",
+    "marketCap": 23017236400,
+    "beta": 1.118,
+    "adv": 274445969.49,
+    "bars": 509
+  },
+  {
+    "symbol": "PKG",
+    "name": "Packaging Corporation of America",
+    "exchange": "NYSE",
+    "sector": "Consumer Cyclical",
+    "industry": "Packaging & Containers",
+    "country": "US",
+    "marketCap": 22812817578,
+    "beta": 0.818,
+    "adv": 133303567.805,
+    "bars": 509
+  },
+  {
+    "symbol": "FFIV",
+    "name": "F5, Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Technology",
+    "industry": "Software - Infrastructure",
+    "country": "US",
+    "marketCap": 22580656416,
+    "beta": 1.03,
+    "adv": 238364296.18,
+    "bars": 509
+  },
+  {
+    "symbol": "FICO",
+    "name": "Fair Isaac Corporation",
+    "exchange": "NYSE",
+    "sector": "Technology",
+    "industry": "Software - Infrastructure",
+    "country": "US",
+    "marketCap": 22491778130,
+    "beta": 1.29,
+    "adv": 353521958.40999997,
+    "bars": 509
+  },
+  {
+    "symbol": "CMS",
+    "name": "CMS Energy Corporation",
+    "exchange": "NYSE",
+    "sector": "Utilities",
+    "industry": "Regulated Electric",
+    "country": "US",
+    "marketCap": 22273374310,
+    "beta": 0.342,
+    "adv": 258128338,
+    "bars": 509
+  },
+  {
+    "symbol": "AMCR",
+    "name": "Amcor plc",
+    "exchange": "NYSE",
+    "sector": "Consumer Cyclical",
+    "industry": "Packaging & Containers",
+    "country": "CH",
+    "marketCap": 22127864723,
+    "beta": 0.614,
+    "adv": 140021241.62,
+    "bars": 509
+  },
+  {
+    "symbol": "FIS",
+    "name": "Fidelity National Information Services, Inc.",
+    "exchange": "NYSE",
+    "sector": "Technology",
+    "industry": "Information Technology Services",
+    "country": "US",
+    "marketCap": 22106914830,
+    "beta": 0.813,
+    "adv": 250597058.60000002,
+    "bars": 509
+  },
+  {
+    "symbol": "IP",
+    "name": "International Paper Company",
+    "exchange": "NYSE",
+    "sector": "Basic Materials",
+    "industry": "Paper, Lumber & Forest Products",
+    "country": "US",
+    "marketCap": 22017316860,
+    "beta": 0.898,
+    "adv": 191766119.61,
+    "bars": 509
+  },
+  {
+    "symbol": "IFF",
+    "name": "International Flavors & Fragrances Inc.",
+    "exchange": "NYSE",
+    "sector": "Basic Materials",
+    "industry": "Chemicals - Specialty",
+    "country": "US",
+    "marketCap": 21927974670,
+    "beta": 0.944,
+    "adv": 141624318.475,
+    "bars": 509
+  },
+  {
+    "symbol": "LEN",
+    "name": "Lennar Corporation",
+    "exchange": "NYSE",
+    "sector": "Consumer Cyclical",
+    "industry": "Residential Construction",
+    "country": "US",
+    "marketCap": 21894676997,
+    "beta": 1.394,
+    "adv": 216895849.925,
+    "bars": 509
+  },
+  {
+    "symbol": "SNA",
+    "name": "Snap-on Incorporated",
+    "exchange": "NYSE",
+    "sector": "Industrials",
+    "industry": "Manufacturing - Tools & Accessories",
+    "country": "US",
+    "marketCap": 21536588077,
+    "beta": 0.721,
+    "adv": 123412282.22,
+    "bars": 509
+  },
+  {
+    "symbol": "EXE",
+    "name": "Expand Energy Corporation",
+    "exchange": "NASDAQ",
+    "sector": "Energy",
+    "industry": "Oil & Gas Exploration & Production",
+    "country": "US",
+    "marketCap": 21492831360,
+    "beta": 0.326,
+    "adv": 309626208.29999995,
+    "bars": 509
+  },
+  {
+    "symbol": "EFX",
+    "name": "Equifax Inc.",
+    "exchange": "NYSE",
+    "sector": "Industrials",
+    "industry": "Consulting Services",
+    "country": "US",
+    "marketCap": 21448042614,
+    "beta": 1.316,
+    "adv": 273034913.25,
+    "bars": 509
+  },
+  {
+    "symbol": "GPN",
+    "name": "Global Payments Inc.",
+    "exchange": "NYSE",
+    "sector": "Financial Services",
+    "industry": "Financial - Credit Services",
+    "country": "US",
+    "marketCap": 21379686496,
+    "beta": 0.769,
+    "adv": 259619796.34500003,
+    "bars": 509
+  },
+  {
+    "symbol": "DOW",
+    "name": "Dow Inc.",
+    "exchange": "NYSE",
+    "sector": "Basic Materials",
+    "industry": "Chemicals",
+    "country": "US",
+    "marketCap": 21193476461,
+    "beta": 0.435,
+    "adv": 355696771.32,
+    "bars": 509
+  },
+  {
+    "symbol": "BG",
+    "name": "Bunge Global S.A.",
+    "exchange": "NYSE",
+    "sector": "Consumer Defensive",
+    "industry": "Agricultural Farm Products",
+    "country": "US",
+    "marketCap": 20821870551,
+    "beta": 0.639,
+    "adv": 196493257.53,
+    "bars": 509
+  },
+  {
+    "symbol": "TSN",
+    "name": "Tyson Foods, Inc.",
+    "exchange": "NYSE",
+    "sector": "Consumer Defensive",
+    "industry": "Agricultural Farm Products",
+    "country": "US",
+    "marketCap": 20576330295,
+    "beta": 0.391,
+    "adv": 183482046.02499998,
+    "bars": 509
+  },
+  {
+    "symbol": "CHTR",
+    "name": "Charter Communications, Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Communication Services",
+    "industry": "Telecommunications Services",
+    "country": "US",
+    "marketCap": 20563000734,
+    "beta": 0.704,
+    "adv": 383209298.5,
+    "bars": 509
+  },
+  {
+    "symbol": "NI",
+    "name": "NiSource Inc",
+    "exchange": "NYSE",
+    "sector": "Utilities",
+    "industry": "Regulated Gas",
+    "country": "US",
+    "marketCap": 20428906229,
+    "beta": 0.542,
+    "adv": 195482994.39,
+    "bars": 509
+  },
+  {
+    "symbol": "SMCI",
+    "name": "Super Micro Computer, Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Technology",
+    "industry": "Computer Hardware",
+    "country": "US",
+    "marketCap": 20137156490,
+    "beta": 1.936,
+    "adv": 1378525054.5,
+    "bars": 509
+  },
+  {
+    "symbol": "GIS",
+    "name": "General Mills, Inc.",
+    "exchange": "NYSE",
+    "sector": "Consumer Defensive",
+    "industry": "Packaged Foods",
+    "country": "US",
+    "marketCap": 19688488083,
+    "beta": -0.047,
+    "adv": 334761479,
+    "bars": 509
+  },
+  {
+    "symbol": "SBAC",
+    "name": "SBA Communications Corporation",
+    "exchange": "NASDAQ",
+    "sector": "Real Estate",
+    "industry": "REIT - Specialty",
+    "country": "US",
+    "marketCap": 19518773890,
+    "beta": 0.997,
+    "adv": 175138567.34500003,
+    "bars": 509
+  },
+  {
+    "symbol": "BR",
+    "name": "Broadridge Financial Solutions, Inc.",
+    "exchange": "NYSE",
+    "sector": "Technology",
+    "industry": "Information Technology Services",
+    "country": "US",
+    "marketCap": 19257057000,
+    "beta": 0.903,
+    "adv": 191969157.9,
+    "bars": 509
+  },
+  {
+    "symbol": "DD",
+    "name": "DuPont de Nemours, Inc.",
+    "exchange": "NYSE",
+    "sector": "Basic Materials",
+    "industry": "Chemicals",
+    "country": "US",
+    "marketCap": 19237507120,
+    "beta": 1.083,
+    "adv": 184519998.985,
+    "bars": 509
+  },
+  {
+    "symbol": "LYB",
+    "name": "LyondellBasell Industries N.V.",
+    "exchange": "NYSE",
+    "sector": "Basic Materials",
+    "industry": "Chemicals - Specialty",
+    "country": "NL",
+    "marketCap": 19236372075,
+    "beta": 0.362,
+    "adv": 301603959.735,
+    "bars": 509
+  },
+  {
+    "symbol": "EVRG",
+    "name": "Evergy, Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Utilities",
+    "industry": "Regulated Electric",
+    "country": "US",
+    "marketCap": 19220173940,
+    "beta": 0.524,
+    "adv": 166364065,
+    "bars": 509
+  },
+  {
+    "symbol": "VTRS",
+    "name": "Viatris Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Healthcare",
+    "industry": "Drug Manufacturers - Specialty & Generic",
+    "country": "US",
+    "marketCap": 19133600105,
+    "beta": 0.902,
+    "adv": 152197755.865,
+    "bars": 509
+  },
+  {
+    "symbol": "GPC",
+    "name": "Genuine Parts Company",
+    "exchange": "NYSE",
+    "sector": "Consumer Cyclical",
+    "industry": "Specialty Retail",
+    "country": "US",
+    "marketCap": 18697918978,
+    "beta": 0.642,
+    "adv": 176136666,
+    "bars": 509
+  },
+  {
+    "symbol": "ZBH",
+    "name": "Zimmer Biomet Holdings, Inc.",
+    "exchange": "NYSE",
+    "sector": "Healthcare",
+    "industry": "Medical - Devices",
+    "country": "US",
+    "marketCap": 18678756100,
+    "beta": 0.468,
+    "adv": 194269462.115,
+    "bars": 509
+  },
+  {
+    "symbol": "FTV",
+    "name": "Fortive Corporation",
+    "exchange": "NYSE",
+    "sector": "Technology",
+    "industry": "Industrial - Machinery",
+    "country": "US",
+    "marketCap": 18637472279,
+    "beta": 0.98,
+    "adv": 171221838.7,
+    "bars": 509
+  },
+  {
+    "symbol": "ESS",
+    "name": "Essex Property Trust, Inc.",
+    "exchange": "NYSE",
+    "sector": "Real Estate",
+    "industry": "REIT - Residential",
+    "country": "US",
+    "marketCap": 18513807006,
+    "beta": 0.715,
+    "adv": 128833484.21,
+    "bars": 509
+  },
+  {
+    "symbol": "WY",
+    "name": "Weyerhaeuser Company",
+    "exchange": "NYSE",
+    "sector": "Real Estate",
+    "industry": "REIT - Specialty",
+    "country": "US",
+    "marketCap": 18444269938,
+    "beta": 0.911,
+    "adv": 125359598,
+    "bars": 509
+  },
+  {
+    "symbol": "FDXF",
+    "name": "FedEx Freight Holding Company, Inc.",
+    "exchange": "NYSE",
+    "sector": "Industrials",
+    "industry": "Integrated Freight & Logistics",
+    "country": "US",
+    "marketCap": 18316374954,
+    "beta": -7.34,
+    "adv": 201928734.6,
+    "bars": 51
+  },
+  {
+    "symbol": "ROL",
+    "name": "Rollins, Inc.",
+    "exchange": "NYSE",
+    "sector": "Industrials",
+    "industry": "Environmental Services",
+    "country": "US",
+    "marketCap": 18158427547,
+    "beta": 0.747,
+    "adv": 213414891.56,
+    "bars": 509
+  },
+  {
+    "symbol": "TSCO",
+    "name": "Tractor Supply Company",
+    "exchange": "NASDAQ",
+    "sector": "Consumer Cyclical",
+    "industry": "Specialty Retail",
+    "country": "US",
+    "marketCap": 18124992000,
+    "beta": 0.456,
+    "adv": 335136617.615,
+    "bars": 509
+  },
+  {
+    "symbol": "INVH",
+    "name": "Invitation Homes Inc.",
+    "exchange": "NYSE",
+    "sector": "Real Estate",
+    "industry": "REIT - Residential",
+    "country": "US",
+    "marketCap": 18041055540,
+    "beta": 0.843,
+    "adv": 151176024.76,
+    "bars": 509
+  },
+  {
+    "symbol": "ZBRA",
+    "name": "Zebra Technologies Corporation",
+    "exchange": "NASDAQ",
+    "sector": "Technology",
+    "industry": "Communication Equipment",
+    "country": "US",
+    "marketCap": 17933498766,
+    "beta": 1.605,
+    "adv": 236285493.1,
+    "bars": 509
+  },
+  {
+    "symbol": "LNT",
+    "name": "Alliant Energy Corporation",
+    "exchange": "NASDAQ",
+    "sector": "Utilities",
+    "industry": "Regulated Electric",
+    "country": "US",
+    "marketCap": 17916675490,
+    "beta": 0.54,
+    "adv": 180317107.68,
+    "bars": 509
+  },
+  {
+    "symbol": "NWS",
+    "name": "News Corporation",
+    "exchange": "NASDAQ",
+    "sector": "Communication Services",
+    "industry": "Publishing",
+    "country": "US",
+    "marketCap": 17763049492,
+    "beta": 0.899,
+    "adv": 37727516.2,
+    "bars": 509
+  },
+  {
+    "symbol": "CHRW",
+    "name": "C.H. Robinson Worldwide, Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Industrials",
+    "industry": "Integrated Freight & Logistics",
+    "country": "US",
+    "marketCap": 17603749457,
+    "beta": 0.915,
+    "adv": 270544162.945,
+    "bars": 509
+  },
+  {
+    "symbol": "CF",
+    "name": "CF Industries Holdings, Inc.",
+    "exchange": "NYSE",
+    "sector": "Basic Materials",
+    "industry": "Agricultural Inputs",
+    "country": "US",
+    "marketCap": 17567476150,
+    "beta": 0.39,
+    "adv": 292541022.26,
+    "bars": 509
+  },
+  {
+    "symbol": "BEN",
+    "name": "Franklin Resources, Inc.",
+    "exchange": "NYSE",
+    "sector": "Financial Services",
+    "industry": "Asset Management",
+    "country": "US",
+    "marketCap": 17548141456,
+    "beta": 1.575,
+    "adv": 140312942.5,
+    "bars": 509
+  },
+  {
+    "symbol": "GEN",
+    "name": "Gen Digital Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Technology",
+    "industry": "Software - Infrastructure",
+    "country": "US",
+    "marketCap": 17460492986,
+    "beta": 1.207,
+    "adv": 142696722.635,
+    "bars": 509
+  },
+  {
+    "symbol": "CDW",
+    "name": "CDW Corporation",
+    "exchange": "NASDAQ",
+    "sector": "Technology",
+    "industry": "Information Technology Services",
+    "country": "US",
+    "marketCap": 17350134930,
+    "beta": 0.962,
+    "adv": 244350675.505,
+    "bars": 509
+  },
+  {
+    "symbol": "LDOS",
+    "name": "Leidos Holdings, Inc.",
+    "exchange": "NYSE",
+    "sector": "Technology",
+    "industry": "Information Technology Services",
+    "country": "US",
+    "marketCap": 17304242450,
+    "beta": 0.547,
+    "adv": 160824830.12,
+    "bars": 509
+  },
+  {
+    "symbol": "IEX",
+    "name": "IDEX Corporation",
+    "exchange": "NYSE",
+    "sector": "Industrials",
+    "industry": "Industrial - Machinery",
+    "country": "US",
+    "marketCap": 17284367754,
+    "beta": 0.974,
+    "adv": 134259528.91,
+    "bars": 509
+  },
+  {
+    "symbol": "BBY",
+    "name": "Best Buy Co., Inc.",
+    "exchange": "NYSE",
+    "sector": "Consumer Cyclical",
+    "industry": "Specialty Retail",
+    "country": "US",
+    "marketCap": 17282894000,
+    "beta": 1.33,
+    "adv": 278661560.645,
+    "bars": 509
+  },
+  {
+    "symbol": "NDSN",
+    "name": "Nordson Corporation",
+    "exchange": "NASDAQ",
+    "sector": "Industrials",
+    "industry": "Industrial - Machinery",
+    "country": "US",
+    "marketCap": 17278708980,
+    "beta": 0.969,
+    "adv": 98628226.72,
+    "bars": 509
+  },
+  {
+    "symbol": "NVR",
+    "name": "NVR, Inc.",
+    "exchange": "NYSE",
+    "sector": "Consumer Cyclical",
+    "industry": "Residential Construction",
+    "country": "US",
+    "marketCap": 17248841001,
+    "beta": 0.902,
+    "adv": 184231488.88,
+    "bars": 509
+  },
+  {
+    "symbol": "J",
+    "name": "Jacobs Solutions Inc.",
+    "exchange": "NYSE",
+    "sector": "Industrials",
+    "industry": "Engineering & Construction",
+    "country": "US",
+    "marketCap": 17130010670,
+    "beta": 0.672,
+    "adv": 137001021,
+    "bars": 509
+  },
+  {
+    "symbol": "PTC",
+    "name": "PTC Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Technology",
+    "industry": "Software - Application",
+    "country": "US",
+    "marketCap": 17061391260,
+    "beta": 0.994,
+    "adv": 201472505.76,
+    "bars": 509
+  },
+  {
+    "symbol": "BALL",
+    "name": "Ball Corporation",
+    "exchange": "NYSE",
+    "sector": "Consumer Cyclical",
+    "industry": "Packaging & Containers",
+    "country": "US",
+    "marketCap": 16893372150,
+    "beta": 0.986,
+    "adv": 135541479.46499997,
+    "bars": 509
+  },
+  {
+    "symbol": "KIM",
+    "name": "Kimco Realty Corporation",
+    "exchange": "NYSE",
+    "sector": "Real Estate",
+    "industry": "REIT - Retail",
+    "country": "US",
+    "marketCap": 16495579400,
+    "beta": 0.969,
+    "adv": 101213372.5,
+    "bars": 509
+  },
+  {
+    "symbol": "AKAM",
+    "name": "Akamai Technologies, Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Technology",
+    "industry": "Software - Infrastructure",
+    "country": "US",
+    "marketCap": 16070907754,
+    "beta": 0.633,
+    "adv": 510019776.515,
+    "bars": 509
+  },
+  {
+    "symbol": "NWSA",
+    "name": "News Corporation",
+    "exchange": "NASDAQ",
+    "sector": "Communication Services",
+    "industry": "Publishing",
+    "country": "US",
+    "marketCap": 16009185417,
+    "beta": 0.899,
+    "adv": 105119348.05000001,
+    "bars": 509
+  },
+  {
+    "symbol": "HST",
+    "name": "Host Hotels & Resorts, Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Real Estate",
+    "industry": "REIT - Hotel & Motel",
+    "country": "US",
+    "marketCap": 15950831910,
+    "beta": 1.119,
+    "adv": 206628376.5,
+    "bars": 509
+  },
+  {
+    "symbol": "MAA",
+    "name": "Mid-America Apartment Communities, Inc.",
+    "exchange": "NYSE",
+    "sector": "Real Estate",
+    "industry": "REIT - Residential",
+    "country": "US",
+    "marketCap": 15707292878,
+    "beta": 0.728,
+    "adv": 136615512,
+    "bars": 509
+  },
+  {
+    "symbol": "SWK",
+    "name": "Stanley Black & Decker, Inc.",
+    "exchange": "NYSE",
+    "sector": "Industrials",
+    "industry": "Manufacturing - Tools & Accessories",
+    "country": "US",
+    "marketCap": 15689156130,
+    "beta": 1.164,
+    "adv": 127465754.65,
+    "bars": 509
+  },
+  {
+    "symbol": "ALB",
+    "name": "Albemarle Corporation",
+    "exchange": "NYSE",
+    "sector": "Basic Materials",
+    "industry": "Chemicals - Specialty",
+    "country": "US",
+    "marketCap": 15462412093,
+    "beta": 1.346,
+    "adv": 317962278,
+    "bars": 509
+  },
+  {
+    "symbol": "TXT",
+    "name": "Textron Inc.",
+    "exchange": "NYSE",
+    "sector": "Industrials",
+    "industry": "Aerospace & Defense",
+    "country": "US",
+    "marketCap": 15380797410,
+    "beta": 0.905,
+    "adv": 122770323.9,
+    "bars": 509
+  },
+  {
+    "symbol": "MAS",
+    "name": "Masco Corporation",
+    "exchange": "NYSE",
+    "sector": "Basic Materials",
+    "industry": "Construction Materials",
+    "country": "US",
+    "marketCap": 15283997699,
+    "beta": 1.282,
+    "adv": 166233936,
+    "bars": 509
+  },
+  {
+    "symbol": "LII",
+    "name": "Lennox International Inc.",
+    "exchange": "NYSE",
+    "sector": "Industrials",
+    "industry": "Industrial - Machinery",
+    "country": "US",
+    "marketCap": 15198759039,
+    "beta": 1.163,
+    "adv": 215060925.12,
+    "bars": 509
+  },
+  {
+    "symbol": "EG",
+    "name": "Everest Group, Ltd.",
+    "exchange": "NYSE",
+    "sector": "Financial Services",
+    "industry": "Insurance - Reinsurance",
+    "country": "BM",
+    "marketCap": 14837767136,
+    "beta": 0.287,
+    "adv": 134262672.935,
+    "bars": 509
+  },
+  {
+    "symbol": "DOC",
+    "name": "Healthpeak Properties, Inc.",
+    "exchange": "NYSE",
+    "sector": "Real Estate",
+    "industry": "REIT - Healthcare Facilities",
+    "country": "US",
+    "marketCap": 14760482200,
+    "beta": 1.004,
+    "adv": 137834911.55,
+    "bars": 509
+  },
+  {
+    "symbol": "LULU",
+    "name": "Lululemon Athletica Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Consumer Cyclical",
+    "industry": "Apparel - Retail",
+    "country": "CA",
+    "marketCap": 14600762519,
+    "beta": 0.878,
+    "adv": 349474877,
+    "bars": 509
+  },
+  {
+    "symbol": "COO",
+    "name": "The Cooper Companies, Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Healthcare",
+    "industry": "Medical - Instruments & Supplies",
+    "country": "US",
+    "marketCap": 14477151130,
+    "beta": 0.84,
+    "adv": 167724592.195,
+    "bars": 509
+  },
+  {
+    "symbol": "SOLV",
+    "name": "Solventum Corporation",
+    "exchange": "NYSE",
+    "sector": "Healthcare",
+    "industry": "Medical - Instruments & Supplies",
+    "country": "US",
+    "marketCap": 14370037602,
+    "beta": 0.716,
+    "adv": 106946824.13,
+    "bars": 509
+  },
+  {
+    "symbol": "ALLE",
+    "name": "Allegion plc",
+    "exchange": "NYSE",
+    "sector": "Industrials",
+    "industry": "Security & Protection Services",
+    "country": "IE",
+    "marketCap": 14366116992,
+    "beta": 0.858,
+    "adv": 156976378.45,
+    "bars": 509
+  },
+  {
+    "symbol": "AIZ",
+    "name": "Assurant, Inc.",
+    "exchange": "NYSE",
+    "sector": "Financial Services",
+    "industry": "Insurance - Specialty",
+    "country": "US",
+    "marketCap": 14346507580,
+    "beta": 0.555,
+    "adv": 103694877,
+    "bars": 509
+  },
+  {
+    "symbol": "GL",
+    "name": "Globe Life Inc.",
+    "exchange": "NYSE",
+    "sector": "Financial Services",
+    "industry": "Insurance - Life",
+    "country": "US",
+    "marketCap": 14274996480,
+    "beta": 0.47,
+    "adv": 101653179.88,
+    "bars": 509
+  },
+  {
+    "symbol": "ECHO",
+    "name": "EchoStar Corporation",
+    "exchange": "NASDAQ",
+    "sector": "Communication Services",
+    "industry": "Telecommunications Services",
+    "country": "US",
+    "marketCap": 14268188600,
+    "beta": 0.95,
+    "adv": 686357034.17,
+    "bars": 509
+  },
+  {
+    "symbol": "BAX",
+    "name": "Baxter International Inc.",
+    "exchange": "NYSE",
+    "sector": "Healthcare",
+    "industry": "Medical - Instruments & Supplies",
+    "country": "US",
+    "marketCap": 14243239580,
+    "beta": 0.613,
+    "adv": 136806761.78,
+    "bars": 509
+  },
+  {
+    "symbol": "MKC",
+    "name": "McCormick & Company, Incorporated",
+    "exchange": "NYSE",
+    "sector": "Consumer Defensive",
+    "industry": "Packaged Foods",
+    "country": "US",
+    "marketCap": 14238378353,
+    "beta": 0.626,
+    "adv": 180416145.42000002,
+    "bars": 509
+  },
+  {
+    "symbol": "REG",
+    "name": "Regency Centers Corporation",
+    "exchange": "NASDAQ",
+    "sector": "Real Estate",
+    "industry": "REIT - Retail",
+    "country": "US",
+    "marketCap": 14083231860,
+    "beta": 0.825,
+    "adv": 107892162.80000001,
+    "bars": 509
+  },
+  {
+    "symbol": "IVZ",
+    "name": "Invesco Ltd.",
+    "exchange": "NYSE",
+    "sector": "Financial Services",
+    "industry": "Asset Management",
+    "country": "US",
+    "marketCap": 13999319260,
+    "beta": 1.597,
+    "adv": 133515761.5,
+    "bars": 509
+  },
+  {
+    "symbol": "TKO",
+    "name": "TKO Group Holdings, Inc.",
+    "exchange": "NYSE",
+    "sector": "Communication Services",
+    "industry": "Entertainment",
+    "country": "US",
+    "marketCap": 13985974112,
+    "beta": 0.621,
+    "adv": 231341743.5,
+    "bars": 509
+  },
+  {
+    "symbol": "TRMB",
+    "name": "Trimble Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Technology",
+    "industry": "Hardware, Equipment & Parts",
+    "country": "US",
+    "marketCap": 13872466496,
+    "beta": 1.383,
+    "adv": 153334594.72500002,
+    "bars": 509
+  },
+  {
+    "symbol": "HRL",
+    "name": "Hormel Foods Corporation",
+    "exchange": "NYSE",
+    "sector": "Consumer Defensive",
+    "industry": "Packaged Foods",
+    "country": "US",
+    "marketCap": 13768881300,
+    "beta": 0.328,
+    "adv": 101395174.5,
+    "bars": 509
+  },
+  {
+    "symbol": "AVY",
+    "name": "Avery Dennison Corporation",
+    "exchange": "NYSE",
+    "sector": "Consumer Cyclical",
+    "industry": "Packaging & Containers",
+    "country": "US",
+    "marketCap": 13552569072,
+    "beta": 0.826,
+    "adv": 111402643.19999999,
+    "bars": 509
+  },
+  {
+    "symbol": "APA",
+    "name": "APA Corporation",
+    "exchange": "NASDAQ",
+    "sector": "Energy",
+    "industry": "Oil & Gas Exploration & Production",
+    "country": "US",
+    "marketCap": 13301076100,
+    "beta": 0.347,
+    "adv": 186941113.29000002,
+    "bars": 509
+  },
+  {
+    "symbol": "BF-B",
+    "name": "Brown-Forman Corporation",
+    "exchange": "NYSE",
+    "sector": "Consumer Defensive",
+    "industry": "Beverages - Wineries & Distilleries",
+    "country": "US",
+    "marketCap": 13300078346,
+    "beta": 0.344,
+    "adv": 66783137.4,
+    "bars": 509
+  },
+  {
+    "symbol": "DECK",
+    "name": "Deckers Outdoor Corporation",
+    "exchange": "NYSE",
+    "sector": "Consumer Cyclical",
+    "industry": "Apparel - Footwear & Accessories",
+    "country": "US",
+    "marketCap": 13272297720,
+    "beta": 1.167,
+    "adv": 215017280.75,
+    "bars": 509
+  },
+  {
+    "symbol": "HAS",
+    "name": "Hasbro, Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Consumer Cyclical",
+    "industry": "Leisure",
+    "country": "US",
+    "marketCap": 13190478554,
+    "beta": 0.482,
+    "adv": 156047633.66,
+    "bars": 509
+  },
+  {
+    "symbol": "CRL",
+    "name": "Charles River Laboratories International, Inc.",
+    "exchange": "NYSE",
+    "sector": "Healthcare",
+    "industry": "Medical - Diagnostics & Research",
+    "country": "US",
+    "marketCap": 12884378073,
+    "beta": 1.399,
+    "adv": 178493362.6,
+    "bars": 509
+  },
+  {
+    "symbol": "SJM",
+    "name": "The J. M. Smucker Company",
+    "exchange": "NYSE",
+    "sector": "Consumer Defensive",
+    "industry": "Packaged Foods",
+    "country": "US",
+    "marketCap": 12842783710,
+    "beta": 0.247,
+    "adv": 167607069.89,
+    "bars": 509
+  },
+  {
+    "symbol": "TYL",
+    "name": "Tyler Technologies, Inc.",
+    "exchange": "NYSE",
+    "sector": "Technology",
+    "industry": "Software - Application",
+    "country": "US",
+    "marketCap": 12795546135,
+    "beta": 0.821,
+    "adv": 223158392.44,
+    "bars": 509
+  },
+  {
+    "symbol": "RVTY",
+    "name": "Revvity, Inc.",
+    "exchange": "NYSE",
+    "sector": "Healthcare",
+    "industry": "Medical - Diagnostics & Research",
+    "country": "US",
+    "marketCap": 12791469600,
+    "beta": 1.091,
+    "adv": 131165691.3,
+    "bars": 509
+  },
+  {
+    "symbol": "HII",
+    "name": "Huntington Ingalls Industries, Inc.",
+    "exchange": "NYSE",
+    "sector": "Industrials",
+    "industry": "Aerospace & Defense",
+    "country": "US",
+    "marketCap": 12786003959,
+    "beta": 0.248,
+    "adv": 135099339.745,
+    "bars": 509
+  },
+  {
+    "symbol": "CLX",
+    "name": "The Clorox Company",
+    "exchange": "NYSE",
+    "sector": "Consumer Defensive",
+    "industry": "Household & Personal Products",
+    "country": "US",
+    "marketCap": 12714843150,
+    "beta": 0.531,
+    "adv": 225975477.42499998,
+    "bars": 509
+  },
+  {
+    "symbol": "GNRC",
+    "name": "Generac Holdings Inc.",
+    "exchange": "NYSE",
+    "sector": "Industrials",
+    "industry": "Industrial - Machinery",
+    "country": "US",
+    "marketCap": 12493115514,
+    "beta": 1.895,
+    "adv": 226843078.115,
+    "bars": 509
+  },
+  {
+    "symbol": "ALGN",
+    "name": "Align Technology, Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Healthcare",
+    "industry": "Medical - Devices",
+    "country": "US",
+    "marketCap": 12437203935,
+    "beta": 1.669,
+    "adv": 173208884.305,
+    "bars": 509
+  },
+  {
+    "symbol": "IT",
+    "name": "Gartner, Inc.",
+    "exchange": "NYSE",
+    "sector": "Industrials",
+    "industry": "Consulting Services",
+    "country": "US",
+    "marketCap": 12426272454,
+    "beta": 0.963,
+    "adv": 191769509.52,
+    "bars": 509
+  },
+  {
+    "symbol": "UDR",
+    "name": "UDR, Inc.",
+    "exchange": "NYSE",
+    "sector": "Real Estate",
+    "industry": "REIT - Residential",
+    "country": "US",
+    "marketCap": 12339758767,
+    "beta": 0.695,
+    "adv": 145819303.76,
+    "bars": 509
+  },
+  {
+    "symbol": "CSGP",
+    "name": "CoStar Group, Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Real Estate",
+    "industry": "Real Estate - Services",
+    "country": "US",
+    "marketCap": 12253187520,
+    "beta": 0.735,
+    "adv": 203010141.63,
+    "bars": 509
+  },
+  {
+    "symbol": "PNW",
+    "name": "Pinnacle West Capital Corporation",
+    "exchange": "NYSE",
+    "sector": "Utilities",
+    "industry": "Regulated Electric",
+    "country": "US",
+    "marketCap": 12243522610,
+    "beta": 0.425,
+    "adv": 120570897,
+    "bars": 509
+  },
+  {
+    "symbol": "GDDY",
+    "name": "GoDaddy Inc.",
+    "exchange": "NYSE",
+    "sector": "Technology",
+    "industry": "Software - Infrastructure",
+    "country": "US",
+    "marketCap": 12058564766,
+    "beta": 0.888,
+    "adv": 183546132,
+    "bars": 509
+  },
+  {
+    "symbol": "DVA",
+    "name": "DaVita Inc.",
+    "exchange": "NYSE",
+    "sector": "Healthcare",
+    "industry": "Medical - Care Facilities",
+    "country": "US",
+    "marketCap": 11798034000,
+    "beta": 0.882,
+    "adv": 170277041.42000002,
+    "bars": 509
+  },
+  {
+    "symbol": "ERIE",
+    "name": "Erie Indemnity Company",
+    "exchange": "NASDAQ",
+    "sector": "Financial Services",
+    "industry": "Insurance - Property & Casualty",
+    "country": "US",
+    "marketCap": 11666442878,
+    "beta": 0.286,
+    "adv": 48034606.870000005,
+    "bars": 509
+  },
+  {
+    "symbol": "DPZ",
+    "name": "Domino's Pizza, Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Consumer Cyclical",
+    "industry": "Restaurants",
+    "country": "US",
+    "marketCap": 11610034898,
+    "beta": 0.975,
+    "adv": 257367330.5,
+    "bars": 509
+  },
+  {
+    "symbol": "TECH",
+    "name": "Bio-Techne Corporation",
+    "exchange": "NASDAQ",
+    "sector": "Healthcare",
+    "industry": "Biotechnology",
+    "country": "US",
+    "marketCap": 11318373010,
+    "beta": 1.289,
+    "adv": 211646339.5,
+    "bars": 509
+  },
+  {
+    "symbol": "CPT",
+    "name": "Camden Property Trust",
+    "exchange": "NYSE",
+    "sector": "Real Estate",
+    "industry": "REIT - Residential",
+    "country": "US",
+    "marketCap": 11251203600,
+    "beta": 0.798,
+    "adv": 117599251.94,
+    "bars": 509
+  },
+  {
+    "symbol": "MGM",
+    "name": "MGM Resorts International",
+    "exchange": "NYSE",
+    "sector": "Consumer Cyclical",
+    "industry": "Gambling, Resorts & Casinos",
+    "country": "US",
+    "marketCap": 11188642884,
+    "beta": 1.291,
+    "adv": 148678180.95,
+    "bars": 509
+  },
+  {
+    "symbol": "BXP",
+    "name": "BXP, Inc.",
+    "exchange": "NYSE",
+    "sector": "Real Estate",
+    "industry": "REIT - Office",
+    "country": "US",
+    "marketCap": 11117168927,
+    "beta": 1.039,
+    "adv": 86022600.94,
+    "bars": 509
+  },
+  {
+    "symbol": "JKHY",
+    "name": "Jack Henry & Associates, Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Technology",
+    "industry": "Information Technology Services",
+    "country": "US",
+    "marketCap": 11080372260,
+    "beta": 0.571,
+    "adv": 182659491.14499998,
+    "bars": 509
+  },
+  {
+    "symbol": "PNR",
+    "name": "Pentair plc",
+    "exchange": "NYSE",
+    "sector": "Industrials",
+    "industry": "Industrial - Machinery",
     "country": "GB",
-    "marketCap": 26633666800,
-    "beta": 1.355,
-    "adv": 307889813.03,
-    "lastClose": 164.69,
+    "marketCap": 10997461820,
+    "beta": 1.029,
+    "adv": 169402469.25,
+    "bars": 509
+  },
+  {
+    "symbol": "WYNN",
+    "name": "Wynn Resorts, Limited",
+    "exchange": "NASDAQ",
+    "sector": "Consumer Cyclical",
+    "industry": "Gambling, Resorts & Casinos",
+    "country": "US",
+    "marketCap": 10642318980,
+    "beta": 0.988,
+    "adv": 134691188.45,
+    "bars": 509
+  },
+  {
+    "symbol": "SWKS",
+    "name": "Skyworks Solutions, Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Technology",
+    "industry": "Semiconductors",
+    "country": "US",
+    "marketCap": 10626387865,
+    "beta": 1.497,
+    "adv": 345193645.005,
+    "bars": 509
+  },
+  {
+    "symbol": "UHS",
+    "name": "Universal Health Services, Inc.",
+    "exchange": "NYSE",
+    "sector": "Healthcare",
+    "industry": "Medical - Care Facilities",
+    "country": "US",
+    "marketCap": 10505478526,
+    "beta": 1.075,
+    "adv": 136626710.085,
+    "bars": 509
+  },
+  {
+    "symbol": "AES",
+    "name": "The AES Corporation",
+    "exchange": "NYSE",
+    "sector": "Utilities",
+    "industry": "Diversified Utilities",
+    "country": "US",
+    "marketCap": 10504817340,
+    "beta": 0.942,
+    "adv": 118781754.53,
+    "bars": 509
+  },
+  {
+    "symbol": "APTV",
+    "name": "Aptiv PLC",
+    "exchange": "NYSE",
+    "sector": "Consumer Cyclical",
+    "industry": "Auto - Parts",
+    "country": "CH",
+    "marketCap": 10485820550,
+    "beta": 1.344,
+    "adv": 177454075.8,
+    "bars": 509
+  },
+  {
+    "symbol": "FRT",
+    "name": "Federal Realty Investment Trust",
+    "exchange": "NYSE",
+    "sector": "Real Estate",
+    "industry": "REIT - Retail",
+    "country": "US",
+    "marketCap": 10253533792,
+    "beta": 0.932,
+    "adv": 102092584,
+    "bars": 509
+  },
+  {
+    "symbol": "FDS",
+    "name": "FactSet Research Systems Inc.",
+    "exchange": "NYSE",
+    "sector": "Financial Services",
+    "industry": "Financial - Data & Stock Exchanges",
+    "country": "US",
+    "marketCap": 10156452115,
+    "beta": 0.715,
+    "adv": 220704644.39999998,
+    "bars": 509
+  },
+  {
+    "symbol": "HSIC",
+    "name": "Henry Schein, Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Healthcare",
+    "industry": "Medical - Distribution",
+    "country": "US",
+    "marketCap": 10039505210,
+    "beta": 0.806,
+    "adv": 103047087.75,
+    "bars": 509
+  },
+  {
+    "symbol": "PSKY",
+    "name": "Paramount Skydance Corporation Class B Common Stock",
+    "exchange": "NASDAQ",
+    "sector": "Communication Services",
+    "industry": "Entertainment",
+    "country": "US",
+    "marketCap": 9995687300,
+    "beta": 1.447,
+    "adv": 81474769.83500001,
+    "bars": 509
+  },
+  {
+    "symbol": "PODD",
+    "name": "Insulet Corp.",
+    "exchange": "NASDAQ",
+    "sector": "Healthcare",
+    "industry": "Medical - Devices",
+    "country": "US",
+    "marketCap": 9778094029,
+    "beta": 1.111,
+    "adv": 220168148.46,
+    "bars": 509
+  },
+  {
+    "symbol": "AOS",
+    "name": "A. O. Smith Corporation",
+    "exchange": "NYSE",
+    "sector": "Industrials",
+    "industry": "Industrial - Machinery",
+    "country": "US",
+    "marketCap": 8866782248,
+    "beta": 1.153,
+    "adv": 97544813.53999999,
+    "bars": 509
+  },
+  {
+    "symbol": "NCLH",
+    "name": "Norwegian Cruise Line Holdings Ltd.",
+    "exchange": "NYSE",
+    "sector": "Consumer Cyclical",
+    "industry": "Travel Services",
+    "country": "US",
+    "marketCap": 8837867500,
+    "beta": 1.876,
+    "adv": 347204026.525,
+    "bars": 509
+  },
+  {
+    "symbol": "ARE",
+    "name": "Alexandria Real Estate Equities, Inc.",
+    "exchange": "NYSE",
+    "sector": "Real Estate",
+    "industry": "REIT - Office",
+    "country": "US",
+    "marketCap": 8668140060,
+    "beta": 1.183,
+    "adv": 80194240.38499999,
+    "bars": 509
+  },
+  {
+    "symbol": "TAP",
+    "name": "Molson Coors Beverage Company",
+    "exchange": "NYSE",
+    "sector": "Consumer Defensive",
+    "industry": "Beverages - Alcoholic",
+    "country": "US",
+    "marketCap": 8134102570,
+    "beta": 0.419,
+    "adv": 127609680.67000002,
+    "bars": 509
+  },
+  {
+    "symbol": "BLDR",
+    "name": "Builders FirstSource, Inc.",
+    "exchange": "NYSE",
+    "sector": "Basic Materials",
+    "industry": "Construction Materials",
+    "country": "US",
+    "marketCap": 8036345240,
+    "beta": 1.418,
+    "adv": 168788818.77,
+    "bars": 509
+  },
+  {
+    "symbol": "MOS",
+    "name": "The Mosaic Company",
+    "exchange": "NYSE",
+    "sector": "Basic Materials",
+    "industry": "Agricultural Inputs",
+    "country": "US",
+    "marketCap": 7329543611,
+    "beta": 0.825,
+    "adv": 183807392.95,
+    "bars": 509
+  },
+  {
+    "symbol": "TTD",
+    "name": "The Trade Desk, Inc.",
+    "exchange": "NASDAQ",
+    "sector": "Technology",
+    "industry": "Software - Services",
+    "country": "US",
+    "marketCap": 6487495037,
+    "beta": 1.04,
+    "adv": 360699130,
     "bars": 509
   }
 ]

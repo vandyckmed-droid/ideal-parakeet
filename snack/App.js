@@ -1,4 +1,4 @@
-// Parakeet - the 500 largest US-traded equities, with a selectable return
+// Parakeet - the S&P 500, with a selectable return
 // window and a risk-adjusted view of that same window.
 //
 // Expo Snack build. The dataset is fetched from the public repo rather than
@@ -14,9 +14,10 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { ThemeProvider, useTheme, radius, space, type } from './theme';
-import { sessionsSinceSnapshot, windowForPreset } from './stats';
+import { sessionsSinceSnapshot, setMarket, windowForPreset } from './stats';
 import { computeOverlap, describeCandidateOverlap } from './overlap';
 import { ListScreen } from './ListScreen';
+import { ResearchScreen } from './Research';
 import { RankTable } from './RankTable';
 import { SegmentedControl } from './ui';
 import { DetailScreen } from './DetailScreen';
@@ -26,8 +27,17 @@ const MARKET_VIEWS = [
   { key: 'table', label: 'Table' },
 ];
 
-const DATA_URL =
-  'https://raw.githubusercontent.com/vandyckmed-droid/ideal-parakeet/main/assets/data/market.json';
+// Main first; the working branch second so a payload shape that has not
+// merged yet still reaches the phone. Once main carries it the first URL
+// always wins - and main is the one the nightly job refreshes.
+const DATA_URLS = [
+  'https://raw.githubusercontent.com/vandyckmed-droid/ideal-parakeet/main/assets/data/market.json',
+  'https://raw.githubusercontent.com/vandyckmed-droid/ideal-parakeet/claude/stock-watchlist-app-ju7qxb/assets/data/market.json',
+];
+const RESEARCH_URLS = [
+  'https://raw.githubusercontent.com/vandyckmed-droid/ideal-parakeet/main/assets/data/research.json',
+  'https://raw.githubusercontent.com/vandyckmed-droid/ideal-parakeet/claude/stock-watchlist-app-ju7qxb/assets/data/research.json',
+];
 const WATCHLIST_KEY = 'parakeet.watchlist';
 const SKIP_KEY = 'parakeet.skip';
 
@@ -35,6 +45,7 @@ function Shell() {
   const { colors, scheme } = useTheme();
 
   const [data, setData] = useState(null);
+  const [research, setResearch] = useState(null);
   const [error, setError] = useState(null);
   const [attempt, setAttempt] = useState(0);
 
@@ -53,29 +64,53 @@ function Shell() {
   useEffect(() => {
     let cancelled = false;
     setError(null);
-    fetch(DATA_URL)
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((json) => {
-        if (cancelled) return;
-        // Cache the last close per name so rows do not walk the array to find it.
-        const tickers = json.tickers.map((t) => ({ ...t, last: t.p[t.p.length - 1] }));
-        setData({
-          dates: json.dates,
-          tickers,
-          bySymbol: new Map(tickers.map((t) => [t.s, t])),
-          sectors: Array.from(new Set(tickers.map((t) => t.se))).sort(),
-          generatedAt: json.generatedAt,
-        });
-        // Read once per load: window maths must not depend on wall-clock time.
-        setSessionsStale(sessionsSinceSnapshot(json.dates));
-        setWin(windowForPreset('1Y', json.dates));
-      })
-      .catch((e) => {
-        if (!cancelled) setError(e.message || String(e));
-      });
+    (async () => {
+      let lastErr = null;
+      for (let u = 0; u < DATA_URLS.length; u++) {
+        try {
+          const r = await fetch(DATA_URLS[u]);
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          const json = await r.json();
+          // A payload without the market reference predates the residual
+          // metric - the branch's copy has it, so keep looking before
+          // settling for a shape that would leave every residual blank.
+          if (!json.market && u < DATA_URLS.length - 1) continue;
+          if (cancelled) return;
+          // The residual metric measures each name against this; hand it over
+          // before anything computes a window.
+          setMarket(json.market);
+          // Cache the last close per name so rows do not walk the array to find it.
+          const tickers = json.tickers.map((t) => ({ ...t, last: t.p[t.p.length - 1] }));
+          setData({
+            dates: json.dates,
+            tickers,
+            bySymbol: new Map(tickers.map((t) => [t.s, t])),
+            sectors: Array.from(new Set(tickers.map((t) => t.se))).sort(),
+            generatedAt: json.generatedAt,
+          });
+          // Read once per load: window maths must not depend on wall-clock time.
+          setSessionsStale(sessionsSinceSnapshot(json.dates));
+          setWin(windowForPreset('1Y', json.dates));
+          return;
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+      if (!cancelled) setError((lastErr && lastErr.message) || String(lastErr || 'no data'));
+    })();
+    // Optional: the app is fully usable without it, so a failure here only
+    // leaves the Research tab explaining itself.
+    (async () => {
+      for (const url of RESEARCH_URLS) {
+        try {
+          const r = await fetch(url);
+          if (!r.ok) continue;
+          const json = await r.json();
+          if (!cancelled) setResearch(json);
+          return;
+        } catch {}
+      }
+    })();
     return () => {
       cancelled = true;
     };
@@ -144,7 +179,7 @@ function Shell() {
     return (
       <View style={[s.centre, { backgroundColor: colors.bg }]}>
         <ActivityIndicator color={colors.accent} />
-        <Text style={[type.caption, { color: colors.textMuted }]}>Loading 500 tickers…</Text>
+        <Text style={[type.caption, { color: colors.textMuted }]}>Loading the S&P 500…</Text>
       </View>
     );
   }
@@ -194,6 +229,7 @@ function Shell() {
     <View style={[s.tabs, { backgroundColor: colors.bg, borderTopColor: colors.hairline }]}>
       {[
         { key: 'market', label: 'Market', glyph: '◫' },
+        { key: 'research', label: 'Research', glyph: '∿' },
         { key: 'watchlist', label: 'Watchlist', glyph: '★' },
       ].map((t) => {
         const active = tab === t.key;
@@ -210,13 +246,25 @@ function Shell() {
     </View>
   );
 
+  if (tab === 'research') {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
+        <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} />
+        <View style={{ flex: 1 }}>
+          <ResearchScreen research={research} />
+        </View>
+        {tabBar}
+      </SafeAreaView>
+    );
+  }
+
   // The Market tab in two views of the same 500 names. Local state rather than
   // persisted: the choice survives switching tabs, which is the only continuity
   // that matters here - a view mode restored on a cold start would be a
   // setting, and this is a glance.
   const viewSwitch =
     tab === 'market' ? (
-      <SegmentedControl segments={MARKET_VIEWS} value={marketView} onChange={setMarketView} />
+      <SegmentedControl segments={MARKET_VIEWS} value={marketView} onChange={setMarketView} compact />
     ) : null;
 
   if (tab === 'market' && marketView === 'table') {

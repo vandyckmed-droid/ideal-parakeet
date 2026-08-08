@@ -8,10 +8,11 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "data": "node tools/01-build-candidates.mjs && node tools/02-fetch-prices.mjs && node tools/03-build-dataset.mjs",
+    "data": "node tools/01-build-candidates.mjs && node tools/02-fetch-prices.mjs && node tools/03-build-dataset.mjs && node tools/04-validate-dataset.mjs && node tools/05-build-research.mjs",
     "data:candidates": "node tools/01-build-candidates.mjs",
     "data:prices": "node tools/02-fetch-prices.mjs",
     "data:build": "node tools/03-build-dataset.mjs",
+    "data:validate": "node tools/04-validate-dataset.mjs && node tools/05-build-research.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

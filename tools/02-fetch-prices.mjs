@@ -4,11 +4,17 @@
 //
 // Writes one file per symbol under data/prices/ so an interrupted run can be
 // resumed without re-billing the whole universe.
+//
+// SPY is fetched alongside the constituents even though it is not one. It is
+// the market the app measures each name against for the residual metric, and
+// packing it beside the universe keeps that measurement on the same calendar
+// and the same adjusted-close basis as everything else.
 
 import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'node:fs';
 import { fmp, mapPool, progress } from './lib/fmp.mjs';
 
 const YEARS = 2;
+const MARKET_SYMBOL = 'SPY';
 const CONCURRENCY = 8;
 
 function dateNDaysAgo(days) {
@@ -18,7 +24,10 @@ function dateNDaysAgo(days) {
 }
 
 async function main() {
-  const candidates = JSON.parse(readFileSync('data/candidates.json', 'utf8'));
+  const constituents = JSON.parse(readFileSync('data/candidates.json', 'utf8'));
+  // The market reference rides along; stage 3 packs it separately, so it never
+  // enters the universe.
+  const candidates = [...constituents, { symbol: MARKET_SYMBOL }];
   mkdirSync('data/prices', { recursive: true });
 
   // A little over two calendar years, so the first requested window still has

@@ -9,10 +9,21 @@ import {
   formatPercentPlain, formatPrice, formatRatio, slice, windowForPreset, withSkip, VOL_FLOOR,
 } from './stats';
 
-function Page({ ticker, dates, initialPreset, width, skipEnabled, sessionsStale }) {
+function Page({ ticker, dates, initialPreset, width, skipEnabled, sessionsStale, onScrubbingChange }) {
   const colors = useColors();
   const [preset, setPreset] = useState(initialPreset === 'CUSTOM' ? '1Y' : initialPreset);
   const [scrub, setScrub] = useState(null);
+
+  // A scrub is a horizontal drag and so is a page turn. The chart claims the
+  // touch first, and this tells the pager to stand down until the finger
+  // lifts - otherwise a drag across the chart swipes to the next ticker.
+  const handleScrub = useCallback(
+    (i) => {
+      setScrub(i);
+      if (onScrubbingChange) onScrubbingChange(i !== null);
+    },
+    [onScrubbingChange]
+  );
 
   // "Max" means the most history this name has, so it clamps to the listing
   // date. The shorter presets deliberately do not: six months of a 2025 listing
@@ -86,7 +97,7 @@ function Page({ ticker, dates, initialPreset, width, skipEnabled, sessionsStale 
         </View>
       </View>
 
-      <PriceChart values={series} onScrub={setScrub} excludeTail={excludeTail} />
+      <PriceChart values={series} onScrub={handleScrub} excludeTail={excludeTail} />
 
       <View style={s.section}>
         <SegmentedControl segments={PRESETS} value={preset} onChange={setPreset} compact />
@@ -175,6 +186,10 @@ export function DetailScreen({ symbols, bySymbol, dates, initialSymbol, preset, 
   const initialIndex = Math.max(0, symbols.indexOf(initialSymbol));
   const [index, setIndex] = useState(initialIndex);
 
+  // While a scrub is live the pager stops accepting drags, so the finger stays
+  // on the chart instead of flicking through to the next ticker.
+  const [scrubbing, setScrubbing] = useState(false);
+
   const current = bySymbol.get(symbols[index]);
   const watched = current ? isWatched(current.s) : false;
 
@@ -225,10 +240,11 @@ export function DetailScreen({ symbols, bySymbol, dates, initialSymbol, preset, 
         data={symbols}
         keyExtractor={(x) => x}
         renderItem={({ item }) => (
-          <Page ticker={bySymbol.get(item)} dates={dates} initialPreset={preset} width={width} skipEnabled={skipEnabled} sessionsStale={sessionsStale} />
+          <Page ticker={bySymbol.get(item)} dates={dates} initialPreset={preset} width={width} skipEnabled={skipEnabled} sessionsStale={sessionsStale} onScrubbingChange={setScrubbing} />
         )}
         horizontal
         pagingEnabled
+        scrollEnabled={!scrubbing}
         showsHorizontalScrollIndicator={false}
         initialScrollIndex={initialIndex}
         getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}

@@ -50,8 +50,10 @@ export function MarketScreen() {
     [overlap, basket.length]
   );
 
+  // Compact, because it rides in the search row rather than owning a full row
+  // of its own - the header is tall enough without a bar per control.
   const viewSwitch = (
-    <SegmentedControl<MarketView> segments={VIEW_SEGMENTS} value={view} onChange={setView} />
+    <SegmentedControl<MarketView> segments={VIEW_SEGMENTS} value={view} onChange={setView} compact />
   );
 
   if (view === 'table') return <RankTableScreen headerAccessory={viewSwitch} />;

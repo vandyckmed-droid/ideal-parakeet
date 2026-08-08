@@ -72,20 +72,27 @@ jobs:
       - name: Validate
         run: node tools/04-validate-dataset.mjs
 
+      # The Research tab's series: $10k in the top-50 momentum portfolio,
+      # point-in-time index membership, rebalanced monthly. ~530 extra calls.
+      - name: Build research series
+        run: node tools/05-build-research.mjs
+        env:
+          API_KEY: ${{ secrets.FMP_API_KEY }}
+
       - name: Commit if changed
         run: |
           set -euo pipefail
           git config user.name  'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
 
-          if git diff --quiet -- assets/data/market.json data/universe.json; then
+          if git diff --quiet -- assets/data/market.json assets/data/research.json data/universe.json; then
             echo "No change - the newest session is already committed."
             echo "No new session; nothing committed." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
           THROUGH=$(node -e "const d=require('./assets/data/market.json');console.log(d.dates[d.dates.length-1])")
-          git add assets/data/market.json data/universe.json
+          git add assets/data/market.json assets/data/research.json data/universe.json
           git commit -m "Refresh market data through ${THROUGH}"
 
           # The branch can move under a long run; rebase rather than force.

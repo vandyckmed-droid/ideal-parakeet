@@ -44,12 +44,22 @@ export function slice(t, from, to) {
  * differently over one month than over one year and the column could not be
  * ranked at all.
  */
-// applyFloor: VOL_FLOOR exists to stop one quiet *name* dominating a ranking
-// for reasons unrelated to skill (the EA case - a price pinned near a deal).
-// That reasoning doesn't carry over to a portfolio, where sigma below
-// VOL_FLOOR is the ordinary, intended result of diversification, not an
-// anomaly. Portfolio-level callers pass false.
-export function computeWindowStats(ticker, startIndex, endIndex, applyFloor = true) {
+/**
+ * The market every name is measured against for the residual metric - SPY,
+ * packed on the same calendar but outside the universe. The native build
+ * imports it statically; here the dataset arrives over the network, so App.js
+ * hands it over once on load.
+ */
+let MARKET = null;
+export function setMarket(m) {
+  MARKET = m && Array.isArray(m.p) ? m : null;
+}
+/** Whether the loaded dataset carries the market reference at all. */
+export function hasMarket() {
+  return MARKET != null;
+}
+
+export function computeWindowStats(ticker, startIndex, endIndex) {
   if (endIndex <= startIndex) return null;
 
   const startPrice = closeAt(ticker, startIndex);
@@ -82,14 +92,41 @@ export function computeWindowStats(ticker, startIndex, endIndex, applyFloor = tr
     annualizedVol = Math.sqrt(variance * TRADING_DAYS_PER_YEAR);
   }
 
-  // Divisor is floored when asked; `annualizedVol` always stays the honest
-  // measurement either way.
-  const divisor =
-    annualizedVol === null ? null : applyFloor ? Math.max(annualizedVol, VOL_FLOOR) : annualizedVol;
+  // `annualizedVol` always stays the honest measurement; only the divisor moves.
+  const divisor = annualizedVol === null ? null : Math.max(annualizedVol, VOL_FLOOR);
   const ratio =
     annualizedReturn !== null && divisor !== null && divisor > 1e-9
       ? annualizedReturn / divisor
       : null;
+
+  // --- the market-residual return --------------------------------------------
+  // One pass of ordinary least squares of the name on the market over exactly
+  // the window being displayed, then the residual accumulated in log space and
+  // converted back. Log returns matter twice: they make the regression linear
+  // and they make the residual summable.
+  let beta = null;
+  let residualReturn = null;
+  if (MARKET && observations >= MIN_VOL_OBSERVATIONS) {
+    const mLo = startIndex - MARKET.o;
+    const mHi = endIndex - MARKET.o;
+    if (mLo >= 0 && mHi < MARKET.p.length) {
+      let n = 0, sx = 0, sy = 0, sxx = 0, sxy = 0;
+      for (let i = 1; i <= hi - lo; i++) {
+        const y = Math.log(ticker.p[lo + i] / ticker.p[lo + i - 1]);
+        const x = Math.log(MARKET.p[mLo + i] / MARKET.p[mLo + i - 1]);
+        if (!isFinite(y) || !isFinite(x)) continue;
+        n++; sx += x; sy += y; sxx += x * x; sxy += x * y;
+      }
+      const varX = n > 1 ? sxx / n - (sx / n) ** 2 : 0;
+      if (n >= MIN_VOL_OBSERVATIONS && varX > 1e-12) {
+        beta = (sxy / n - (sx / n) * (sy / n)) / varX;
+        // Deliberately no alpha term. Fitting an intercept over the very window
+        // being measured would absorb the drift into it and leave a residual
+        // that sums to zero for every name - precisely the thing being ranked.
+        residualReturn = Math.expm1(sy - beta * sx);
+      }
+    }
+  }
 
   return {
     startPrice,
@@ -97,15 +134,19 @@ export function computeWindowStats(ticker, startIndex, endIndex, applyFloor = tr
     totalReturn,
     annualizedReturn,
     annualizedVol,
-    volFloored: applyFloor && annualizedVol !== null && annualizedVol < VOL_FLOOR,
+    volFloored: annualizedVol !== null && annualizedVol < VOL_FLOOR,
     ratio,
+    residualReturn,
+    beta,
     observations,
   };
 }
 
 export function metricValue(stats, metric) {
   if (!stats) return null;
-  return metric === 'return' ? stats.totalReturn : stats.ratio;
+  if (metric === 'return') return stats.totalReturn;
+  if (metric === 'residual') return stats.residualReturn;
+  return stats.ratio;
 }
 
 // --- windows -----------------------------------------------------------------
@@ -242,7 +283,7 @@ export function formatRatio(v) {
   return `${v >= 0 ? '+' : ''}${v.toFixed(2)}`;
 }
 export function formatMetric(v, metric) {
-  return metric === 'return' ? formatPercent(v) : formatRatio(v);
+  return metric === 'ratio' ? formatRatio(v) : formatPercent(v);
 }
 export function formatPrice(v) {
   if (v === null || !isFinite(v)) return '—';

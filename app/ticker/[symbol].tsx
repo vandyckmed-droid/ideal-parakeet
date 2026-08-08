@@ -58,6 +58,11 @@ export default function TickerRoute() {
     [width, symbols.length]
   );
 
+  // A drag on a chart is horizontal and so is a page turn. While a scrub is
+  // live the pager stops accepting drags, so the finger stays on the chart
+  // instead of flicking through to the next ticker.
+  const [scrubbing, setScrubbing] = useState(false);
+
   const renderPage = useCallback(
     ({ item }: { item: string }) => {
       const ticker = BY_SYMBOL.get(item) as Ticker;
@@ -68,6 +73,7 @@ export default function TickerRoute() {
           width={width}
           skipEnabled={skipEnabled}
           sessionsStale={sessionsStale}
+          onScrubbingChange={setScrubbing}
         />
       );
     },
@@ -133,6 +139,7 @@ export default function TickerRoute() {
         renderItem={renderPage}
         horizontal
         pagingEnabled
+        scrollEnabled={!scrubbing}
         showsHorizontalScrollIndicator={false}
         initialScrollIndex={initialIndex}
         getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}

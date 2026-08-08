@@ -1,8 +1,8 @@
 // Shared presentational pieces: segmented control, sparkline, price chart, row.
 
-import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Modal, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle, Defs, LinearGradient, Path, Line as SvgLine, Stop } from 'react-native-svg';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, Modal, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
+import Svg, { Circle, ClipPath, Defs, G, LinearGradient, Path, Rect, Line as SvgLine, Stop } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 
 import { useColors } from './theme';
@@ -10,6 +10,17 @@ import { mixHex, mono, radius, space, type, withAlpha } from './theme';
 import { formatMetric, formatPercentPlain, formatPrice, formatRatio, metricValue } from './stats';
 import { OVERLAP_THRESHOLD } from './overlap';
 import { rankHeat } from './ranks';
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+const AnimatedRect = Animated.createAnimatedComponent(Rect);
+
+// SVG ids share one document-wide namespace, so two charts mounted at once -
+// the ticker pager keeps three - would otherwise share a gradient and a clip
+// path, and the second would paint with the first's colour.
+let chartSeq = 0;
+
+/** Room at the right edge for the leading marker and its halo. */
+const LEAD_PAD = 10;
 
 const haptic = (fn) => {
   try {
@@ -20,10 +31,56 @@ const haptic = (fn) => {
   }
 };
 
+// The active state is a single thumb that glides between positions, rather
+// than each segment repainting its own background - one moving object reads as
+// a physical part. Thumb geometry is arithmetic on the measured track width,
+// so the first paint is correct before any animation has run.
 export function SegmentedControl({ segments, value, onChange, compact }) {
   const colors = useColors();
+  const [trackWidth, setTrackWidth] = useState(0);
+
+  const pad = compact ? 2 : 3;
+  const gap = 2;
+  const n = segments.length;
+  const index = Math.max(0, segments.findIndex((s) => s.key === value));
+  const segWidth = n > 0 ? (trackWidth - pad * 2 - gap * (n - 1)) / n : 0;
+
+  const x = useRef(new Animated.Value(0)).current;
+  const mounted = useRef(false);
+
+  useEffect(() => {
+    if (trackWidth <= 0) return;
+    const target = pad + index * (segWidth + gap);
+    if (!mounted.current) {
+      // First layout: appear in place. Sliding in from 0 on mount would
+      // animate something the user never changed.
+      x.setValue(target);
+      mounted.current = true;
+      return;
+    }
+    Animated.spring(x, { toValue: target, speed: 26, bounciness: 5, useNativeDriver: true }).start();
+  }, [index, segWidth, trackWidth, pad, x]);
+
   return (
-    <View style={[sc.track, { backgroundColor: colors.surface, padding: compact ? 2 : 3 }]}>
+    <View
+      onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
+      style={[sc.track, { backgroundColor: colors.surface, padding: pad }]}
+    >
+      {trackWidth > 0 && segWidth > 0 && (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            sc.thumb,
+            {
+              width: segWidth,
+              top: pad,
+              bottom: pad,
+              backgroundColor: colors.bg,
+              transform: [{ translateX: x }],
+            },
+          ]}
+        />
+      )}
       {segments.map((seg) => {
         const active = seg.key === value;
         return (
@@ -31,13 +88,7 @@ export function SegmentedControl({ segments, value, onChange, compact }) {
             key={seg.key}
             onPress={() => onChange(seg.key)}
             hitSlop={4}
-            style={[
-              sc.segment,
-              {
-                paddingVertical: compact ? space(1.25) : space(1.75),
-                backgroundColor: active ? colors.bg : 'transparent',
-              },
-            ]}
+            style={[sc.segment, { paddingVertical: compact ? space(1.25) : space(1.75) }]}
           >
             <Text
               numberOfLines={1}
@@ -54,7 +105,17 @@ export function SegmentedControl({ segments, value, onChange, compact }) {
 
 const sc = StyleSheet.create({
   track: { flexDirection: 'row', borderRadius: radius.md, gap: 2 },
-  segment: { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm + 1 },
+  thumb: {
+    position: 'absolute',
+    left: 0,
+    borderRadius: radius.sm + 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 2,
+    shadowOpacity: 0.12,
+    elevation: 1,
+  },
+  segment: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });
 
 export const Sparkline = React.memo(function Sparkline({ values, color, width = 64, height = 26 }) {
@@ -95,10 +156,15 @@ export const Sparkline = React.memo(function Sparkline({ values, color, width = 
  * Snack build depends only on modules Snack preloads. The dashed baseline marks
  * the window's opening price, so up-or-down reads without parsing a number.
  */
-export function PriceChart({ values, height = 220, onScrub, excludeTail = 0 }) {
+export function PriceChart({ values, height = 220, onScrub, excludeTail = 0, compare }) {
   const colors = useColors();
   const [width, setWidth] = useState(0);
   const [scrub, setScrub] = useState(null);
+
+  const uid = useRef(0);
+  if (uid.current === 0) uid.current = ++chartSeq;
+  const fillId = `pcfill${uid.current}`;
+  const clipId = `pcclip${uid.current}`;
 
   // Last measured point. The excluded tail is still drawn, but dimmed and
   // fenced off - cropping it would hide the very price action being skipped.
@@ -106,42 +172,68 @@ export function PriceChart({ values, height = 220, onScrub, excludeTail = 0 }) {
 
   const widthRef = useRef(0);
   const lenRef = useRef(0);
-  widthRef.current = width;
+  widthRef.current = Math.max(1, width - LEAD_PAD);
   lenRef.current = values.length;
+
+  // A drag delivers touches faster than the screen repaints, and each one used
+  // to set state and re-render the whole screen. Coalescing to one update per
+  // frame is what makes the crosshair track the thumb instead of lurching
+  // behind it; the reported index is unchanged.
+  const pendingX = useRef(null);
+  const frame = useRef(null);
+
+  const flush = useCallback(() => {
+    frame.current = null;
+    const x = pendingX.current;
+    const w = widthRef.current;
+    const len = lenRef.current;
+    if (x == null || !w || len < 2) return;
+    const ratio = Math.max(0, Math.min(1, x / w));
+    const i = Math.round(ratio * (len - 1));
+    setScrub((prev) => {
+      if (prev === i) return prev;
+      if (onScrub) onScrub(i);
+      return i;
+    });
+  }, [onScrub]);
 
   const update = useCallback(
     (x) => {
-      const w = widthRef.current;
-      const len = lenRef.current;
-      if (!w || len < 2) return;
-      const ratio = Math.max(0, Math.min(1, x / w));
-      const i = Math.round(ratio * (len - 1));
-      setScrub((prev) => {
-        if (prev === i) return prev;
-        if (onScrub) onScrub(i);
-        return i;
-      });
+      pendingX.current = x;
+      if (frame.current == null) frame.current = requestAnimationFrame(flush);
     },
-    [onScrub]
+    [flush]
   );
+
+  const release = useCallback(() => {
+    if (frame.current != null) cancelAnimationFrame(frame.current);
+    frame.current = null;
+    pendingX.current = null;
+    setScrub(null);
+    if (onScrub) onScrub(null);
+  }, [onScrub]);
+
+  useEffect(() => () => {
+    if (frame.current != null) cancelAnimationFrame(frame.current);
+  }, []);
 
   const responder = useMemo(
     () =>
       PanResponder.create({
         onStartShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponder: () => true,
+        // Capture phase: the ticker pager scrolls horizontally underneath, and
+        // without claiming the touch before it, a sideways drag on the chart is
+        // read as a page turn and the scrub is lost.
+        onStartShouldSetPanResponderCapture: () => true,
+        onMoveShouldSetPanResponderCapture: () => true,
+        onPanResponderTerminationRequest: () => false,
         onPanResponderGrant: (e) => update(e.nativeEvent.locationX),
         onPanResponderMove: (e) => update(e.nativeEvent.locationX),
-        onPanResponderRelease: () => {
-          setScrub(null);
-          if (onScrub) onScrub(null);
-        },
-        onPanResponderTerminate: () => {
-          setScrub(null);
-          if (onScrub) onScrub(null);
-        },
+        onPanResponderRelease: release,
+        onPanResponderTerminate: release,
       }),
-    [update, onScrub]
+    [update, release]
   );
 
   // Judged on the measured stretch so the colour agrees with the reported return.
@@ -156,13 +248,25 @@ export function PriceChart({ values, height = 220, onScrub, excludeTail = 0 }) {
       if (v < min) min = v;
       if (v > max) max = v;
     }
+    // The comparison lines share the axis, so they have to widen the extremes
+    // or they would be drawn clipped against a frame they never sized.
+    for (const c of compare || []) {
+      for (const v of c.values) {
+        if (v < min) min = v;
+        if (v > max) max = v;
+      }
+    }
     const span = max - min || Math.abs(max) * 0.01 || 1;
     const padY = 12;
     const usable = height - padY * 2;
-    const xAt = (i) => (i / (values.length - 1)) * width;
+    // The newest point carries a marker and a halo, which would be sliced in
+    // half by the frame if the line ran to the very edge. Everything measured
+    // in x - including where a finger maps to - uses this inset width.
+    const plotW = Math.max(1, width - LEAD_PAD);
+    const xAt = (i) => (i / (values.length - 1)) * plotW;
     const yAt = (v) => padY + (1 - (v - min) / span) * usable;
 
-    const n = Math.min(values.length, Math.max(2, Math.floor(width)));
+    const n = Math.min(values.length, Math.max(2, Math.floor(plotW)));
     const step = (values.length - 1) / (n - 1);
     // Two paths sharing the vertex at `cut`, so the excluded tail can carry its
     // own style with a seamless join.
@@ -175,17 +279,85 @@ export function PriceChart({ values, height = 220, onScrub, excludeTail = 0 }) {
       if (idx >= cut) tail += `${tail === '' ? 'M' : 'L'}${cmd}`;
     }
     const cutX = xAt(cut);
+    const comparePaths = (compare || [])
+      .filter((c) => c.values.length === values.length)
+      .map((c) => {
+        let d = '';
+        for (let i = 0; i < n; i++) {
+          const idx = Math.round(i * step);
+          d += `${d === '' ? 'M' : 'L'}${xAt(idx).toFixed(2)} ${yAt(c.values[idx]).toFixed(2)}`;
+        }
+        return { d, color: c.color, dash: c.dash };
+      });
     return {
       path,
       tail,
       cutX,
+      comparePaths,
       // Fill stops at the cut so the shaded mass matches the measured window.
       area: `${path}L${cutX.toFixed(2)} ${height}L0 ${height}Z`,
       xAt,
       yAt,
       baseY: yAt(values[0]),
+      leadX: cutX,
+      leadY: yAt(values[cut]),
     };
-  }, [values, width, height, cut]);
+  }, [values, width, height, cut, compare]);
+
+  // --- the line drawing itself in on open ----------------------------------
+  // Keyed on a signature of the data rather than its array identity, so it
+  // replays when the window changes and stays put while a finger drags.
+  const reveal = useRef(new Animated.Value(0)).current;
+  const ready = width > 0 && values.length >= 2;
+  const signature = ready ? `${values.length}:${values[0]}:${values[cut]}` : '';
+
+  useEffect(() => {
+    if (!signature) return;
+    reveal.setValue(0);
+    const anim = Animated.timing(reveal, {
+      toValue: 1,
+      duration: 620,
+      easing: Easing.out(Easing.cubic),
+      // Driving an SVG geometry attribute, which the native driver cannot own.
+      useNativeDriver: false,
+    });
+    anim.start();
+    return () => anim.stop();
+  }, [signature, reveal]);
+
+  const revealWidth = reveal.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, Math.max(width, 1)],
+  });
+  // The leading marker arrives only once the line has reached it.
+  const leadOpacity = reveal.interpolate({ inputRange: [0, 0.88, 1], outputRange: [0, 0, 1] });
+
+  // --- the leading pulse ---------------------------------------------------
+  // A slow halo on the newest point. It stops while scrubbing: a beating dot
+  // competing with the crosshair reads as noise, and the frames are better
+  // spent on the drag.
+  const pulse = useRef(new Animated.Value(0)).current;
+  const scrubbing = scrub !== null;
+
+  useEffect(() => {
+    if (scrubbing || !ready) {
+      pulse.setValue(0);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.timing(pulse, {
+        toValue: 1,
+        duration: 2000,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: false,
+      })
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [scrubbing, ready, pulse]);
+
+  const haloRadius = pulse.interpolate({ inputRange: [0, 1], outputRange: [3.5, 14] });
+  const haloOpacity = pulse.interpolate({ inputRange: [0, 0.12, 1], outputRange: [0, 0.3, 0] });
 
   return (
     <View
@@ -196,44 +368,87 @@ export function PriceChart({ values, height = 220, onScrub, excludeTail = 0 }) {
       {geo && (
         <Svg width={width} height={height}>
           <Defs>
-            <LinearGradient id="pcfill" x1="0" y1="0" x2="0" y2="1">
+            <LinearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
               <Stop offset="0" stopColor={line} stopOpacity={colors.fillOpacity} />
               <Stop offset="1" stopColor={line} stopOpacity={0} />
             </LinearGradient>
+            <ClipPath id={clipId}>
+              <AnimatedRect x={0} y={0} width={revealWidth} height={height} />
+            </ClipPath>
           </Defs>
-          <Path d={geo.area} fill="url(#pcfill)" />
-          <SvgLine
-            x1={0}
-            y1={geo.baseY}
-            x2={width}
-            y2={geo.baseY}
-            stroke={colors.textFaint}
-            strokeWidth={1}
-            strokeDasharray="3 4"
-            opacity={0.6}
-          />
-          {excludeTail > 0 && (
-            <>
+
+          {/* Everything that constitutes the drawing is revealed together by
+              one sweeping clip, so the fill, the baseline and every line arrive
+              as a single gesture rather than as separate effects. */}
+          <G clipPath={`url(#${clipId})`}>
+            <Path d={geo.area} fill={`url(#${fillId})`} />
+            <SvgLine
+              x1={0}
+              y1={geo.baseY}
+              x2={width}
+              y2={geo.baseY}
+              stroke={colors.textFaint}
+              strokeWidth={1}
+              strokeDasharray="3 4"
+              opacity={0.6}
+            />
+            {excludeTail > 0 && (
+              <>
+                <Path
+                  d={geo.tail}
+                  stroke={colors.textFaint}
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                />
+                <SvgLine
+                  x1={geo.cutX}
+                  y1={0}
+                  x2={geo.cutX}
+                  y2={height}
+                  stroke={colors.textFaint}
+                  strokeWidth={1}
+                  strokeDasharray="2 3"
+                />
+              </>
+            )}
+            {/* Under the portfolio line and dashed, so the comparisons read as
+                references rather than as rival protagonists. */}
+            {geo.comparePaths.map((c) => (
               <Path
-                d={geo.tail}
-                stroke={colors.textFaint}
-                strokeWidth={2}
+                key={c.color + c.dash}
+                d={c.d}
+                stroke={c.color}
+                strokeWidth={1.5}
+                strokeDasharray={c.dash}
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 fill="none"
               />
-              <SvgLine
-                x1={geo.cutX}
-                y1={0}
-                x2={geo.cutX}
-                y2={height}
-                stroke={colors.textFaint}
-                strokeWidth={1}
-                strokeDasharray="2 3"
-              />
-            </>
-          )}
-          <Path d={geo.path} stroke={line} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            ))}
+            <Path d={geo.path} stroke={line} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          </G>
+
+          {/* The newest point: a halo breathing out of a solid dot. Outside the
+              clip so it can settle after the sweep has passed. */}
+          <AnimatedCircle
+            cx={geo.leadX}
+            cy={geo.leadY}
+            r={haloRadius}
+            fill={line}
+            opacity={Animated.multiply(haloOpacity, leadOpacity)}
+          />
+          <AnimatedCircle
+            cx={geo.leadX}
+            cy={geo.leadY}
+            r={3}
+            fill={line}
+            stroke={colors.bg}
+            strokeWidth={1.5}
+            opacity={leadOpacity}
+          />
+
           {scrub !== null && scrub < values.length && (
             <>
               <SvgLine x1={geo.xAt(scrub)} y1={0} x2={geo.xAt(scrub)} y2={height} stroke={colors.textMuted} strokeWidth={1} />
@@ -245,149 +460,6 @@ export function PriceChart({ values, height = 220, onScrub, excludeTail = 0 }) {
     </View>
   );
 }
-
-/**
- * A small circled "i" that opens a short explanation on tap. For a stat whose
- * name alone doesn't say what question it answers.
- */
-export function InfoButton({ title, children }) {
-  const colors = useColors();
-  const [open, setOpen] = useState(false);
-
-  return (
-    <>
-      <Pressable
-        onPress={() => setOpen(true)}
-        hitSlop={10}
-        style={[ib.circle, { borderColor: colors.textFaint }]}
-        accessibilityRole="button"
-        accessibilityLabel={`About ${title}`}
-      >
-        <Text style={[type.micro, { color: colors.textFaint }]}>i</Text>
-      </Pressable>
-
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <Pressable style={[ib.scrim, { backgroundColor: colors.scrim }]} onPress={() => setOpen(false)} />
-        <View style={ib.centerWrap} pointerEvents="box-none">
-          <View style={[ib.card, { backgroundColor: colors.bg, borderColor: colors.border }]}>
-            <Text style={[type.heading, { color: colors.text }]}>{title}</Text>
-            <Text style={[type.body, { color: colors.textMuted, marginTop: space(2) }]}>{children}</Text>
-            <Pressable
-              onPress={() => setOpen(false)}
-              style={[ib.closeButton, { backgroundColor: colors.surface }]}
-              accessibilityRole="button"
-            >
-              <Text style={[type.bodyStrong, { color: colors.text }]}>Got it</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
-    </>
-  );
-}
-
-const ib = StyleSheet.create({
-  circle: { width: 16, height: 16, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  scrim: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
-  centerWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space(8) },
-  card: { width: '100%', maxWidth: 340, borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, padding: space(5) },
-  closeButton: { marginTop: space(4), paddingVertical: space(3), borderRadius: radius.md, alignItems: 'center' },
-});
-
-const DIVERSIFICATION_EXPLANATION =
-  'The average volatility of your holdings on their own, divided by your ' +
-  "portfolio's actual volatility. 1.0x means combining these names bought " +
-  'you nothing - your risk is the same as just holding one of them. 2.0x ' +
-  'means your combined risk is half what the average holding carries alone. ' +
-  'Higher is more diversified.';
-
-function formatDiversification(v) {
-  if (v === null || !Number.isFinite(v)) return '—';
-  return `${v.toFixed(2)}x`;
-}
-
-/**
- * The watchlist's own volatility, risk-adjusted return and diversification
- * ratio, treated as one equal-weighted position rather than N separate rows.
- * `stats` already reflects whatever window and skip setting the rest of the
- * screen is using, with the vol floor turned off (see stats.js's
- * computeWindowStats).
- *
- * Deliberately does not show the portfolio's total return. A watchlist is
- * assembled by reading a list ranked on past return and keeping the names
- * near the top, so its backtested return is close to a tautology: it measures
- * the selection, not a result anyone could have had. The risk figures do not
- * have that problem - nothing here was chosen for being low-volatility or
- * uncorrelated, so sigma and the diversification ratio describe the basket
- * rather than restating how it was picked.
- */
-export function PortfolioSummary({ stats, diversificationRatio }) {
-  const colors = useColors();
-
-  if (!stats) {
-    return (
-      <View style={[pf.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <Text style={[type.micro, { color: colors.textFaint }]}>PORTFOLIO · EQUAL-WEIGHTED</Text>
-        <Text style={[type.caption, { color: colors.textFaint, marginTop: space(1) }]}>
-          Not enough shared history in this window.
-        </Text>
-      </View>
-    );
-  }
-
-  return (
-    <View
-      style={[pf.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
-      accessibilityLabel={
-        `Portfolio, equal-weighted: ` +
-        `volatility ${formatPercentPlain(stats.annualizedVol)}, ` +
-        `return over volatility ${formatRatio(stats.ratio)}, ` +
-        `diversification ${formatDiversification(diversificationRatio)}`
-      }
-    >
-      <Text style={[type.micro, { color: colors.textFaint }]}>PORTFOLIO · EQUAL-WEIGHTED</Text>
-      <View style={pf.figures}>
-        <View style={pf.figure}>
-          <Text style={[type.micro, { color: colors.textFaint }]}>ANN σ</Text>
-          <Text style={[type.heading, mono, { color: colors.textMuted }]}>
-            {formatPercentPlain(stats.annualizedVol)}
-          </Text>
-        </View>
-        <View style={pf.figure}>
-          <Text style={[type.micro, { color: colors.textFaint }]}>RETURN ÷ σ</Text>
-          <Text style={[type.heading, mono, { color: colors.text }]}>{formatRatio(stats.ratio)}</Text>
-        </View>
-      </View>
-
-      <View style={[pf.divider, { backgroundColor: colors.hairline }]} />
-
-      <View style={pf.diversificationRow}>
-        <View style={pf.diversificationLabel}>
-          <Text style={[type.micro, { color: colors.textFaint }]}>DIVERSIFICATION</Text>
-          <InfoButton title="Diversification ratio">{DIVERSIFICATION_EXPLANATION}</InfoButton>
-        </View>
-        <Text style={[type.heading, mono, { color: colors.text }]}>
-          {formatDiversification(diversificationRatio)}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
-const pf = StyleSheet.create({
-  card: {
-    borderRadius: radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: space(4),
-    paddingVertical: space(3),
-    gap: space(1),
-  },
-  figures: { flexDirection: 'row', justifyContent: 'space-between', marginTop: space(1) },
-  figure: { gap: 2 },
-  divider: { height: StyleSheet.hairlineWidth, marginVertical: space(2) },
-  diversificationRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  diversificationLabel: { flexDirection: 'row', alignItems: 'center', gap: space(1.5) },
-});
 
 export const ROW_HEIGHT = 64;
 

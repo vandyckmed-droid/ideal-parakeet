@@ -23,6 +23,7 @@ import { mono, radius, space, type } from '../theme/theme';
 const METRIC_SEGMENTS: { key: MetricKey; label: string }[] = [
   { key: 'return', label: 'Return' },
   { key: 'ratio', label: 'Return ÷ σ' },
+  { key: 'residual', label: 'Residual' },
 ];
 
 /** Default sort column: the longest horizon, where rank is least noisy. */
@@ -144,18 +145,21 @@ export function RankTableScreen({ headerAccessory }: { headerAccessory?: React.R
           </Pressable>
         </View>
 
-        {headerAccessory}
-
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Search symbol or company"
-          placeholderTextColor={colors.textFaint}
-          autoCapitalize="characters"
-          autoCorrect={false}
-          clearButtonMode="while-editing"
-          style={[styles.search, type.body, { backgroundColor: colors.surface, color: colors.text }]}
-        />
+        {/* Same row as the search box, matching the card view: both are
+            "what am I looking at" controls and neither deserves a full row. */}
+        <View style={styles.searchRow}>
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search symbol or company"
+            placeholderTextColor={colors.textFaint}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            clearButtonMode="while-editing"
+            style={[styles.search, type.body, { backgroundColor: colors.surface, color: colors.text }]}
+          />
+          {headerAccessory ? <View style={styles.accessory}>{headerAccessory}</View> : null}
+        </View>
 
         <View style={styles.controlRow}>
           <View style={{ flex: 1 }}>
@@ -163,6 +167,7 @@ export function RankTableScreen({ headerAccessory }: { headerAccessory?: React.R
               segments={METRIC_SEGMENTS}
               value={metric}
               onChange={setMetric}
+              compact
             />
           </View>
           <Pressable
@@ -287,7 +292,7 @@ export function RankTableScreen({ headerAccessory }: { headerAccessory?: React.R
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { paddingHorizontal: space(4), paddingBottom: space(2), gap: space(2.5) },
+  header: { paddingHorizontal: space(4), paddingBottom: space(2), gap: space(2) },
   headerTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   themeButton: {
     width: 36,
@@ -296,7 +301,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  search: { borderRadius: radius.md, paddingHorizontal: space(3.5), paddingVertical: space(2.75) },
+  searchRow: { flexDirection: 'row', alignItems: 'stretch', gap: space(2) },
+  // minWidth 0: otherwise the placeholder's width is the field's minimum and
+  // the view switch gets shoved off the right edge.
+  search: { flex: 1, minWidth: 0, borderRadius: radius.md, paddingHorizontal: space(3.5), paddingVertical: space(2.75) },
+  accessory: { width: 148, justifyContent: 'center' },
   controlRow: { flexDirection: 'row', alignItems: 'center', gap: space(2) },
   skipButton: {
     paddingHorizontal: space(3.5),
