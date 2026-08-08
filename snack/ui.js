@@ -118,6 +118,154 @@ const sc = StyleSheet.create({
   segment: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });
 
+// Several series as equals on one shared axis - unlike PriceChart, where one
+// protagonist owns the fill and references are dashed. Every line is solid and
+// colour-coded; the legend lives outside, keyed by the same colours.
+export function CompareChart({ lines, height = 200, baseline, onScrub }) {
+  const colors = useColors();
+  const [width, setWidth] = useState(0);
+  const [scrub, setScrub] = useState(null);
+
+  const uid = useRef(0);
+  if (uid.current === 0) uid.current = ++chartSeq;
+  const clipId = `ccclip${uid.current}`;
+
+  const len = lines.length ? lines[0].values.length : 0;
+
+  const geo = useMemo(() => {
+    if (len < 2 || width <= 0 || !lines.length) return null;
+    let min = Infinity, max = -Infinity;
+    for (const l of lines) for (const v of l.values) { if (v < min) min = v; if (v > max) max = v; }
+    if (baseline != null) { if (baseline < min) min = baseline; if (baseline > max) max = baseline; }
+    const span = max - min || Math.abs(max) * 0.01 || 1;
+    const padY = 12;
+    const usable = height - padY * 2;
+    const plotW = Math.max(1, width - LEAD_PAD);
+    const xAt = (i) => (i / (len - 1)) * plotW;
+    const yAt = (v) => padY + (1 - (v - min) / span) * usable;
+    const n = Math.min(len, Math.max(2, Math.floor(plotW)));
+    const step = (len - 1) / (n - 1);
+    const paths = lines.map((l) => {
+      let d = '';
+      for (let i = 0; i < n; i++) {
+        const idx = Math.round(i * step);
+        d += `${d === '' ? 'M' : 'L'}${xAt(idx).toFixed(2)} ${yAt(l.values[idx]).toFixed(2)}`;
+      }
+      return { key: l.key, color: l.color, d, endY: yAt(l.values[len - 1]) };
+    });
+    return { paths, xAt, yAt, baseY: baseline != null ? yAt(baseline) : null, endX: xAt(len - 1) };
+  }, [lines, len, width, height, baseline]);
+
+  // Scrub, coalesced to one update per frame (same reasoning as PriceChart).
+  const plotWRef = useRef(1);
+  const lenRef = useRef(0);
+  plotWRef.current = Math.max(1, width - LEAD_PAD);
+  lenRef.current = len;
+  const pendingX = useRef(null);
+  const frame = useRef(null);
+
+  const flush = useCallback(() => {
+    frame.current = null;
+    const x = pendingX.current;
+    if (x == null || lenRef.current < 2) return;
+    const ratio = Math.max(0, Math.min(1, x / plotWRef.current));
+    const i = Math.round(ratio * (lenRef.current - 1));
+    setScrub((prev) => {
+      if (prev === i) return prev;
+      if (onScrub) onScrub(i);
+      return i;
+    });
+  }, [onScrub]);
+
+  const update = useCallback((x) => {
+    pendingX.current = x;
+    if (frame.current == null) frame.current = requestAnimationFrame(flush);
+  }, [flush]);
+
+  const release = useCallback(() => {
+    if (frame.current != null) cancelAnimationFrame(frame.current);
+    frame.current = null;
+    pendingX.current = null;
+    setScrub(null);
+    if (onScrub) onScrub(null);
+  }, [onScrub]);
+
+  useEffect(() => () => { if (frame.current != null) cancelAnimationFrame(frame.current); }, []);
+
+  const responder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onStartShouldSetPanResponderCapture: () => true,
+        onMoveShouldSetPanResponderCapture: () => true,
+        onPanResponderTerminationRequest: () => false,
+        onPanResponderGrant: (e) => update(e.nativeEvent.locationX),
+        onPanResponderMove: (e) => update(e.nativeEvent.locationX),
+        onPanResponderRelease: release,
+        onPanResponderTerminate: release,
+      }),
+    [update, release]
+  );
+
+  // Draw-in keyed on which lines show, so adding a family replays the sweep.
+  const reveal = useRef(new Animated.Value(0)).current;
+  const signature = lines.map((l) => l.key).join('|') + ':' + len;
+  const ready = width > 0 && len >= 2;
+  useEffect(() => {
+    if (!ready) return;
+    reveal.setValue(0);
+    const anim = Animated.timing(reveal, {
+      toValue: 1, duration: 620, easing: Easing.out(Easing.cubic), useNativeDriver: false,
+    });
+    anim.start();
+    return () => anim.stop();
+  }, [signature, ready, reveal]);
+  const revealWidth = reveal.interpolate({ inputRange: [0, 1], outputRange: [0, Math.max(width, 1)] });
+
+  return (
+    <View
+      onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+      style={{ height, width: '100%' }}
+      {...responder.panHandlers}
+    >
+      {geo && (
+        <Svg width={width} height={height}>
+          <Defs>
+            <ClipPath id={clipId}>
+              <AnimatedRect x={0} y={0} width={revealWidth} height={height} />
+            </ClipPath>
+          </Defs>
+          <G clipPath={`url(#${clipId})`}>
+            {geo.baseY != null && (
+              <SvgLine x1={0} y1={geo.baseY} x2={width} y2={geo.baseY}
+                stroke={colors.textFaint} strokeWidth={1} strokeDasharray="3 4" opacity={0.6} />
+            )}
+            {geo.paths.map((p) => (
+              <Path key={p.key} d={p.d} stroke={p.color} strokeWidth={2}
+                strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            ))}
+          </G>
+          {geo.paths.map((p) => (
+            <Circle key={`end-${p.key}`} cx={geo.endX} cy={p.endY} r={3}
+              fill={p.color} stroke={colors.bg} strokeWidth={1.5} />
+          ))}
+          {scrub !== null && (
+            <>
+              <SvgLine x1={geo.xAt(scrub)} y1={0} x2={geo.xAt(scrub)} y2={height}
+                stroke={colors.textMuted} strokeWidth={1} />
+              {lines.map((l) => (
+                <Circle key={`dot-${l.key}`} cx={geo.xAt(scrub)} cy={geo.yAt(l.values[scrub])}
+                  r={4} fill={l.color} stroke={colors.bg} strokeWidth={2} />
+              ))}
+            </>
+          )}
+        </Svg>
+      )}
+    </View>
+  );
+}
+
 export const Sparkline = React.memo(function Sparkline({ values, color, width = 64, height = 26 }) {
   const d = useMemo(() => {
     if (!values || values.length < 2) return null;

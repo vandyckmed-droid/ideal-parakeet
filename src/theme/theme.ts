@@ -29,6 +29,12 @@ export type Palette = {
   chartFillTop: string;
   chartFillBottom: string;
   scrim: string;
+  /**
+   * Categorical hues for multi-line comparison charts, in selection order.
+   * Deliberately excludes the up/down green and red, which carry return sign
+   * everywhere else and must not be spent on telling lines apart.
+   */
+  chart: string[];
 };
 
 const dark: Palette = {
@@ -50,6 +56,7 @@ const dark: Palette = {
   chartFillTop: 'rgba(0, 200, 83, 0.22)',
   chartFillBottom: 'rgba(0, 200, 83, 0)',
   scrim: 'rgba(0, 0, 0, 0.7)',
+  chart: ['#5B9DFF', '#F5A524', '#A78BFA', '#2DD4BF'],
 };
 
 const light: Palette = {
@@ -71,6 +78,7 @@ const light: Palette = {
   chartFillTop: 'rgba(0, 121, 74, 0.16)',
   chartFillBottom: 'rgba(0, 121, 74, 0)',
   scrim: 'rgba(0, 0, 0, 0.35)',
+  chart: ['#2563EB', '#B45309', '#7C3AED', '#0F766E'],
 };
 
 export const palettes = { dark, light };
