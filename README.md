@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/wblz_ZSzDOGfqPiJiHvEZ), so it can be opened in
+Snack](https://snack.expo.dev/ZIunEOpUE6knNVd_ZZ39Q), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -127,9 +127,9 @@ Before it can run you need to do two things it cannot do for itself:
    from there, so on a feature branch it will never fire — `workflow_dispatch`
    lets you run it by hand in the meantime.
 
-One running cost worth knowing. A run costs **~1,227 API calls**: the
+One running cost worth knowing. A run costs **~1,228 API calls**: the
 constituent list, 3 screener calls and a few profile fills in stage 1, one per
-constituent (~503) in stage 2, none in stages 3-4, and ~718 in stage 5 (index
+constituent (~503) in stage 2, none in stages 3-4, and ~719 in stage 5 (index
 membership plus prices for every name that was a member at any point since
 January 2016 — a longer backtest window means more departed members to price).
 At five runs a week that is roughly 27,000 a month against your FMP quota.
@@ -678,7 +678,7 @@ Two choices worth stating. The universe is the same S&P 500 the Market tab
 tracks, held to point-in-time membership because avoiding selection bias
 requires knowing who was in the index *then*, not who survived until today.
 And the series is built entirely by the pipeline
-(`tools/05-build-research.mjs`, ~718 API calls per run, prices fetched fresh
+(`tools/05-build-research.mjs`, ~719 API calls per run, prices fetched fresh
 every time); the app only displays it, so the graph, the current 50 holdings
 and the rules can never disagree with each other.
 

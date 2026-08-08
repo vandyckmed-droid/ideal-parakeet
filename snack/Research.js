@@ -22,18 +22,24 @@ export function ResearchScreen({ research }) {
   const colors = useColors();
   const [scrub, setScrub] = useState(null);
   const [windowKey, setWindowKey] = useState('MAX');
+  const [signalKey, setSignalKey] = useState(null);
 
   const spec = WINDOWS.find((w) => w.key === windowKey) || WINDOWS[WINDOWS.length - 1];
+  const strategies = research && Array.isArray(research.strategies) ? research.strategies : null;
+  const strategy = strategies
+    ? strategies.find((st) => st.key === signalKey) || strategies[0]
+    : null;
 
   // Both lines are re-based to $10,000 at the start of the selected window, so
   // every window answers the same question: what would the two have done with
   // the same money over this stretch. Comparing a re-based line against an
   // absolute one would be a rigged race.
   const view = useMemo(() => {
-    // A published snapshot older than the multi-benchmark shape has no
-    // `benchmarks`; treat it as absent rather than rendering a broken screen.
-    if (!research || !Array.isArray(research.benchmarks)) return null;
-    const { series, benchmarks, startValue } = research;
+    // A published snapshot older than the current shape has no `benchmarks` or
+    // no `strategies`; treat it as absent rather than rendering a broken screen.
+    if (!research || !Array.isArray(research.benchmarks) || !strategy) return null;
+    const { benchmarks, startValue } = research;
+    const series = strategy.series;
     let start = 0;
     if (spec.months != null) {
       const last = new Date(`${series[series.length - 1][0]}T00:00:00`);
@@ -61,7 +67,7 @@ export function ResearchScreen({ research }) {
       }),
       truncated: spec.months != null && start === 0,
     };
-  }, [research, spec]);
+  }, [research, spec, strategy]);
 
   if (!research || !view) {
     return (
@@ -81,7 +87,7 @@ export function ResearchScreen({ research }) {
   const value = values[i];
   const ret = value / research.startValue - 1;
   const tone = ret >= 0 ? colors.up : colors.down;
-  const latest = research.formations[research.formations.length - 1];
+  const latest = strategy.formations[strategy.formations.length - 1];
 
   // Both references stay in neutral greys: up/down carry return sign
   // everywhere else in the app and must not be spent on a legend. They are
@@ -102,7 +108,7 @@ export function ResearchScreen({ research }) {
     };
   });
 
-  const inceptionLabel = new Date(`${research.series[0][0]}T00:00:00`).toLocaleDateString('en-US', {
+  const inceptionLabel = new Date(`${strategy.series[0][0]}T00:00:00`).toLocaleDateString('en-US', {
     month: 'long',
     year: 'numeric',
   });
@@ -117,7 +123,7 @@ export function ResearchScreen({ research }) {
 
   const rules = [
     ['Universe', 'S&P 500 members as of each measurement date (point in time - names later removed are included while they were members). The Market tab tracks the same index.'],
-    ['Signal', '12-1 momentum: return from 12 months before the measurement date to 1 month before it'],
+    ['Signal', strategy.signal],
     ['Selection', `Top ${research.top}, equally weighted`],
     ['Rebalance', 'Measured at the last trading day of each month, traded at the next trading day’s close, held untouched in between'],
     ['Period', periodRule],
@@ -137,8 +143,8 @@ export function ResearchScreen({ research }) {
         <View style={s.header}>
           <Text style={[type.hero, { color: colors.text }]}>Research</Text>
           <Text style={[type.caption, { color: colors.textMuted }]}>
-            Top-{research.top} momentum vs {refs.map((r) => r.symbol).join(' and ')} · through{' '}
-            {formatDate(research.series[research.series.length - 1][0])}
+            {strategy.label} · top {research.top} vs {refs.map((r) => r.symbol).join(' and ')} ·
+            through {formatDate(strategy.series[strategy.series.length - 1][0])}
           </Text>
         </View>
 
@@ -158,6 +164,17 @@ export function ResearchScreen({ research }) {
 
         <View style={s.picker}>
           <SegmentedControl
+            segments={strategies.map((st) => ({ key: st.key, label: st.label }))}
+            value={strategy.key}
+            onChange={(k) => {
+              setScrub(null);
+              setSignalKey(k);
+            }}
+          />
+        </View>
+
+        <View style={s.pickerTight}>
+          <SegmentedControl
             segments={WINDOWS.map((w) => ({ key: w.key, label: w.label }))}
             value={windowKey}
             onChange={(k) => {
@@ -176,7 +193,7 @@ export function ResearchScreen({ research }) {
             <View style={[s.h2hRow, { borderBottomColor: colors.hairline }]}>
               <View style={[s.swatch, { backgroundColor: tone }]} />
               <Text style={[type.caption, s.h2hName, { color: colors.text }]}>
-                Top-{research.top} momentum
+                {strategy.label}
               </Text>
               <Text style={[type.caption, mono, s.h2hMoney, { color: colors.text }]}>
                 {money(value)}
@@ -266,6 +283,7 @@ const s = StyleSheet.create({
   header: { paddingHorizontal: space(4), paddingTop: space(1), gap: 2 },
   figures: { paddingHorizontal: space(4), paddingTop: space(4), paddingBottom: space(2), gap: 2 },
   picker: { paddingHorizontal: space(4), marginTop: space(3) },
+  pickerTight: { paddingHorizontal: space(4), marginTop: space(2) },
   section: { paddingHorizontal: space(4), marginTop: space(6) },
   card: { borderRadius: radius.md, paddingHorizontal: space(3.5), paddingVertical: space(1) },
   ruleRow: {

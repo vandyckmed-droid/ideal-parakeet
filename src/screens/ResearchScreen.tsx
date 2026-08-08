@@ -36,15 +36,19 @@ export function ResearchScreen() {
   const colors = useColors();
   const [scrub, setScrub] = useState<number | null>(null);
   const [windowKey, setWindowKey] = useState<WindowKey>('MAX');
+  const [signalKey, setSignalKey] = useState<string>(RESEARCH.strategies[0].key);
 
   const spec = WINDOWS.find((w) => w.key === windowKey) ?? WINDOWS[WINDOWS.length - 1];
+  const strategy =
+    RESEARCH.strategies.find((st) => st.key === signalKey) ?? RESEARCH.strategies[0];
 
   // Both lines are re-based to $10,000 at the start of the selected window, so
   // every window answers the same question: what would the two have done with
   // the same money over this stretch. Comparing a re-based line against an
   // absolute one would be a rigged race.
   const view = useMemo(() => {
-    const { series, benchmarks, startValue } = RESEARCH;
+    const { benchmarks, startValue } = RESEARCH;
+    const series = strategy.series;
     let start = 0;
     if (spec.months != null) {
       const last = new Date(`${series[series.length - 1][0]}T00:00:00`);
@@ -70,7 +74,7 @@ export function ResearchScreen() {
       };
     });
     return { dates, values, refs, truncated: spec.months != null && start === 0 };
-  }, [spec]);
+  }, [spec, strategy]);
 
   const { dates, values, refs } = view;
 
@@ -94,11 +98,11 @@ export function ResearchScreen() {
     return { ...r, value: rv, ret: rr, gap: (ret - rr) * 100, style: refStyle(n) };
   });
 
-  const latest = RESEARCH.formations[RESEARCH.formations.length - 1];
+  const latest = strategy.formations[strategy.formations.length - 1];
 
   // Read off the series rather than restated, so the rule cannot drift out of
   // step with the window the pipeline actually built.
-  const inceptionLabel = new Date(`${RESEARCH.series[0][0]}T00:00:00`).toLocaleDateString(
+  const inceptionLabel = new Date(`${strategy.series[0][0]}T00:00:00`).toLocaleDateString(
     'en-US',
     { month: 'long', year: 'numeric' }
   );
@@ -113,7 +117,7 @@ export function ResearchScreen() {
 
   const rules: [string, string][] = [
     ['Universe', 'S&P 500 members as of each measurement date (point in time - names later removed are included while they were members). The Market tab tracks the same index.'],
-    ['Signal', '12-1 momentum: return from 12 months before the measurement date to 1 month before it'],
+    ['Signal', strategy.signal],
     ['Selection', `Top ${RESEARCH.top}, equally weighted`],
     ['Rebalance', 'Measured at the last trading day of each month, traded at the next trading day’s close, held untouched in between'],
     ['Period', periodRule],
@@ -133,8 +137,8 @@ export function ResearchScreen() {
         <View style={styles.header}>
           <Text style={[type.hero, { color: colors.text }]}>Research</Text>
           <Text style={[type.caption, { color: colors.textMuted }]}>
-            Top-{RESEARCH.top} momentum vs {refs.map((r) => r.symbol).join(' and ')} · through{' '}
-            {formatDate(RESEARCH.series[RESEARCH.series.length - 1][0])}
+            {strategy.label} · top {RESEARCH.top} vs {refs.map((r) => r.symbol).join(' and ')} ·
+            through {formatDate(strategy.series[strategy.series.length - 1][0])}
           </Text>
         </View>
 
@@ -154,6 +158,17 @@ export function ResearchScreen() {
 
         <View style={styles.picker}>
           <SegmentedControl
+            segments={RESEARCH.strategies.map((st) => ({ key: st.key, label: st.label }))}
+            value={strategy.key}
+            onChange={(k) => {
+              setScrub(null);
+              setSignalKey(k);
+            }}
+          />
+        </View>
+
+        <View style={styles.pickerTight}>
+          <SegmentedControl
             segments={WINDOWS.map((w) => ({ key: w.key, label: w.label }))}
             value={windowKey}
             onChange={(k) => {
@@ -172,7 +187,7 @@ export function ResearchScreen() {
             <View style={[styles.h2hRow, { borderBottomColor: colors.hairline }]}>
               <View style={[styles.swatch, { backgroundColor: tone }]} />
               <Text style={[type.caption, styles.h2hName, { color: colors.text }]}>
-                Top-{RESEARCH.top} momentum
+                {strategy.label}
               </Text>
               <Text style={[type.caption, mono, styles.h2hMoney, { color: colors.text }]}>
                 {money(value)}
@@ -271,6 +286,7 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: space(4), paddingTop: space(1), gap: 2 },
   figures: { paddingHorizontal: space(4), paddingTop: space(4), paddingBottom: space(2), gap: 2 },
   picker: { paddingHorizontal: space(4), marginTop: space(3) },
+  pickerTight: { paddingHorizontal: space(4), marginTop: space(2) },
   section: { paddingHorizontal: space(4), marginTop: space(6) },
   card: {
     borderRadius: radius.md,

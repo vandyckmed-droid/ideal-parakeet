@@ -8,9 +8,18 @@
 //              or delisted are included while they were members. The Market
 //              tab tracks the same index (tools/01-build-candidates.mjs), so
 //              the backtest and the app describe one universe.
-//   Signal     12-1 momentum - total return from 12 months before the
-//              measurement date to 1 month before it (the recent month is
+//   Signal     Two, switchable in the app and built identically here.
+//              TOTAL: 12-1 momentum, the plain return from 12 months before
+//              the measurement date to 1 month before it (the recent month is
 //              skipped, the same reversal logic as the app's Skip control).
+//              RESIDUAL: the same window, but measured on what the market does
+//              not explain. Each name is regressed on SPY over the trailing
+//              three years of daily log returns, and the signal accumulates
+//              r - alpha - beta*market rather than r. Ranking on raw return
+//              quietly favours high-beta names, so part of what looks like
+//              stock picking is leveraged market exposure; this removes it.
+//              Both signals share one eligibility test, so switching between
+//              them changes the signal and nothing else.
 //   Selection  The 50 highest, equally weighted.
 //   Rebalance  Measured at the last trading day of each month, traded at the
 //              close of the first trading day of the next month, per
@@ -47,6 +56,12 @@ const START_MONTH = '2016-01';
 const M = 21; // trading days per month for the momentum lookbacks
 const CONCURRENCY = 8;
 
+// Trailing window for the market regression behind the residual signal, and
+// the minimum sample within it worth trusting a beta from.
+const BETA_WINDOW = 756; // three years of daily returns
+const MIN_BETA_OBS = 500;
+const MIN_SIGNAL_OBS = 200;
+
 // The share of a formation date's roster that must be scoreable. Below this
 // the selection universe has quietly become the set of companies that
 // survived, which is the one bias this whole construction exists to avoid.
@@ -59,9 +74,11 @@ const CONCURRENCY = 8;
 const COVERAGE_FLOOR = 0.85;
 
 // historical-price-eod/dividend-adjusted truncates at 5000 rows (~20 years)
-// without saying so. The window is ~12 years today, comfortably inside it, but
-// a fixed start date means the span grows every year - so a response landing
-// exactly on the cap is treated as truncation rather than trusted.
+// without saying so. The fetch now reaches back far enough for a three-year
+// beta window ahead of the first formation - ~15 years, or about 3,700 rows -
+// so the headroom is real but no longer generous, and a fixed start date means
+// the span grows every year. A response landing exactly on the cap is treated
+// as truncation rather than trusted.
 const ROW_CAP = 5000;
 
 // SPY is the familiar reference; RSP is the like-for-like one, since this
@@ -114,9 +131,10 @@ async function main() {
   console.log(`  ${need.size} symbols were members at some point since ${START_MONTH}`);
 
   // --- prices ----------------------------------------------------------------
-  // The earliest formation needs 12 months of history behind it.
+  // The earliest formation needs 12 months of signal behind it, and the
+  // residual signal needs a three-year regression window behind that.
   const from = new Date(`${START_MONTH}-01T00:00:00Z`);
-  from.setMonth(from.getMonth() - 14);
+  from.setMonth(from.getMonth() - 50);
   const to = iso(today);
 
   const bars = new Map();
@@ -169,6 +187,17 @@ async function main() {
     px.set(sym, a);
   }
 
+  // Daily log returns, aligned to the master calendar. Log returns because the
+  // residual is accumulated by summing, which only works if returns add.
+  const rets = new Map();
+  for (const [sym, a] of px) {
+    const r = new Array(N).fill(null);
+    for (let i = 1; i < N; i++) {
+      if (a[i] != null && a[i - 1] != null) r[i] = Math.log(a[i] / a[i - 1]);
+    }
+    rets.set(sym, r);
+  }
+
   // --- benchmarks: $10,000 held, over the identical window -------------------
   // Dividend-adjusted like everything else, so this compares total return with
   // total return. A price-return benchmark would hand the strategy a free few
@@ -215,7 +244,7 @@ async function main() {
   // Whole months: the first entry is the first trading day of START_MONTH,
   // not a mid-month date.
   const formations = monthEnds.filter(
-    (i) => i + 1 < N && DATES[i + 1].slice(0, 7) >= START_MONTH && i - 12 * M >= 0
+    (i) => i + 1 < N && DATES[i + 1].slice(0, 7) >= START_MONTH && i - BETA_WINDOW >= 0
   );
   // One formation per month between the start and now, less a little slack.
   const [sy, sm] = START_MONTH.split('-').map(Number);
@@ -227,23 +256,66 @@ async function main() {
     process.exit(1);
   }
 
-  // --- select and simulate ---------------------------------------------------
+  // --- score, then simulate --------------------------------------------------
+  // One eligibility test shared by both signals: a name is scoreable only if it
+  // has the two endpoint prices AND enough history for a trustworthy beta. That
+  // costs a little coverage, but it means switching signals in the app changes
+  // the signal and nothing else - a comparison where the universe moved too
+  // would not be a comparison of signals.
+  const mktRet = new Array(N).fill(null);
+  {
+    const spy = BENCHMARKS.find((b) => b.symbol === 'SPY');
+    if (!spy) { console.error('  SPY is required as the residual signal\'s market'); process.exit(1); }
+    for (let i = 1; i < N; i++) {
+      const a = spy.aligned[i], b = spy.aligned[i - 1];
+      if (a != null && b != null) mktRet[i] = Math.log(a / b);
+    }
+  }
+
   // Coverage is recorded at every formation, not just checked: if the share of
   // the roster that can be scored ever sags, the backtest is drifting toward
   // survivors and the number it prints stops meaning what it says.
   const coverage = [];
-  const pick = (i) => {
+  const scoreAt = (i) => {
     const roster = rosterAt(DATES[i]);
+    const lo = i - BETA_WINDOW;
+    const sigLo = i - 12 * M;
+    const sigHi = i - M;
     const scored = [];
+
     for (const sym of roster) {
       const a = px.get(sym);
-      if (!a) continue;
-      const then = a[i - 12 * M];
-      const near = a[i - M];
+      const r = rets.get(sym);
+      if (!a || !r) continue;
+      const then = a[sigLo];
+      const near = a[sigHi];
       if (then == null || near == null || then <= 0) continue;
-      scored.push({ sym, mom: near / then - 1 });
+
+      // Ordinary least squares of the name on the market over three years.
+      let n = 0, sx = 0, sy = 0, sxx = 0, sxy = 0;
+      for (let k = lo; k <= i; k++) {
+        const y = r[k], x = mktRet[k];
+        if (y == null || x == null) continue;
+        n++; sx += x; sy += y; sxx += x * x; sxy += x * y;
+      }
+      if (n < MIN_BETA_OBS) continue;
+      const varX = sxx / n - (sx / n) ** 2;
+      if (!(varX > 0)) continue;
+      const beta = (sxy / n - (sx / n) * (sy / n)) / varX;
+      const alpha = sy / n - beta * (sx / n);
+
+      // Accumulate what the market did not explain, over the 12-1 window only.
+      let m = 0, resid = 0;
+      for (let k = sigLo + 1; k <= sigHi; k++) {
+        const y = r[k], x = mktRet[k];
+        if (y == null || x == null) continue;
+        m++; resid += y - alpha - beta * x;
+      }
+      if (m < MIN_SIGNAL_OBS) continue;
+
+      scored.push({ sym, total: near / then - 1, residual: resid });
     }
-    scored.sort((a, b) => b.mom - a.mom);
+
     const share = roster.size ? scored.length / roster.size : 0;
     coverage.push({ date: DATES[i], share, scored: scored.length, roster: roster.size });
     if (share < COVERAGE_FLOOR) {
@@ -254,8 +326,10 @@ async function main() {
       );
       process.exit(1);
     }
-    return scored.slice(0, TOP).map((s) => s.sym);
+    return scored;
   };
+
+  const scored = new Map(formations.map((i) => [i, scoreAt(i)]));
 
   const lastPriceUpTo = (sym, i) => {
     const a = px.get(sym);
@@ -263,39 +337,68 @@ async function main() {
     return null;
   };
 
-  const series = [];
-  const formationLog = [];
-  let units = null; // Map symbol -> units held
-  let value = START_CASH;
+  function simulate(key) {
+    const series = [];
+    const formationLog = [];
+    let value = START_CASH;
 
-  for (let f = 0; f < formations.length; f++) {
-    const formIdx = formations[f];
-    const entryIdx = formIdx + 1;
-    const holdings = pick(formIdx);
-    formationLog.push({ measured: DATES[formIdx], entered: DATES[entryIdx], holdings });
+    for (let f = 0; f < formations.length; f++) {
+      const formIdx = formations[f];
+      const entryIdx = formIdx + 1;
+      const holdings = [...scored.get(formIdx)]
+        .sort((a, b) => b[key] - a[key])
+        .slice(0, TOP)
+        .map((x) => x.sym);
+      formationLog.push({ measured: DATES[formIdx], entered: DATES[entryIdx], holdings });
 
-    // Re-cut the book into 50 equal slices at the entry close.
-    units = new Map();
-    const alloc = value / TOP;
-    for (const sym of holdings) {
-      const p = lastPriceUpTo(sym, entryIdx);
-      units.set(sym, p ? alloc / p : 0);
+      // Re-cut the book into 50 equal slices at the entry close.
+      const units = new Map();
+      const alloc = value / TOP;
+      for (const sym of holdings) {
+        const p = lastPriceUpTo(sym, entryIdx);
+        units.set(sym, p ? alloc / p : 0);
+      }
+
+      // Walk daily until the next entry day (or the end of the data).
+      const stop = f + 1 < formations.length ? formations[f + 1] + 1 : N - 1;
+      for (let i = entryIdx; i <= stop; i++) {
+        let v = 0;
+        for (const [sym, u] of units) {
+          const p = lastPriceUpTo(sym, i);
+          v += p ? u * p : 0;
+        }
+        value = v;
+        // The stop day is the next month's entry: it gets pushed by the next
+        // loop iteration after the rebalance, not twice.
+        if (i < stop || f + 1 === formations.length) {
+          series.push([DATES[i], Math.round(value * 100) / 100]);
+        }
+      }
     }
+    return { series, formations: formationLog };
+  }
 
-    // Walk daily until the next entry day (or the end of the data).
-    const stop = f + 1 < formations.length ? formations[f + 1] + 1 : N - 1;
-    for (let i = entryIdx; i <= stop; i++) {
-      let v = 0;
-      for (const [sym, u] of units) {
-        const p = lastPriceUpTo(sym, i);
-        v += p ? u * p : 0;
-      }
-      value = v;
-      // The stop day is the next month's entry: it gets pushed by the next
-      // loop iteration after the rebalance, not twice.
-      if (i < stop || f + 1 === formations.length) {
-        series.push([DATES[i], Math.round(value * 100) / 100]);
-      }
+  const STRATEGIES = [
+    {
+      key: 'total',
+      label: 'Total return',
+      signal: '12-1 momentum: return from 12 months before the measurement date to 1 month before it',
+    },
+    {
+      key: 'residual',
+      label: 'Market residual',
+      signal:
+        'The same 12-1 window, measured on what the market does not explain: each name is regressed on SPY over the trailing three years of daily returns, and only the part left over is accumulated. Ranking on raw return quietly favours high-beta names, so some of what looks like stock picking is leveraged market exposure - this removes it.',
+    },
+  ].map((st) => ({ ...st, ...simulate(st.key) }));
+
+  // Every strategy walks the same calendar, so one series stands for all of
+  // them when aligning the benchmarks below.
+  const series = STRATEGIES[0].series;
+  for (const st of STRATEGIES) {
+    if (st.series.length !== series.length) {
+      console.error(`  ${st.key} produced ${st.series.length} points, expected ${series.length}`);
+      process.exit(1);
     }
   }
 
@@ -306,10 +409,17 @@ async function main() {
     console.error(`  series has only ${series.length} points, expected ~${expected * 21}`);
     process.exit(1);
   }
-  for (let i = 1; i < series.length; i++) {
-    if (!(series[i][0] > series[i - 1][0]) || !Number.isFinite(series[i][1]) || series[i][1] <= 0) {
-      console.error(`  bad series point at ${series[i][0]}`);
-      process.exit(1);
+  for (const st of STRATEGIES) {
+    for (let i = 1; i < st.series.length; i++) {
+      const [d, v] = st.series[i];
+      if (!(d > st.series[i - 1][0]) || !Number.isFinite(v) || v <= 0) {
+        console.error(`  ${st.key}: bad series point at ${d}`);
+        process.exit(1);
+      }
+      if (d !== series[i][0]) {
+        console.error(`  ${st.key}: date ${d} does not line up with ${series[i][0]}`);
+        process.exit(1);
+      }
     }
   }
 
@@ -340,22 +450,26 @@ async function main() {
     generatedAt: series[series.length - 1][0],
     startValue: START_CASH,
     top: TOP,
-    signal: '12-1 momentum',
     universe: 'S&P 500, point-in-time membership',
     rebalance: 'monthly',
     // The worst roster coverage any formation ran at - the honest reader's
     // first question about a backtest this long.
     minCoverage: Math.round(Math.min(...coverage.map((c) => c.share)) * 1000) / 1000,
     benchmarks,
-    series,
-    formations: formationLog,
+    // Every strategy shares the calendar in `strategies[0].series`, which is
+    // what the benchmark values above are aligned to.
+    strategies: STRATEGIES.map((st) => ({
+      key: st.key,
+      label: st.label,
+      signal: st.signal,
+      series: st.series,
+      formations: st.formations,
+    })),
   };
   writeFileSync('assets/data/research.json', JSON.stringify(out));
 
-  const first = series[0], last = series[series.length - 1];
-  console.log(`  ${series.length} daily points, ${first[0]} -> ${last[0]}`);
-  console.log(`  $${START_CASH.toLocaleString()} -> $${last[1].toLocaleString()} (${(((last[1] / START_CASH) - 1) * 100).toFixed(1)}%)`);
-  console.log(`  ${formationLog.length} rebalances, latest holdings: ${formationLog[formationLog.length - 1].holdings.slice(0, 8).join(' ')}...`);
+  console.log(`  ${series.length} daily points, ${series[0][0]} -> ${series[series.length - 1][0]}`);
+  console.log(`  ${STRATEGIES[0].formations.length} rebalances`);
 
   // Peak-to-trough on the daily series: the crashes are the reason for the
   // longer window, so they get printed rather than left to the eye.
@@ -368,8 +482,16 @@ async function main() {
     });
     return { mdd, at };
   };
-  const pd = drawdown(series.map(([, v]) => v));
-  console.log(`  max drawdown ${(pd.mdd * 100).toFixed(1)}% (trough ${series[pd.at][0]})`);
+  for (const st of STRATEGIES) {
+    const end = st.series[st.series.length - 1][1];
+    const d = drawdown(st.series.map(([, v]) => v));
+    console.log(
+      `  ${st.label.padEnd(15)} $${START_CASH.toLocaleString()} -> $${end.toLocaleString()} ` +
+        `(${(((end / START_CASH) - 1) * 100).toFixed(1)}%), ` +
+        `max drawdown ${(d.mdd * 100).toFixed(1)}% (trough ${st.series[d.at][0]})`
+    );
+    console.log(`                  latest: ${st.formations[st.formations.length - 1].holdings.slice(0, 8).join(' ')}...`);
+  }
   for (const b of benchmarks) {
     const end = b.values[b.values.length - 1];
     const bd = drawdown(b.values);
