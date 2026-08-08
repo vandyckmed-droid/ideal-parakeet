@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/1ybmiimLdspPNcj0BP6YJ), so it can be opened in
+Snack](https://snack.expo.dev/n_dlYiD5U9PdG-Kgvhwwg), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -616,8 +616,9 @@ how this app thinks:
 ## The Research tab
 
 A third tab graphs **$10,000 in the top-50 momentum portfolio since January
-2016**, updated by the same nightly job that refreshes prices. Every rule that
-produces the line is displayed on the screen with it:
+2016 against $10,000 held in SPY**, updated by the same nightly job that
+refreshes prices. Every rule that produces the lines is displayed on the screen
+with them:
 
 | Rule | Setting |
 | --- | --- |
@@ -625,10 +626,33 @@ produces the line is displayed on the screen with it:
 | Signal | 12-1 momentum: return from 12 months before the measurement date to 1 month before it |
 | Selection | Top 50, equally weighted |
 | Rebalance | Measured at the last trading day of each month, traded at the next trading day's close (per `docs/rebalancing-standard.md`), held untouched in between |
-| Period | Since January 2016, $10,000 at the start |
-| Dividends | Reinvested, via adjusted closes |
+| Period | Since January 2016, $10,000 at the start — or the selected window, re-based |
+| Benchmark | `SPY` bought once at the same start and held, dividends reinvested |
+| Dividends | Reinvested on both sides, via adjusted closes |
 | Costs | No taxes or fees |
 | Delistings | Frozen at the last close until the next rebalance |
+
+### The head-to-head
+
+The strategy is drawn against **$10,000 held in SPY** over the identical
+window, on one shared axis — two independently scaled lines would let any pair
+of series look neck and neck. Both sides use dividend-adjusted closes, so this
+is total return against total return; benchmarking a dividend-reinvesting
+strategy against a price-return index would hand it a couple of free points a
+year it never earned.
+
+A window selector (`3M / 6M / 9M / 1Y / 3Y / 5Y / Max`) re-bases **both** lines
+to $10,000 at the start of the selected window, so every window asks the same
+question rather than mixing a re-based line with an absolute one. The Period
+rule restates whichever window is showing, so the stated rules never describe a
+different graph from the one on screen.
+
+The result is worth stating plainly, since the whole point of a benchmark is to
+be allowed to lose to it. Over the full window since January 2016 the strategy
+**trails**: $43,783 against SPY's $45,625, −18.4 percentage points, and with a
+deeper drawdown through COVID (−36.5% against −33.7%). It leads over every
+shorter window measured to the current snapshot. Both facts come off the same
+two series.
 
 Two choices worth stating. The universe is the same S&P 500 the Market tab
 tracks, held to point-in-time membership because avoiding selection bias

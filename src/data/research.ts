@@ -12,8 +12,17 @@ export type ResearchData = {
   signal: string;
   universe: string;
   rebalance: string;
+  /** Worst roster coverage any formation ran at, 0-1. */
+  minCoverage: number;
+  benchmarkSymbol: string;
+  benchmarkName: string;
   /** [date, portfolio value] per session, oldest first. */
   series: [string, number][];
+  /**
+   * The benchmark's value on the same dates, positionally aligned to `series`.
+   * Values only, so the two cannot drift apart.
+   */
+  benchmark: number[];
   formations: { measured: string; entered: string; holdings: string[] }[];
 };
 

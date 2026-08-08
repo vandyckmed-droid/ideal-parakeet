@@ -95,7 +95,7 @@ export const Sparkline = React.memo(function Sparkline({ values, color, width = 
  * Snack build depends only on modules Snack preloads. The dashed baseline marks
  * the window's opening price, so up-or-down reads without parsing a number.
  */
-export function PriceChart({ values, height = 220, onScrub, excludeTail = 0 }) {
+export function PriceChart({ values, height = 220, onScrub, excludeTail = 0, compare }) {
   const colors = useColors();
   const [width, setWidth] = useState(0);
   const [scrub, setScrub] = useState(null);
@@ -156,6 +156,14 @@ export function PriceChart({ values, height = 220, onScrub, excludeTail = 0 }) {
       if (v < min) min = v;
       if (v > max) max = v;
     }
+    // The comparison line shares the axis, so it has to widen the extremes or
+    // it would be drawn clipped against a frame it never sized.
+    if (compare) {
+      for (const v of compare) {
+        if (v < min) min = v;
+        if (v > max) max = v;
+      }
+    }
     const span = max - min || Math.abs(max) * 0.01 || 1;
     const padY = 12;
     const usable = height - padY * 2;
@@ -175,17 +183,25 @@ export function PriceChart({ values, height = 220, onScrub, excludeTail = 0 }) {
       if (idx >= cut) tail += `${tail === '' ? 'M' : 'L'}${cmd}`;
     }
     const cutX = xAt(cut);
+    let comparePath = '';
+    if (compare && compare.length === values.length) {
+      for (let i = 0; i < n; i++) {
+        const idx = Math.round(i * step);
+        comparePath += `${comparePath === '' ? 'M' : 'L'}${xAt(idx).toFixed(2)} ${yAt(compare[idx]).toFixed(2)}`;
+      }
+    }
     return {
       path,
       tail,
       cutX,
+      comparePath,
       // Fill stops at the cut so the shaded mass matches the measured window.
       area: `${path}L${cutX.toFixed(2)} ${height}L0 ${height}Z`,
       xAt,
       yAt,
       baseY: yAt(values[0]),
     };
-  }, [values, width, height, cut]);
+  }, [values, width, height, cut, compare]);
 
   return (
     <View
@@ -232,6 +248,19 @@ export function PriceChart({ values, height = 220, onScrub, excludeTail = 0 }) {
                 strokeDasharray="2 3"
               />
             </>
+          )}
+          {/* Under the portfolio line and dashed, so the comparison reads as
+              the reference rather than as a second protagonist. */}
+          {geo.comparePath !== '' && (
+            <Path
+              d={geo.comparePath}
+              stroke={colors.textMuted}
+              strokeWidth={1.5}
+              strokeDasharray="4 3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
           )}
           <Path d={geo.path} stroke={line} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
           {scrub !== null && scrub < values.length && (

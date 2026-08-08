@@ -23,6 +23,13 @@ type Props = {
    * price action the user chose to skip, and seeing it is the point.
    */
   excludeTail?: number;
+  /**
+   * An optional second series drawn against the same axis, for comparison.
+   * Must be the same length as `values`. Sharing one scale is the whole point -
+   * two independently scaled lines would let any pair of series look neck and
+   * neck.
+   */
+  compare?: number[];
 };
 
 /**
@@ -32,7 +39,13 @@ type Props = {
  * position is up or down over the selected window is legible at a glance
  * without reading a single number.
  */
-export function PriceChart({ values, height = 220, onScrub, excludeTail = 0 }: Props) {
+export function PriceChart({
+  values,
+  height = 220,
+  onScrub,
+  excludeTail = 0,
+  compare,
+}: Props) {
   const colors = useColors();
   const [width, setWidth] = useState(0);
   const [scrubIndex, setScrubIndex] = useState<number | null>(null);
@@ -57,6 +70,14 @@ export function PriceChart({ values, height = 220, onScrub, excludeTail = 0 }: P
     for (const v of values) {
       if (v < min) min = v;
       if (v > max) max = v;
+    }
+    // The comparison line shares the axis, so it has to widen the extremes or
+    // it would be drawn clipped against a frame it never sized.
+    if (compare) {
+      for (const v of compare) {
+        if (v < min) min = v;
+        if (v > max) max = v;
+      }
     }
     const span = max - min || Math.abs(max) * 0.01 || 1;
     // Breathing room so the extremes are not welded to the frame edges.
@@ -85,8 +106,19 @@ export function PriceChart({ values, height = 220, onScrub, excludeTail = 0 }: P
     const cutX = xAt(cut);
     const area = `${line}L${cutX.toFixed(2)} ${height}L0 ${height}Z`;
 
-    return { line, tail, area, xAt, yAt, min, max, cutX, baselineY: yAt(values[0]) };
-  }, [values, width, height, cut]);
+    let comparePath = '';
+    if (compare && compare.length === values.length) {
+      for (let i = 0; i < maxPoints; i++) {
+        const idx = Math.round(i * step);
+        comparePath += `${comparePath === '' ? 'M' : 'L'}${xAt(idx).toFixed(2)} ${yAt(compare[idx]).toFixed(2)}`;
+      }
+    }
+
+    return {
+      line, tail, area, comparePath, xAt, yAt, min, max, cutX,
+      baselineY: yAt(values[0]),
+    };
+  }, [values, width, height, cut, compare]);
 
   const updateScrub = useCallback(
     (x: number) => {
@@ -170,6 +202,20 @@ export function PriceChart({ values, height = 220, onScrub, excludeTail = 0 }: P
                   strokeDasharray="2 3"
                 />
               </>
+            )}
+
+            {/* Under the portfolio line and dashed, so the comparison reads as
+                the reference rather than as a second protagonist. */}
+            {geometry.comparePath !== '' && (
+              <Path
+                d={geometry.comparePath}
+                stroke={colors.textMuted}
+                strokeWidth={1.5}
+                strokeDasharray="4 3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
             )}
 
             <Path

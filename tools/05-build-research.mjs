@@ -162,6 +162,34 @@ async function main() {
     px.set(sym, a);
   }
 
+  // --- benchmark: $10,000 held in SPY over the identical window --------------
+  // Dividend-adjusted like everything else, so this compares total return with
+  // total return. A price-return benchmark would hand the strategy a free few
+  // points a year that it did not earn.
+  const spyRows = await fmp('historical-price-eod/dividend-adjusted', {
+    symbol: 'SPY',
+    from: iso(from),
+    to,
+  });
+  const spyByDate = new Map(
+    (Array.isArray(spyRows) ? spyRows : [])
+      .filter((r) => r.date && Number.isFinite(r.adjClose) && r.adjClose > 0)
+      .map((r) => [r.date, r.adjClose])
+  );
+  if (spyByDate.size < 200) {
+    console.error(`  SPY returned only ${spyByDate.size} usable bars`);
+    process.exit(1);
+  }
+  // Forward-filled onto the master calendar so a missing print never leaves a
+  // hole the comparison would have to guess at.
+  const spy = new Array(N).fill(null);
+  let carried = null;
+  for (let i = 0; i < N; i++) {
+    const v = spyByDate.get(DATES[i]);
+    if (v != null) carried = v;
+    spy[i] = carried;
+  }
+
   // --- formation dates: last trading day of each month -----------------------
   const monthEnds = [];
   for (let i = 1; i < N; i++) if (DATES[i].slice(0, 7) !== DATES[i - 1].slice(0, 7)) monthEnds.push(i - 1);
@@ -267,6 +295,23 @@ async function main() {
     }
   }
 
+  // The benchmark rides the same dates as the portfolio, so it is stored as
+  // bare values positionally aligned to `series` - alignment by construction
+  // rather than by two date columns that could drift apart.
+  const spyStart = spy[dIdx.get(series[0][0])];
+  if (!(spyStart > 0)) {
+    console.error(`  no SPY price at the start date ${series[0][0]}`);
+    process.exit(1);
+  }
+  const benchmark = series.map(([d]) => {
+    const v = spy[dIdx.get(d)];
+    return Math.round(START_CASH * (v / spyStart) * 100) / 100;
+  });
+  if (benchmark.length !== series.length || benchmark.some((v) => !Number.isFinite(v) || v <= 0)) {
+    console.error('  benchmark series is misaligned or has bad values');
+    process.exit(1);
+  }
+
   const out = {
     // The last covered session, not the wall clock: a run that adds no new
     // session then produces a byte-identical file and the nightly job commits
@@ -280,7 +325,10 @@ async function main() {
     // The worst roster coverage any formation ran at - the honest reader's
     // first question about a backtest this long.
     minCoverage: Math.round(Math.min(...coverage.map((c) => c.share)) * 1000) / 1000,
+    benchmarkSymbol: 'SPY',
+    benchmarkName: 'S&P 500 ETF, dividends reinvested',
     series,
+    benchmark,
     formations: formationLog,
   };
   writeFileSync('assets/data/research.json', JSON.stringify(out));
@@ -292,13 +340,23 @@ async function main() {
 
   // Peak-to-trough on the daily series: the crashes are the reason for the
   // longer window, so they get printed rather than left to the eye.
-  let peak = series[0][1], mdd = 0, mddAt = series[0][0];
-  for (const [d, v] of series) {
-    if (v > peak) peak = v;
-    const dd = v / peak - 1;
-    if (dd < mdd) { mdd = dd; mddAt = d; }
-  }
-  console.log(`  max drawdown ${(mdd * 100).toFixed(1)}% (trough ${mddAt})`);
+  const drawdown = (vals) => {
+    let peak = vals[0], mdd = 0, at = 0;
+    vals.forEach((v, i) => {
+      if (v > peak) peak = v;
+      const dd = v / peak - 1;
+      if (dd < mdd) { mdd = dd; at = i; }
+    });
+    return { mdd, at };
+  };
+  const pd = drawdown(series.map(([, v]) => v));
+  const bd = drawdown(benchmark);
+  console.log(`  max drawdown ${(pd.mdd * 100).toFixed(1)}% (trough ${series[pd.at][0]})`);
+  console.log(
+    `  SPY $${START_CASH.toLocaleString()} -> $${benchmark[benchmark.length - 1].toLocaleString()} ` +
+      `(${(((benchmark[benchmark.length - 1] / START_CASH) - 1) * 100).toFixed(1)}%), ` +
+      `max drawdown ${(bd.mdd * 100).toFixed(1)}% (trough ${series[bd.at][0]})`
+  );
 
   const worst = coverage.reduce((a, b) => (b.share < a.share ? b : a));
   const mean = coverage.reduce((s, c) => s + c.share, 0) / coverage.length;
