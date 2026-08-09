@@ -104,12 +104,24 @@ export function buildRankTable(universe, dates, metric, skipEnabled, sessionsSta
 }
 
 /**
- * Above 1 this pushes mid-table ranks toward neutral. With 500 names a linear
- * ramp leaves most of the table visibly tinted, which reads as information
- * where there is none; 1.5 keeps the top and bottom deciles vivid and lets the
- * middle recede.
+ * Where "the top and bottom 10%" starts, on the same 0..1 distance-from-median
+ * scale `strength` is computed on. A rank at the 10th or 90th percentile sits
+ * 0.8 of the way from the median to the extreme (|1 - 2 x 0.1| = 0.8), so this
+ * is that boundary, not a tuned constant.
+ *
+ * Below it - the middle 80% of the table, which is not where anyone looks -
+ * strength is squeezed under QUIET_CEILING, so two ranks a few places apart
+ * there (200 vs 205) barely separate in colour. At and above it, strength
+ * spends the REST of the range climbing to 1 over just that last fifth of the
+ * scale, so the same few-place gap at the very top (1 vs 5) reads as a real
+ * jump: all the visual range the quiet middle gave up gets spent where
+ * someone is actually scanning.
  */
-const HEAT_GAMMA = 1.5;
+const DECILE = 0.8;
+/** The most tint or text-mix the quiet middle 80% is ever allowed to reach. */
+const QUIET_CEILING = 0.12;
+/** Gentle curve inside the quiet zone - keeps the true median flattest of all. */
+const INNER_GAMMA = 1.4;
 
 /**
  * How far a rank is from the middle of the pack, and in which direction.
@@ -120,8 +132,14 @@ export function rankHeat(rank, count) {
   if (rank === null || count < 2) return null;
   const percentile = (rank - 1) / (count - 1); // 0 best .. 1 worst
   const signed = 1 - 2 * percentile; // +1 best .. -1 worst
-  return {
-    side: signed >= 0 ? 'up' : 'down',
-    strength: Math.pow(Math.abs(signed), HEAT_GAMMA),
-  };
+  const distance = Math.abs(signed); // 0 at the median .. 1 at either extreme
+
+  // Continuous at DECILE by construction (both branches equal QUIET_CEILING
+  // there), so the heatmap has no visible seam where the curve switches.
+  const strength =
+    distance < DECILE
+      ? QUIET_CEILING * Math.pow(distance / DECILE, INNER_GAMMA)
+      : QUIET_CEILING + (1 - QUIET_CEILING) * ((distance - DECILE) / (1 - DECILE));
+
+  return { side: signed >= 0 ? 'up' : 'down', strength };
 }
