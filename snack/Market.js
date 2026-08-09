@@ -35,7 +35,7 @@ export function MarketScreen({
   data, research, win, setPreset, setCustomWindow,
   metric, setMetric, skipEnabled, setSkipEnabled, sessionsStale,
   isWatched, toggleWatch, onOpenDetail, onOrder, overlap, overlapCaption, tab,
-  familyCompare, toggleFamilyCompare, onOpenFamily,
+  familyCompare, familySlots, toggleFamilyCompare, onOpenFamily,
 }) {
   const { colors } = useTheme();
   const { dates, tickers, sectors } = data;
@@ -243,6 +243,7 @@ export function MarketScreen({
           sortKey={famSort}
           descending={famDescending}
           familyCompare={familyCompare}
+          familySlots={familySlots}
           toggleFamilyCompare={toggleFamilyCompare}
           onOpenFamily={onOpenFamily}
         />

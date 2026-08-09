@@ -26,7 +26,7 @@ import {
 
 function Page({
   family, byKey, bySymbol, dates, initialPreset, width, skipEnabled, sessionsStale,
-  familyCompare, isWatched, toggleWatch, onOpenTicker, onScrubbingChange,
+  familyCompare, familySlots = {}, isWatched, toggleWatch, onOpenTicker, onScrubbingChange,
 }) {
   const { colors } = useTheme();
   const [preset, setPreset] = useState(initialPreset === 'CUSTOM' ? '1Y' : initialPreset);
@@ -77,19 +77,24 @@ function Page({
 
   const compareLines = useMemo(() => {
     if (!comparing) return [];
+    // Every collected family draws in its persistent slot colour - the same
+    // hue its dot wears on the list, whichever family's page you are on. An
+    // opened family that is NOT collected takes the text colour instead: a
+    // neutral protagonist that cannot collide with any slot.
     return [family, ...companions]
-      .map((f, slot) => {
+      .map((f) => {
         const vals = slice(f, range.startIndex, range.endIndex);
         if (vals.length < 2) return null;
         const base = vals[0];
+        const slot = familySlots[f.s];
         return {
           key: f.s,
-          color: colors.chart[slot % colors.chart.length],
+          color: slot != null ? colors.chart[slot % colors.chart.length] : colors.text,
           values: vals.map((v) => (v / base) * 100),
         };
       })
       .filter(Boolean);
-  }, [comparing, family, companions, range, colors]);
+  }, [comparing, family, companions, range, colors, familySlots]);
 
   // While a finger is down the headline reports the scrubbed point, so the
   // chart and the numbers never disagree.
@@ -342,7 +347,7 @@ function Page({
 
 export function FamilyDetailScreen({
   families, bySymbol, dates, initialKey, order, preset, skipEnabled, sessionsStale,
-  familyCompare, toggleFamilyCompare, isWatched, toggleWatch, onOpenTicker, onBack,
+  familyCompare, familySlots, toggleFamilyCompare, isWatched, toggleWatch, onOpenTicker, onBack,
 }) {
   const colors = useColors();
   const { width } = useWindowDimensions();
@@ -421,6 +426,7 @@ export function FamilyDetailScreen({
             skipEnabled={skipEnabled}
             sessionsStale={sessionsStale}
             familyCompare={familyCompare}
+            familySlots={familySlots}
             isWatched={isWatched}
             toggleWatch={toggleWatch}
             onOpenTicker={onOpenTicker}

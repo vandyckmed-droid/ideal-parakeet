@@ -45,7 +45,8 @@ export function FamilyBody({
   const colors = useColors();
   const router = useRouter();
   const {
-    window: win, metric, skipEnabled, sessionsStale, familyCompare, toggleFamilyCompare,
+    window: win, metric, skipEnabled, sessionsStale,
+    familyCompare, familySlots, toggleFamilyCompare,
   } = useAppState();
 
   const range = useMemo(
@@ -97,8 +98,10 @@ export function FamilyBody({
     const f = item.family;
     const v = metricValue(item.stats, metric);
     const tone = v === null ? colors.flat : v >= 0 ? colors.up : colors.down;
-    const slot = familyCompare.indexOf(f.symbol);
-    const activeHue = slot >= 0 ? colors.chart[slot % colors.chart.length] : null;
+    // The persistent slot, not the list position: a family keeps its colour
+    // for as long as it stays collected.
+    const slot = familySlots[f.symbol];
+    const activeHue = slot != null ? colors.chart[slot % colors.chart.length] : null;
     const spark = slice(f, range.startIndex, range.endIndex);
     return (
       <Pressable
@@ -113,7 +116,7 @@ export function FamilyBody({
           },
         ]}
         accessibilityRole="button"
-        accessibilityState={{ selected: slot >= 0 }}
+        accessibilityState={{ selected: slot != null }}
         accessibilityHint="Tap to add to the compare set, press and hold to open"
       >
         {/* Rank only under the metric sort, matching the card view: under

@@ -66,7 +66,7 @@ export function FamilyBody({
   // Defaulted so a missing prop degrades to "nothing collected" rather than
   // throwing inside a render and blanking the whole app - which is exactly
   // what an unpassed familyCompare did once.
-  familyCompare = [], toggleFamilyCompare, onOpenFamily,
+  familyCompare = [], familySlots = {}, toggleFamilyCompare, onOpenFamily,
 }) {
   const { colors } = useTheme();
 
@@ -109,8 +109,10 @@ export function FamilyBody({
     const f = item.family;
     const v = metricValue(item.stats, metric);
     const tone = v === null ? colors.flat : v >= 0 ? colors.up : colors.down;
-    const slot = familyCompare.indexOf(f.s);
-    const activeHue = slot >= 0 ? colors.chart[slot % colors.chart.length] : null;
+    // The persistent slot, not the list position: a family keeps its colour
+    // for as long as it stays collected.
+    const slot = familySlots[f.s];
+    const activeHue = slot != null ? colors.chart[slot % colors.chart.length] : null;
     const spark = slice(f, range.startIndex, range.endIndex);
     return (
       <Pressable
@@ -135,7 +137,7 @@ export function FamilyBody({
           { backgroundColor: pressed ? colors.surface : 'transparent', borderBottomColor: colors.hairline },
         ]}
         accessibilityRole="button"
-        accessibilityState={{ selected: slot >= 0 }}
+        accessibilityState={{ selected: slot != null }}
         accessibilityHint="Tap to add to the compare set, press and hold to open"
       >
         {/* Rank only under the metric sort, matching the card view: under

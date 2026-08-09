@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/HlSQfJtf797omuIwXdn-K), so it can be opened in
+Snack](https://snack.expo.dev/0ZC5DjB66bOxByrHf1Iqx), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -831,7 +831,9 @@ ticker page cannot have:
   switches to a shared axis and draws them together, each line indexed to 100
   at the window's start — the families opened their $10,000 on different
   dates, so raw levels would compare start dates rather than performance. Up
-  to four, oldest rolls off.
+  to four, oldest rolls off. A family's colour is claimed when you collect it
+  and held until you release it, so the dot on its list row and its line on
+  any page always agree, and releasing one family never recolours the rest.
 - **Holdings.** A family *is* a small ETF, so the page lists its current
   constituents, ranked by the same window the page is set to. Those rows keep
   the app's one gesture pair: tap watchlists a stock, press and hold opens it.
