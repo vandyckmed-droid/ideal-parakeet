@@ -583,9 +583,22 @@ channels move together, so the ramp is continuous rather than banded.
 It is **diverging**, not sequential: the top of the market and the bottom both
 read loudly, and the wide middle stays quiet. That matters at 500 names, where
 rank 240 and rank 260 mean the same thing and a linear ramp would leave most
-of the table tinted - colour implying information that isn't there. The
-`HEAT_GAMMA` of 1.5 is what pushes the middle back down; rank 25 of 500 still
-reads at 0.86 strength while rank 200 falls to 0.09.
+of the table tinted - colour implying information that isn't there.
+
+The curve is **piecewise, split at the 10th/90th percentile** rather than a
+single tuned exponent, because "quiet middle, loud extremes" is really two
+different jobs: the middle 80% of ranks - not where anyone is looking - needs
+to stay nearly flat so two ranks a few places apart there don't compete for
+attention with names that actually differ; the top and bottom 10% - exactly
+where the eye goes - needs the opposite, enough spread that neighbouring
+ranks visibly separate. One exponent can't do both at once without either
+muddying the middle or flattening the extremes, so `rankHeat` spends the
+inner 80% of ranks on a gentle curve capped at 12% of the available strength,
+then spends the outer 10% on either side climbing the rest of the way to full
+strength - continuous at the seam, so there's no visible band where the curve
+switches. In a 500-name table, rank 1 and rank 5 separate by 0.07 of
+strength; rank 200 and rank 205 - same 5-place gap, deep in the ignored
+middle - separate by 0.002, about 30× less.
 
 **One judgement call worth flagging:** the poles are the palette's `up` and
 `down` - the same green and red the app uses for gains and losses everywhere
