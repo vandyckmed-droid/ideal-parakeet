@@ -7,7 +7,7 @@ import { rankHeat } from '../data/ranks';
 import { useColors } from '../theme/ThemeProvider';
 import { mixHex, mono, radius, space, type, withAlpha } from '../theme/theme';
 
-export const RANK_ROW_HEIGHT = 44;
+export const RANK_ROW_HEIGHT = 56;
 /** Width of one rank cell. Five of these plus the symbol column fit a phone. */
 export const RANK_CELL_WIDTH = 46;
 
@@ -57,6 +57,12 @@ type Props = {
   ticker: Ticker;
   ranks: (number | null)[];
   counts: number[];
+  /**
+   * "Family 3/9 · Sector 12/78" - the name's standing inside its own peer
+   * groups at the sorted horizon. Derived by the table from the same ranks
+   * the cells show, so the two can never disagree.
+   */
+  scopeNote?: string;
   watched: boolean;
   onToggleWatch: (symbol: string) => void;
   onOpenDetail: (symbol: string) => void;
@@ -73,6 +79,7 @@ export const RankRow = React.memo(function RankRow({
   ticker,
   ranks,
   counts,
+  scopeNote,
   watched,
   onToggleWatch,
   onOpenDetail,
@@ -120,6 +127,11 @@ export const RankRow = React.memo(function RankRow({
         >
           {ticker.symbol}
         </Text>
+        {scopeNote ? (
+          <Text style={[type.micro, mono, { color: colors.textFaint }]} numberOfLines={1}>
+            {scopeNote}
+          </Text>
+        ) : null}
       </View>
       {ranks.map((rank, i) => (
         <RankCell key={i} rank={rank} count={counts[i]} />
