@@ -13,8 +13,6 @@ import { setOrderedSymbols } from '../state/listContext';
 import { useColors } from '../theme/ThemeProvider';
 import { space, type } from '../theme/theme';
 
-export type StockSortKey = 'metric' | 'cap' | 'symbol' | 'overlap';
-
 /** The one filter predicate, shared with the header's live row count. */
 export function filterUniverse(universe: Ticker[], query: string, sector: string | null): Ticker[] {
   const needle = query.trim().toUpperCase();
@@ -26,17 +24,17 @@ export function filterUniverse(universe: Ticker[], query: string, sector: string
 }
 
 /**
- * The scored, sorted stock list - the body below the shared header, used by
- * the Market tab's card view and by the Watchlist. All filter and sort state
- * lives with the caller so it can drive the header's chips and captions and
- * survive view switches; this component just renders what that state says.
+ * The scored stock list - the body below the shared header, used by the
+ * Market tab's card view and by the Watchlist. Always ranked by the selected
+ * metric, best first: the metric control above IS the sort, so the rank
+ * numeral, the value column and the order can never describe different
+ * things. Filter state lives with the caller so it can drive the header's
+ * chips and captions and survive view switches.
  */
 export function StockListBody({
   universe,
   query,
   sector,
-  sortKey,
-  descending,
   overlap,
   overlapCaption,
   emptyState,
@@ -45,8 +43,6 @@ export function StockListBody({
   universe: Ticker[];
   query: string;
   sector: string | null;
-  sortKey: StockSortKey;
-  descending: boolean;
   overlap?: OverlapSummary;
   /**
    * A precondition the user can act on, never a finding - findings live on
@@ -72,20 +68,16 @@ export function StockListBody({
   // Typing should not block on re-ranking 500 rows on every keystroke.
   const deferredQuery = useDeferredValue(query);
 
-  // Every scored name, keyed by symbol. Sorting by Overlap needs every row's
-  // own number to rank against, not just the ones that clear the flag
-  // threshold - so while that sort is active this widens from "flagged only"
-  // to "every non-null score," and TickerRow shows the same distinction with
-  // colour rather than by only rendering a badge for some rows.
+  // Flagged names only: the badge warns about redundancy against the
+  // watchlist, and TickerRow renders it for exactly the rows in this map.
   const overlapScores = useMemo(() => {
     if (!overlap) return null;
     const m = new Map<string, number>();
     for (const s of overlap.scores) {
-      if (s.score === null) continue;
-      if (sortKey === 'overlap' || overlap.flagged.has(s.symbol)) m.set(s.symbol, s.score);
+      if (s.score !== null && overlap.flagged.has(s.symbol)) m.set(s.symbol, s.score);
     }
     return m;
-  }, [overlap, sortKey]);
+  }, [overlap]);
 
   const rows = useMemo(() => {
     const built = filterUniverse(universe, deferredQuery, sector).map((t) => ({
@@ -96,24 +88,7 @@ export function StockListBody({
       series: slice(t, range.startIndex, range.endIndex),
     }));
 
-    const dir = descending ? -1 : 1;
     built.sort((a, b) => {
-      if (sortKey === 'symbol') {
-        return a.ticker.symbol.localeCompare(b.ticker.symbol) * dir;
-      }
-      if (sortKey === 'cap') {
-        return (a.ticker.marketCap - b.ticker.marketCap) * dir;
-      }
-      if (sortKey === 'overlap') {
-        const av = overlapScores?.get(a.ticker.symbol) ?? null;
-        const bv = overlapScores?.get(b.ticker.symbol) ?? null;
-        // No comparable history sorts to the bottom either way, same as a
-        // metric a name has no history for.
-        if (av === null && bv === null) return 0;
-        if (av === null) return 1;
-        if (bv === null) return -1;
-        return (av - bv) * dir;
-      }
       const av = metricValue(a.stats, metric);
       const bv = metricValue(b.stats, metric);
       // Names with no history in the window sort to the bottom either way,
@@ -121,11 +96,11 @@ export function StockListBody({
       if (av === null && bv === null) return 0;
       if (av === null) return 1;
       if (bv === null) return -1;
-      return (av - bv) * dir;
+      return bv - av;
     });
 
     return built;
-  }, [universe, deferredQuery, sector, sortKey, descending, metric, range, overlapScores]);
+  }, [universe, deferredQuery, sector, metric, range]);
 
   // Publish the visible order so the detail view swipes through the same list.
   // Gated on focus: both tabs stay mounted, and without the gate the
@@ -151,11 +126,11 @@ export function StockListBody({
         watched={isWatched(item.ticker.symbol)}
         onToggleWatch={toggleWatch}
         onOpenDetail={openDetail}
-        rank={sortKey === 'metric' || sortKey === 'overlap' ? index + 1 : undefined}
+        rank={index + 1}
         overlapScore={overlapScores?.get(item.ticker.symbol)}
       />
     ),
-    [metric, isWatched, toggleWatch, openDetail, sortKey, overlapScores]
+    [metric, isWatched, toggleWatch, openDetail, overlapScores]
   );
 
   return (

@@ -141,30 +141,32 @@ export function ListHeader({
         </Text>
       )}
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chipRow}>
-        {chipGroups.map((group, g) => (
-          <React.Fragment key={g}>
-            {g > 0 && <View style={[s.chipDivider, { backgroundColor: colors.border }]} />}
-            {group.map((chip) => (
-              <Pressable
-                key={chip.key}
-                onPress={chip.onPress}
-                style={[
-                  s.chip,
-                  {
-                    backgroundColor: chip.active ? colors.accentMuted : colors.surface,
-                    borderColor: chip.active ? colors.accent : 'transparent',
-                  },
-                ]}
-              >
-                <Text style={[type.caption, { color: chip.active ? colors.accent : colors.textMuted }]}>
-                  {chip.label}
-                </Text>
-              </Pressable>
-            ))}
-          </React.Fragment>
-        ))}
-      </ScrollView>
+      {chipGroups.some((g) => g.length > 0) && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chipRow}>
+          {chipGroups.map((group, g) => (
+            <React.Fragment key={g}>
+              {g > 0 && <View style={[s.chipDivider, { backgroundColor: colors.border }]} />}
+              {group.map((chip) => (
+                <Pressable
+                  key={chip.key}
+                  onPress={chip.onPress}
+                  style={[
+                    s.chip,
+                    {
+                      backgroundColor: chip.active ? colors.accentMuted : colors.surface,
+                      borderColor: chip.active ? colors.accent : 'transparent',
+                    },
+                  ]}
+                >
+                  <Text style={[type.caption, { color: chip.active ? colors.accent : colors.textMuted }]}>
+                    {chip.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </React.Fragment>
+          ))}
+        </ScrollView>
+      )}
     </View>
   );
 }

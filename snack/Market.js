@@ -8,9 +8,9 @@
 // frame the views swap inside.
 //
 // The same move made the state shared instead of per-view: the search text,
-// the sector filter and the sort survive a view switch, the window control
+// the sector filter survive a view switch, the window control
 // drives the table's leading column (and tapping a column drives it back),
-// and the family view is searchable and sortable like everything else.
+// and the family view is searchable like everything else.
 
 import React, { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -45,12 +45,6 @@ export function MarketScreen({
   const [sector, setSector] = useState(null);
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  // Per-view sort state, kept here rather than in the bodies so it survives
-  // switching views and can drive the header's chips.
-  const [sortKey, setSortKey] = useState('metric');
-  const [descending, setDescending] = useState(true);
-  const [famSort, setFamSort] = useState('metric');
-  const [famDescending, setFamDescending] = useState(true);
   const [bestFirst, setBestFirst] = useState(true);
 
   const lastIndex = dates.length - 1;
@@ -107,65 +101,23 @@ export function MarketScreen({
     return `${stockCount} ${stockCount === 1 ? 'name' : 'names'} · ${through}${skipNote}`;
   }, [view, stockCount, familyCount, families.length, tickers.length, dates, range, skipEnabled, sessionsStale, lastIndex]);
 
-  // Chip rail per view. Sorts lead, sectors follow; families have no sectors
-  // to filter, and the table sorts by its own columns.
+  // The chip rail is the sector filter and nothing else. There used to be
+  // sort chips ahead of the sectors (metric / Size / A–Z / Overlap), but the
+  // metric control above already names the ranking, so they were a second
+  // control for the same choice - and they pushed the sectors a full screen
+  // of scrolling to the right. The list always ranks by the selected metric,
+  // best first. Families have no sectors, so their rail is empty and the
+  // list gets the row back.
   const chipGroups = useMemo(() => {
+    if (view === 'families') return [];
     const sectorChips = [null].concat(sectors).map((sec) => ({
       key: sec || 'all',
       label: sec || 'All sectors',
       active: sector === sec,
       onPress: () => setSector(sec),
     }));
-
-    const metricLabel =
-      metric === 'return' ? 'Return' : metric === 'residual' ? 'Residual' : 'Ratio';
-    const arrow = (active, desc) => (active ? (desc ? ' ↓' : ' ↑') : '');
-
-    if (view === 'card') {
-      const cycle = (key) => {
-        if (sortKey === key) setDescending((d) => !d);
-        else {
-          setSortKey(key);
-          // Overlap's useful direction is ascending, same as Symbol: lowest
-          // correlation first, so the top of the list is whichever name would
-          // add the most diversification.
-          setDescending(key !== 'symbol' && key !== 'overlap');
-        }
-      };
-      const sortChips = [
-        // The chip names whatever the metric control is set to, so the sort
-        // and its label can never describe different columns.
-        { key: 'metric', label: `${metricLabel}${arrow(sortKey === 'metric', descending)}` },
-        { key: 'cap', label: `Size${arrow(sortKey === 'cap', descending)}` },
-        { key: 'symbol', label: `A–Z${arrow(sortKey === 'symbol', descending)}` },
-        // Only offered once the basket itself qualifies for a score: with too
-        // few names every score is null, and a sort with nothing to rank by
-        // is a control that does nothing.
-        ...(overlap && overlap.reason === 'ok'
-          ? [{ key: 'overlap', label: `Overlap${arrow(sortKey === 'overlap', descending)}` }]
-          : []),
-      ].map((c) => ({ ...c, active: sortKey === c.key, onPress: () => cycle(c.key) }));
-      return [sortChips, sectorChips];
-    }
-
-    if (view === 'families') {
-      const cycle = (key) => {
-        if (famSort === key) setFamDescending((d) => !d);
-        else {
-          setFamSort(key);
-          setFamDescending(key !== 'name');
-        }
-      };
-      const famChips = [
-        { key: 'metric', label: `${metricLabel}${arrow(famSort === 'metric', famDescending)}` },
-        { key: 'size', label: `Size${arrow(famSort === 'size', famDescending)}` },
-        { key: 'name', label: `A–Z${arrow(famSort === 'name', famDescending)}` },
-      ].map((c) => ({ ...c, active: famSort === c.key, onPress: () => cycle(c.key) }));
-      return [famChips];
-    }
-
     return [sectorChips];
-  }, [view, sector, sectors, metric, sortKey, descending, famSort, famDescending, overlap]);
+  }, [view, sector, sectors]);
 
   const viewSwitch = (
     <SegmentedControl segments={VIEW_SEGMENTS} value={view} onChange={setView} compact />
@@ -203,8 +155,6 @@ export function MarketScreen({
           sessionsStale={sessionsStale}
           query={query}
           sector={sector}
-          sortKey={sortKey}
-          descending={descending}
           overlap={overlap}
           overlapCaption={overlapCaption}
           showGestureHint
@@ -240,8 +190,6 @@ export function MarketScreen({
           skipEnabled={skipEnabled}
           sessionsStale={sessionsStale}
           query={query}
-          sortKey={famSort}
-          descending={famDescending}
           familyCompare={familyCompare}
           familySlots={familySlots}
           toggleFamilyCompare={toggleFamilyCompare}

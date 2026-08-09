@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/0ZC5DjB66bOxByrHf1Iqx), so it can be opened in
+Snack](https://snack.expo.dev/OManScXxZLYp53K9po5lF), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -396,9 +396,9 @@ What survives, on the Market screen only:
 
 - *the calculation couldn't run, and here's what would fix it* - "Watchlist
   needs 1 more name to screen for overlap", "Widen the window to screen for
-  overlap". These matter because in those states the Overlap sort chip is
-  simply absent, and a control that vanishes with nothing said reads as a
-  missing feature rather than an unmet precondition.
+  overlap". These matter because in those states no row can carry a badge,
+  and an indicator that never appears with nothing said reads as a missing
+  feature rather than an unmet precondition.
 - *the live filter count* - "500 names · through Aug 5", which is feedback for
   the search and sector chips rather than a claim about the market.
 
@@ -451,10 +451,9 @@ against in the first place, not a limit of the maths.
 
 Both headers explain whichever of these applies rather than showing a blank
 result. The Market screen used to stay quiet on the grounds that the guidance
-belonged on the screen with the watchlist on it, which was wrong once the
-Overlap sort existed: the chip is simply *absent* while the basket doesn't
-qualify, and a control that vanishes with nothing said reads as a missing
-feature rather than an unmet precondition. It now says
+belonged on the screen with the watchlist on it, which was wrong: a badge that
+never appears with nothing said reads as a missing feature rather than an
+unmet precondition. It now says
 "Watchlist needs 1 more name to screen for overlap" (or 2, or
 "Widen the window..."), in muted grey rather than the warn colour a flag
 count gets — it's guidance, not a finding.
@@ -480,15 +479,13 @@ giving both a holding's "rest of the basket" average
 outside it (`daySum / n`) directly. Verified bit-identical against a
 brute-force implementation that does perform the literal exclusion.
 
-**Sorting by it.** Both screens carry an "Overlap" sort chip alongside
-Return, Size, and A-Z, once the watchlist itself qualifies for a score (the
-chip is absent under the same conditions the header explains - too few
-names, too short a window). It defaults to ascending, unlike Return and Size:
-the useful direction is lowest correlation first, so the top of the list is
-whichever name would add the most diversification - literally true on the
-Market screen (add this candidate, since it moves least like your basket),
-and the equivalent read on the Watchlist screen (this holding is the least
-redundant with the rest of what you own).
+**Not a sort.** The score surfaces only as the row badge. There used to be an
+"Overlap" sort chip (alongside Return, Size and A-Z), but the whole chip row
+of sorts was removed: the metric control already names the ranking, a second
+control for the same choice was chrome, and the sort chips pushed the sector
+filters a full screen of scrolling to the right. Every list now ranks by the
+selected metric, best first, and the badge marks the redundant names wherever
+they land in that order.
 
 While this sort is active every row shows its own number, not just the ones
 that clear the 65% flag threshold - a badge that only appeared on the
@@ -810,11 +807,10 @@ treats each one as if it were a ticker.
 That last part is the design: because a family index is ticker-shaped, **every
 control the stock list has works on families unchanged** — the same search
 box, the same shared window presets and Custom picker, the same Skip toggle,
-the same sort chips, and the same three metrics, including Residual, which
-regresses the family's daily returns on the same packed market series the
-stocks use. Under the default metric sort the rows rank best first — the list
-doubles as a league table for whatever window and metric are on screen — and
-Size (member count) and A–Z are a chip away, exactly like the stock list.
+and the same three metrics, including Residual, which regresses the family's
+daily returns on the same packed market series the stocks use. The rows always
+rank by the selected metric, best first: the list doubles as a league table
+for whatever window and metric are on screen.
 
 The gestures match the stock list too: **tap collects, press and hold opens.**
 A tap adds the family to the compare set — the family analogue of the
