@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/02CBDnpGBUy9yFF6rxbKy), so it can be opened in
+Snack](https://snack.expo.dev/uv0j6oV4B0q6bVd9zWcap), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -808,12 +808,13 @@ in. The series are built entirely by the pipeline and shipped in
 treats each one as if it were a ticker.
 
 That last part is the design: because a family index is ticker-shaped, **every
-control the stock list has works on families unchanged** — the same shared
-window presets and Custom picker, the same Skip toggle, and the same three
-metrics, including Residual, which regresses the family's daily returns on the
-same packed market series the stocks use. The rows are always ranked by the
-selected metric, best first: rank *is* this view's order, so the list doubles
-as a league table for whatever window and metric are on screen.
+control the stock list has works on families unchanged** — the same search
+box, the same shared window presets and Custom picker, the same Skip toggle,
+the same sort chips, and the same three metrics, including Residual, which
+regresses the family's daily returns on the same packed market series the
+stocks use. Under the default metric sort the rows rank best first — the list
+doubles as a league table for whatever window and metric are on screen — and
+Size (member count) and A–Z are a chip away, exactly like the stock list.
 
 Tap a row to draw that family on the comparison chart — the same gesture that
 puts a stock on the watchlist. Up to four lines share one axis, the oldest
@@ -845,11 +846,14 @@ would describe the opposite of what the gesture does, and by the time you have
 a watchlist to look at, the convention it exists to teach has already been
 learned by using it.
 
-- **Market** — three views. *Card* is the list of all 500; *Table* ranks every
-  name at 3M / 6M / 9M / 12M as a heatmap — both searchable and filterable by
-  sector. *Families* ranks the 38 industry-family indices under the same
-  windows, metrics and Skip; tap rows to compare up to four on one chart. See
-  *Industry families* above.
+- **Market** — three views inside one fixed frame. *Card* is the list of all
+  500; *Table* ranks every name at 3M / 6M / 9M / 12M as a heatmap; *Families*
+  ranks the 38 industry-family indices (see *Industry families* above). The
+  header never moves when you switch: one search box, one window control, one
+  metric control and one Skip toggle span all three, and what you type or pick
+  survives the switch. In the table the window control picks which column
+  leads the sort — and tapping a column header moves the window right back, so
+  the time axis means the same thing in every view.
 - **Window** — presets from 1M to Max, or *Custom* for an explicit start and
   stop day. Days are picked from the trading calendar itself, so a weekend is
   never a selectable answer that silently snaps elsewhere.

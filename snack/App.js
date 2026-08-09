@@ -17,17 +17,9 @@ import { ThemeProvider, useTheme, radius, space, type } from './theme';
 import { sessionsSinceSnapshot, setMarket, windowForPreset } from './stats';
 import { computeOverlap, describeCandidateOverlap } from './overlap';
 import { ListScreen } from './ListScreen';
+import { MarketScreen } from './Market';
 import { ResearchScreen } from './Research';
-import { FamilyScreen } from './FamilyScreen';
-import { RankTable } from './RankTable';
-import { SegmentedControl } from './ui';
 import { DetailScreen } from './DetailScreen';
-
-const MARKET_VIEWS = [
-  { key: 'card', label: 'Card' },
-  { key: 'table', label: 'Table' },
-  { key: 'families', label: 'Families' },
-];
 
 // Main first; the working branch second so a payload shape that has not
 // merged yet still reaches the phone. Once main carries it the first URL
@@ -52,7 +44,6 @@ function Shell() {
   const [attempt, setAttempt] = useState(0);
 
   const [tab, setTab] = useState('market');
-  const [marketView, setMarketView] = useState('card');
   const [detail, setDetail] = useState(null);
   const [order, setOrder] = useState([]);
 
@@ -260,22 +251,13 @@ function Shell() {
     );
   }
 
-  // The Market tab in two views of the same 500 names. Local state rather than
-  // persisted: the choice survives switching tabs, which is the only continuity
-  // that matters here - a view mode restored on a cold start would be a
-  // setting, and this is a glance.
-  const viewSwitch =
-    tab === 'market' ? (
-      <SegmentedControl segments={MARKET_VIEWS} value={marketView} onChange={setMarketView} compact />
-    ) : null;
-
-  if (tab === 'market' && marketView === 'families') {
+  if (tab === 'market') {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
         <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} />
-        <FamilyScreen
+        <MarketScreen
+          data={data}
           research={research}
-          dates={data.dates}
           win={win}
           setPreset={setPreset}
           setCustomWindow={setCustomWindow}
@@ -284,31 +266,13 @@ function Shell() {
           skipEnabled={skipEnabled}
           setSkipEnabled={setSkipEnabled}
           sessionsStale={sessionsStale}
-          headerAccessory={viewSwitch}
-          tab={tabBar}
-        />
-      </SafeAreaView>
-    );
-  }
-
-  if (tab === 'market' && marketView === 'table') {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
-        <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} />
-        <RankTable
-          universe={data.tickers}
-          dates={data.dates}
-          sectors={data.sectors}
-          metric={metric}
-          setMetric={setMetric}
-          skipEnabled={skipEnabled}
-          setSkipEnabled={setSkipEnabled}
-          sessionsStale={sessionsStale}
           isWatched={isWatched}
           toggleWatch={toggleWatch}
           onOpenDetail={setDetail}
+          onOrder={setOrder}
+          overlap={overlap}
+          overlapCaption={overlapCaption}
           tab={tabBar}
-          headerAccessory={viewSwitch}
         />
       </SafeAreaView>
     );
@@ -318,9 +282,8 @@ function Shell() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
       <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} />
       <ListScreen
-        headerAccessory={viewSwitch}
-        title={tab === 'market' ? 'Market' : 'Watchlist'}
-        universe={tab === 'market' ? data.tickers : watched}
+        title="Watchlist"
+        universe={watched}
         dates={data.dates}
         sectors={data.sectors}
         win={win}
@@ -337,20 +300,13 @@ function Shell() {
         onOrder={setOrder}
         tab={tabBar}
         overlap={overlap}
-        overlapCaption={overlapCaption}
-        showCaption={tab === 'market'}
-        showGestureHint={tab === 'market'}
         emptyState={
-          tab === 'watchlist' ? (
-            <View style={{ alignItems: 'center', gap: space(2) }}>
-              <Text style={[type.title, { color: colors.text }]}>Nothing watched yet</Text>
-              <Text style={[type.body, s.centreText, { color: colors.textMuted }]}>
-                Tap any row on the Market tab to add it here. Press and hold a row to open its chart.
-              </Text>
-            </View>
-          ) : (
-            <Text style={[type.body, { color: colors.textMuted }]}>Nothing matches those filters.</Text>
-          )
+          <View style={{ alignItems: 'center', gap: space(2) }}>
+            <Text style={[type.title, { color: colors.text }]}>Nothing watched yet</Text>
+            <Text style={[type.body, s.centreText, { color: colors.textMuted }]}>
+              Tap any row on the Market tab to add it here. Press and hold a row to open its chart.
+            </Text>
+          </View>
         }
       />
     </SafeAreaView>

@@ -1,49 +1,41 @@
+// Mirrors src/components/StockListBody.tsx and src/screens/TickerListScreen.tsx
+// - if these ever disagree, the .tsx files are the ones that are wrong.
+
 import React, { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 
-import { ROW_HEIGHT, SegmentedControl, TickerRow } from './ui';
+import { ROW_HEIGHT, TickerRow } from './ui';
+import { ListHeader } from './chrome';
 import { WindowPicker } from './WindowPicker';
-import { useTheme, radius, space, type, mono } from './theme';
-import { PRESETS, computeWindowStats, formatDateShort, hasMarket, metricValue, slice, withSkip } from './stats';
+import { useTheme, space, type } from './theme';
+import { computeWindowStats, metricValue, slice, withSkip } from './stats';
 
-const METRICS = [
-  { key: 'return', label: 'Return' },
-  { key: 'ratio', label: 'Return ÷ σ' },
-  { key: 'residual', label: 'Residual' },
-];
+/** The one filter predicate, shared with the header's live row count. */
+export function filterUniverse(universe, query, sector) {
+  const needle = query.trim().toUpperCase();
+  return universe
+    .filter((t) => (sector ? t.se === sector : true))
+    .filter((t) => (needle ? t.s.includes(needle) || t.n.toUpperCase().includes(needle) : true));
+}
 
-// Residual drops out when the loaded dataset has no market reference (a
-// payload from before the field existed): every value would be a dash, and a
-// control that only produces dashes is worse than none. Evaluated per render,
-// NOT at module scope - the module loads before the data arrives.
-const availableMetrics = () => METRICS.filter((m) => m.key !== 'residual' || hasMarket());
-
-export function ListScreen({
-  title, universe, dates, sectors, win, setPreset, setCustomWindow,
-  metric, setMetric, skipEnabled, setSkipEnabled, sessionsStale,
-  isWatched, toggleWatch, onOpenDetail, onOrder, emptyState, tab, overlap, overlapCaption,
-  showCaption,
-  // The "tap a row to watchlist it" footer. True only where a tap actually
-  // *adds*: on the Watchlist screen a tap removes the row it lands on, so the
-  // same sentence there describes the opposite of what the gesture does.
-  showGestureHint,
-  // Rendered between the title block and the search box. Exists for the Market
-  // tab's Card/Table switch, which sits inside this header but belongs to the
-  // screen above it.
-  headerAccessory,
+/**
+ * The scored, sorted stock list - the body below the shared header, used by
+ * the Market tab's card view and by the Watchlist. All filter and sort state
+ * lives with the caller so it can drive the header's chips and captions and
+ * survive view switches; this component just renders what that state says.
+ */
+export function StockListBody({
+  universe, dates, win, metric, skipEnabled, sessionsStale,
+  query, sector, sortKey, descending,
+  overlap, overlapCaption, emptyState, showGestureHint,
+  isWatched, toggleWatch, onOpenDetail, onOrder,
 }) {
-  const { colors, scheme, preference, setPreference } = useTheme();
-  // The range the maths actually uses, once the recent tail is dropped.
+  const { colors } = useTheme();
+
   const range = useMemo(
     () => withSkip(win, skipEnabled, sessionsStale, dates.length - 1),
     [win, skipEnabled, sessionsStale, dates.length]
   );
-
-  const [query, setQuery] = useState('');
-  const [sector, setSector] = useState(null);
-  const [sortKey, setSortKey] = useState('metric');
-  const [descending, setDescending] = useState(true);
-  const [pickerOpen, setPickerOpen] = useState(false);
 
   // Every scored name, keyed by symbol. Sorting by Overlap needs every row's
   // own number to rank against, not just the ones that clear the flag
@@ -61,17 +53,13 @@ export function ListScreen({
   }, [overlap, sortKey]);
 
   const rows = useMemo(() => {
-    const needle = query.trim().toUpperCase();
-    const built = universe
-      .filter((t) => (sector ? t.se === sector : true))
-      .filter((t) => (needle ? t.s.includes(needle) || t.n.toUpperCase().includes(needle) : true))
-      .map((t) => ({
-        ticker: t,
-        stats: computeWindowStats(t, range.startIndex, range.endIndex),
-        // Sparkline ends where the measurement ends, so the shape and the
-        // number beside it describe the same stretch of time.
-        series: slice(t, range.startIndex, range.endIndex),
-      }));
+    const built = filterUniverse(universe, query, sector).map((t) => ({
+      ticker: t,
+      stats: computeWindowStats(t, range.startIndex, range.endIndex),
+      // Sparkline ends where the measurement ends, so the shape and the
+      // number beside it describe the same stretch of time.
+      series: slice(t, range.startIndex, range.endIndex),
+    }));
 
     const dir = descending ? -1 : 1;
     built.sort((a, b) => {
@@ -108,17 +96,6 @@ export function ListScreen({
     [symbols, onOrder, onOpenDetail]
   );
 
-  const cycleSort = (key) => {
-    if (sortKey === key) setDescending((d) => !d);
-    else {
-      setSortKey(key);
-      // Overlap's useful direction is ascending, same as Symbol: lowest
-      // correlation to the rest of the list first, so the top of the list is
-      // whichever name would add the most diversification.
-      setDescending(key !== 'symbol' && key !== 'overlap');
-    }
-  };
-
   const renderItem = useCallback(
     ({ item, index }) => (
       <TickerRow
@@ -136,196 +113,137 @@ export function ListScreen({
     [metric, isWatched, toggleWatch, openDetail, sortKey, overlapScores]
   );
 
-  // Only offered once the basket itself qualifies for a score: with too few
-  // names or too short a window every score is null, and a sort with nothing
-  // to rank by is a control that does nothing.
-  const sortChips = [
-    // The chip names whatever the metric control is set to, so the sort and
-    // its label can never describe different columns.
-    {
-      key: 'metric',
-      label: metric === 'return' ? 'Return' : metric === 'residual' ? 'Residual' : 'Ratio',
-    },
-    { key: 'cap', label: 'Size' },
-    { key: 'symbol', label: 'A–Z' },
-    ...(overlap && overlap.reason === 'ok' ? [{ key: 'overlap', label: 'Overlap' }] : []),
-  ];
+  return (
+    <FlatList
+      data={rows}
+      keyExtractor={(r) => r.ticker.s}
+      renderItem={renderItem}
+      getItemLayout={(_, index) => ({ length: ROW_HEIGHT, offset: ROW_HEIGHT * index, index })}
+      initialNumToRender={12}
+      maxToRenderPerBatch={10}
+      windowSize={9}
+      removeClippedSubviews
+      keyboardShouldPersistTaps="handled"
+      ListHeaderComponent={
+        overlapCaption ? (
+          <Text style={[type.caption, s.overlapNote, { color: colors.textFaint }]}>
+            {overlapCaption}
+          </Text>
+        ) : null
+      }
+      ListEmptyComponent={
+        <View style={s.empty}>
+          {emptyState || (
+            <Text style={[type.body, { color: colors.textMuted }]}>
+              Nothing matches those filters.
+            </Text>
+          )}
+        </View>
+      }
+      ListFooterComponent={
+        showGestureHint && rows.length > 0 ? (
+          <Text style={[type.caption, s.hint, { color: colors.textFaint }]}>
+            Tap a row to watchlist it · press and hold to open it
+          </Text>
+        ) : null
+      }
+    />
+  );
+}
+
+/**
+ * A stock list under the standard header - today that means the Watchlist.
+ * The Market tab composes the same ListHeader and StockListBody itself (it
+ * has three bodies to swap under one header); this screen is the
+ * single-body case.
+ *
+ * No caption between the title and the search box, deliberately: the numbers
+ * that belong to a name belong on that name's row.
+ */
+export function ListScreen({
+  title, universe, dates, sectors, win, setPreset, setCustomWindow,
+  metric, setMetric, skipEnabled, setSkipEnabled, sessionsStale,
+  isWatched, toggleWatch, onOpenDetail, onOrder, emptyState, tab, overlap,
+}) {
+  const [query, setQuery] = useState('');
+  const [sector, setSector] = useState(null);
+  const [sortKey, setSortKey] = useState('metric');
+  const [descending, setDescending] = useState(true);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const { colors } = useTheme();
+
+  const range = useMemo(
+    () => withSkip(win, skipEnabled, sessionsStale, dates.length - 1),
+    [win, skipEnabled, sessionsStale, dates.length]
+  );
+
+  const chipGroups = useMemo(() => {
+    const cycle = (key) => {
+      if (sortKey === key) setDescending((d) => !d);
+      else {
+        setSortKey(key);
+        // Overlap's useful direction is ascending, same as Symbol: lowest
+        // correlation to the rest of the list first, so the top of the list
+        // is whichever name would add the most diversification.
+        setDescending(key !== 'symbol' && key !== 'overlap');
+      }
+    };
+    const arrow = (active) => (active ? (descending ? ' ↓' : ' ↑') : '');
+    const metricLabel =
+      metric === 'return' ? 'Return' : metric === 'residual' ? 'Residual' : 'Ratio';
+    const sortChips = [
+      { key: 'metric', label: `${metricLabel}${arrow(sortKey === 'metric')}` },
+      { key: 'cap', label: `Size${arrow(sortKey === 'cap')}` },
+      { key: 'symbol', label: `A–Z${arrow(sortKey === 'symbol')}` },
+      ...(overlap && overlap.reason === 'ok'
+        ? [{ key: 'overlap', label: `Overlap${arrow(sortKey === 'overlap')}` }]
+        : []),
+    ].map((c) => ({ ...c, active: sortKey === c.key, onPress: () => cycle(c.key) }));
+    const sectorChips = [null].concat(sectors).map((sec) => ({
+      key: sec || 'all',
+      label: sec || 'All sectors',
+      active: sector === sec,
+      onPress: () => setSector(sec),
+    }));
+    return [sortChips, sectorChips];
+  }, [sortKey, descending, metric, overlap, sector, sectors]);
 
   return (
     <View style={[s.root, { backgroundColor: colors.bg }]}>
-      <View style={s.header}>
-        <View style={s.headerTop}>
-          <View>
-            <Text style={[type.hero, { color: colors.text }]}>{title}</Text>
-            {showCaption && (
-              <Text style={[type.caption, { color: colors.textMuted }]}>
-                {rows.length} {rows.length === 1 ? 'name' : 'names'} · through{' '}
-                {formatDateShort(dates[range.endIndex])}
-                {range.skip > 0 ? ` · ${range.skip}d skipped` : ''}
-              </Text>
-            )}
-            {/* Always the faint tone. Every caption either screen still
-                produces is a precondition the user can act on, never a
-                finding - findings live on the rows they belong to. */}
-            {overlapCaption && (
-              <Text style={[type.caption, { color: colors.textFaint, marginTop: 2 }]}>
-                {overlapCaption}
-              </Text>
-            )}
-          </View>
-          <Pressable
-            onPress={() =>
-              setPreference(preference === 'system' ? (scheme === 'dark' ? 'light' : 'dark') : 'system')
-            }
-            style={[s.themeButton, { backgroundColor: colors.surface }]}
-            accessibilityRole="button"
-            accessibilityLabel={`Theme: ${preference}`}
-          >
-            <Text style={{ fontSize: 16 }}>
-              {preference === 'system' ? '◐' : scheme === 'dark' ? '☾' : '☀'}
-            </Text>
-          </Pressable>
-        </View>
+      <ListHeader
+        title={title}
+        query={query}
+        onQuery={setQuery}
+        win={win}
+        onPreset={setPreset}
+        onOpenPicker={() => setPickerOpen(true)}
+        metric={metric}
+        onMetric={setMetric}
+        skipEnabled={skipEnabled}
+        onToggleSkip={() => setSkipEnabled(!skipEnabled)}
+        range={range}
+        sessionsStale={sessionsStale}
+        dates={dates}
+        chipGroups={chipGroups}
+      />
 
-        {/* Search and the view switch share a row: both are "what am I looking
-            at" controls, and stacking them cost a full row of chrome before
-            the first piece of data. */}
-        <View style={s.searchRow}>
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search symbol or company"
-            placeholderTextColor={colors.textFaint}
-            autoCapitalize="characters"
-            autoCorrect={false}
-            clearButtonMode="while-editing"
-            style={[s.search, type.body, { backgroundColor: colors.surface, color: colors.text }]}
-          />
-          {headerAccessory ? <View style={s.accessory}>{headerAccessory}</View> : null}
-        </View>
-
-        <View style={s.windowRow}>
-          <View style={{ flex: 1 }}>
-            <SegmentedControl segments={PRESETS} value={win.preset} onChange={setPreset} compact />
-          </View>
-          <Pressable
-            onPress={() => setPickerOpen(true)}
-            style={[
-              s.customButton,
-              {
-                backgroundColor: win.preset === 'CUSTOM' ? colors.accentMuted : colors.surface,
-                borderColor: win.preset === 'CUSTOM' ? colors.accent : 'transparent',
-              },
-            ]}
-          >
-            <Text style={[type.caption, { color: win.preset === 'CUSTOM' ? colors.accent : colors.textMuted }]}>
-              Custom
-            </Text>
-          </Pressable>
-        </View>
-
-        <View style={s.windowRow}>
-          <View style={{ flex: 1 }}>
-            <SegmentedControl segments={availableMetrics()} value={metric} onChange={setMetric} compact />
-          </View>
-          <Pressable
-            onPress={() => setSkipEnabled(!skipEnabled)}
-            style={[
-              s.customButton,
-              {
-                backgroundColor: skipEnabled ? colors.accentMuted : colors.surface,
-                borderColor: skipEnabled ? colors.accent : 'transparent',
-              },
-            ]}
-            accessibilityRole="switch"
-            accessibilityState={{ checked: skipEnabled }}
-            accessibilityLabel={
-              skipEnabled
-                ? `Skipping the last ${range.skip} trading days`
-                : 'Include the most recent trading days'
-            }
-          >
-            <Text style={[type.caption, { color: skipEnabled ? colors.accent : colors.textMuted }]}>
-              {skipEnabled ? `Skip ${range.skip}d` : 'Skip'}
-            </Text>
-          </Pressable>
-        </View>
-
-        {(win.preset === 'CUSTOM' || range.skip > 0) && (
-          <Text style={[type.caption, mono, { color: colors.textMuted }]}>
-            {dates[range.startIndex]} → {dates[range.endIndex]}
-            {range.shortfall > 0
-              ? `  ·  ${range.shortfall}d short`
-              : sessionsStale > 0 && range.skip > 0
-                ? `  ·  data ${sessionsStale}d behind`
-                : ''}
-          </Text>
-        )}
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chipRow}>
-          {sortChips.map((chip) => {
-            const active = sortKey === chip.key;
-            return (
-              <Pressable
-                key={chip.key}
-                onPress={() => cycleSort(chip.key)}
-                style={[
-                  s.chip,
-                  {
-                    backgroundColor: active ? colors.accentMuted : colors.surface,
-                    borderColor: active ? colors.accent : 'transparent',
-                  },
-                ]}
-              >
-                <Text style={[type.caption, { color: active ? colors.accent : colors.textMuted }]}>
-                  {chip.label}
-                  {active ? (descending ? ' ↓' : ' ↑') : ''}
-                </Text>
-              </Pressable>
-            );
-          })}
-          <View style={[s.chipDivider, { backgroundColor: colors.border }]} />
-          {[null].concat(sectors).map((sec) => {
-            const active = sector === sec;
-            return (
-              <Pressable
-                key={sec || 'all'}
-                onPress={() => setSector(sec)}
-                style={[
-                  s.chip,
-                  {
-                    backgroundColor: active ? colors.accentMuted : colors.surface,
-                    borderColor: active ? colors.accent : 'transparent',
-                  },
-                ]}
-              >
-                <Text style={[type.caption, { color: active ? colors.accent : colors.textMuted }]}>
-                  {sec || 'All sectors'}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
-
-      <FlatList
-        data={rows}
-        keyExtractor={(r) => r.ticker.s}
-        renderItem={renderItem}
-        getItemLayout={(_, index) => ({ length: ROW_HEIGHT, offset: ROW_HEIGHT * index, index })}
-        initialNumToRender={12}
-        maxToRenderPerBatch={10}
-        windowSize={9}
-        removeClippedSubviews
-        keyboardShouldPersistTaps="handled"
-        ListEmptyComponent={<View style={s.empty}>{emptyState || null}</View>}
-        ListFooterComponent={
-          showGestureHint && rows.length > 0 ? (
-            <Text style={[type.caption, s.hint, { color: colors.textFaint }]}>
-              Tap a row to watchlist it · press and hold to open it
-            </Text>
-          ) : null
-        }
+      <StockListBody
+        universe={universe}
+        dates={dates}
+        win={win}
+        metric={metric}
+        skipEnabled={skipEnabled}
+        sessionsStale={sessionsStale}
+        query={query}
+        sector={sector}
+        sortKey={sortKey}
+        descending={descending}
+        overlap={overlap}
+        emptyState={emptyState}
+        isWatched={isWatched}
+        toggleWatch={toggleWatch}
+        onOpenDetail={onOpenDetail}
+        onOrder={onOrder}
       />
 
       {tab}
@@ -343,20 +261,7 @@ export function ListScreen({
 
 const s = StyleSheet.create({
   root: { flex: 1 },
-  header: { paddingHorizontal: space(4), paddingBottom: space(2.5), gap: space(2) },
-  headerTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  themeButton: { width: 36, height: 36, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
-  searchRow: { flexDirection: 'row', alignItems: 'stretch', gap: space(2) },
-  // minWidth 0: otherwise the placeholder's width is the field's minimum and
-  // the view switch gets shoved off the right edge.
-  search: { flex: 1, minWidth: 0, borderRadius: radius.md, paddingHorizontal: space(3.5), paddingVertical: space(2.75) },
-  // Three segments now (Card / Table / Families); 148 fit two.
-  accessory: { width: 208, justifyContent: 'center' },
-  windowRow: { flexDirection: 'row', alignItems: 'center', gap: space(2) },
-  customButton: { paddingHorizontal: space(3.5), paddingVertical: space(2), borderRadius: radius.md, borderWidth: 1 },
-  chipRow: { gap: space(2), paddingRight: space(4), alignItems: 'center' },
-  chip: { paddingHorizontal: space(3), paddingVertical: space(1.75), borderRadius: radius.pill, borderWidth: 1 },
-  chipDivider: { width: StyleSheet.hairlineWidth, height: 20, marginHorizontal: space(1) },
+  overlapNote: { paddingHorizontal: space(4), paddingBottom: space(2) },
   empty: { padding: space(10), alignItems: 'center' },
   hint: { textAlign: 'center', paddingVertical: space(5) },
 });

@@ -22,6 +22,33 @@ export const HORIZONS = [
 ];
 
 /**
+ * Which horizon column a shared window resolves to.
+ *
+ * The rank table has no window state of its own: the header's window control
+ * is the sorted column, so the time axis means the same thing in every view.
+ * Presets that are themselves columns match exactly; everything else (1M,
+ * Max, a custom range) resolves to the horizon nearest its length - a 1M
+ * window leads with the 3M column because 1M is deliberately not a column
+ * (see HORIZONS above).
+ */
+export function horizonIndexForWindow(win, dates) {
+  const exact = HORIZONS.findIndex((h) => h.key === win.preset);
+  if (exact >= 0) return exact;
+  const length = win.endIndex - win.startIndex;
+  let best = 0;
+  let bestGap = Infinity;
+  HORIZONS.forEach((h, i) => {
+    const w = windowForPreset(h.key, dates);
+    const gap = Math.abs(w.endIndex - w.startIndex - length);
+    if (gap < bestGap) {
+      bestGap = gap;
+      best = i;
+    }
+  });
+  return best;
+}
+
+/**
  * Rank every name at every horizon, on one metric.
  *
  * Ranks are always computed over the whole universe passed in, before any
