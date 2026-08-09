@@ -60,9 +60,6 @@ export function MarketScreen() {
   const [famSort, setFamSort] = useState<FamilySortKey>('metric');
   const [famDescending, setFamDescending] = useState(true);
   const [bestFirst, setBestFirst] = useState(true);
-  const [famSelected, setFamSelected] = useState<string[]>(() =>
-    FAMILY_TICKERS.slice(0, 2).map((f) => f.symbol)
-  );
 
   const range = useMemo(
     () => withSkip(win, skipEnabled, sessionsStale),
@@ -103,14 +100,6 @@ export function MarketScreen() {
     },
     [sortColumn, setPreset]
   );
-
-  const toggleFamily = useCallback((key: string) => {
-    setFamSelected((prev) => {
-      if (prev.includes(key)) return prev.length > 1 ? prev.filter((k) => k !== key) : prev;
-      const next = [...prev, key];
-      return next.length > 4 ? next.slice(1) : next;
-    });
-  }, []);
 
   // Live row counts for the caption - the same predicates the bodies use.
   const stockCount = useMemo(
@@ -257,13 +246,7 @@ export function MarketScreen() {
         />
       )}
       {view === 'families' && (
-        <FamilyBody
-          query={query}
-          sortKey={famSort}
-          descending={famDescending}
-          selected={famSelected}
-          onToggle={toggleFamily}
-        />
+        <FamilyBody query={query} sortKey={famSort} descending={famDescending} />
       )}
 
       <WindowPicker

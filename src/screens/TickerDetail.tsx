@@ -1,8 +1,10 @@
+import { useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { PriceChart } from '../components/PriceChart';
 import { SegmentedControl } from '../components/SegmentedControl';
+import { familyOfSymbol } from '../data/families';
 import { DATES, Ticker, formatDate, slice } from '../data/market';
 import {
   computeWindowStats,
@@ -37,6 +39,8 @@ export function TickerDetail({
   onScrubbingChange?: (active: boolean) => void;
 }) {
   const colors = useColors();
+  const router = useRouter();
+  const family = familyOfSymbol(ticker.symbol);
   const [preset, setPreset] = useState<PresetKey>(
     initialPreset === 'CUSTOM' ? '1Y' : initialPreset
   );
@@ -230,6 +234,21 @@ export function TickerDetail({
           ABOUT
         </Text>
         <View style={[styles.facts, { backgroundColor: colors.surface }]}>
+          {/* The stock's peer family, when it has one - the bridge from a
+              single name to the group it trades with. */}
+          {family && (
+            <Pressable
+              onPress={() => router.push(`/family/${encodeURIComponent(family)}`)}
+              style={styles.factRow}
+              accessibilityRole="button"
+              accessibilityLabel={`Open the ${family} family`}
+            >
+              <Text style={[type.caption, { color: colors.textMuted }]}>Family</Text>
+              <Text style={[type.caption, { color: colors.accent }]} numberOfLines={1}>
+                {family} ›
+              </Text>
+            </Pressable>
+          )}
           {[
             ['Sector', ticker.sector],
             ['Industry', ticker.industry],

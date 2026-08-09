@@ -35,6 +35,15 @@ type AppStateValue = {
   isWatched: (symbol: string) => boolean;
   toggleWatch: (symbol: string) => boolean;
   clearWatchlist: () => void;
+
+  /**
+   * The families picked for comparison - the family analogue of the
+   * watchlist. Tap a family row to collect it here; any family's detail
+   * chart overlays the set. Session-local on purpose: a comparison is a
+   * question being asked now, not a portfolio being kept.
+   */
+  familyCompare: string[];
+  toggleFamilyCompare: (key: string) => boolean;
 };
 
 const AppStateContext = createContext<AppStateValue | null>(null);
@@ -109,6 +118,21 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
 
   const clearWatchlist = useCallback(() => setWatchlist([]), []);
 
+  const [familyCompare, setFamilyCompare] = useState<string[]>([]);
+  /** Returns the resulting state so callers can pick the right haptic. */
+  const toggleFamilyCompare = useCallback((key: string) => {
+    let added = false;
+    setFamilyCompare((prev) => {
+      if (prev.includes(key)) return prev.filter((k) => k !== key);
+      added = true;
+      // Four lines is where a comparison chart stops being readable; the
+      // oldest pick rolls off, same as the market-view rule always was.
+      const next = [...prev, key];
+      return next.length > 4 ? next.slice(1) : next;
+    });
+    return added;
+  }, []);
+
   const value = useMemo(
     () => ({
       window,
@@ -123,10 +147,13 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       isWatched,
       toggleWatch,
       clearWatchlist,
+      familyCompare,
+      toggleFamilyCompare,
     }),
     [
       window, setPreset, setCustomWindow, metric, skipEnabled, setSkipEnabled,
       sessionsStale, watchlist, isWatched, toggleWatch, clearWatchlist,
+      familyCompare, toggleFamilyCompare,
     ]
   );
 

@@ -1,14 +1,16 @@
-import React, { useMemo } from 'react';
+import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useMemo } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { CompareChart } from '../components/CompareChart';
 import { Sparkline } from '../components/Sparkline';
 import { FAMILY_TICKERS, FamilyTicker } from '../data/families';
 import { slice } from '../data/market';
 import { computeWindowStats, formatMetric, metricValue } from '../data/stats';
 import { withSkip } from '../data/windows';
 import { useAppState } from '../state/AppState';
+import { setOrderedFamilies } from '../state/listContext';
 import { useColors } from '../theme/ThemeProvider';
 import { mono, space, type } from '../theme/theme';
 
@@ -24,34 +26,27 @@ export function filterFamilies(query: string): FamilyTicker[] {
 
 /**
  * The Market tab's family body: the 38 industry families as rows that behave
- * like stocks. The families are Ticker-shaped, so the shared window, Skip and
- * metric state - and the same computeWindowStats, skip clamp and residual
- * regression - apply unchanged; under the metric sort the rows rank
- * best-first exactly like the card view.
- *
- * Tap toggles a family onto the comparison chart, the same gesture that
- * toggles a stock onto the watchlist. Up to four, oldest rolls off, never
- * below one. The chart draws the measured stretch - the same span every
- * row's number covers - indexed to 100 at the window start, because the
- * families opened their $10,000 on different dates and raw levels would
- * compare start dates rather than performance.
+ * like stocks - the same look, the same maths, and now the same gesture pair
+ * as the card view. Tap collects a family into the compare set (the family
+ * analogue of the watchlist; its dot takes the comparison colour). Press and
+ * hold opens the family's own page - chart, every window's numbers, and its
+ * holdings - which is also where the compare set gets drawn.
  */
 export function FamilyBody({
   query,
   sortKey,
   descending,
-  selected,
-  onToggle,
 }: {
   query: string;
   sortKey: FamilySortKey;
   descending: boolean;
-  selected: string[];
-  onToggle: (key: string) => void;
 }) {
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const { window: win, metric, skipEnabled, sessionsStale } = useAppState();
+  const router = useRouter();
+  const {
+    window: win, metric, skipEnabled, sessionsStale, familyCompare, toggleFamilyCompare,
+  } = useAppState();
 
   const range = useMemo(
     () => withSkip(win, skipEnabled, sessionsStale),
@@ -77,33 +72,39 @@ export function FamilyBody({
     return scored;
   }, [query, range, metric, sortKey, descending]);
 
-  const chart = useMemo(() => {
-    return selected
-      .map((key, slot) => {
-        const f = FAMILY_TICKERS.find((x) => x.symbol === key);
-        if (!f) return null;
-        const vals = slice(f, range.startIndex, range.endIndex);
-        if (vals.length < 2) return null;
-        const base = vals[0];
-        return {
-          key,
-          color: colors.chart[slot % colors.chart.length],
-          values: vals.map((v) => (v / base) * 100),
-        };
-      })
-      .filter((x): x is NonNullable<typeof x> => x != null);
-  }, [selected, range, colors]);
+  const collect = useCallback(
+    (key: string) => {
+      const added = toggleFamilyCompare(key);
+      Haptics.impactAsync(
+        added ? Haptics.ImpactFeedbackStyle.Light : Haptics.ImpactFeedbackStyle.Medium
+      ).catch(() => {});
+    },
+    [toggleFamilyCompare]
+  );
+
+  const open = useCallback(
+    (key: string) => {
+      // Publish the visible order so the detail pager swipes through the
+      // same list the finger just left.
+      setOrderedFamilies(rows.map((r) => r.family.symbol));
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      router.push(`/family/${encodeURIComponent(key)}`);
+    },
+    [rows, router]
+  );
 
   const renderRow = ({ item, index }: { item: (typeof rows)[number]; index: number }) => {
     const f = item.family;
     const v = metricValue(item.stats, metric);
     const tone = v === null ? colors.flat : v >= 0 ? colors.up : colors.down;
-    const slot = selected.indexOf(f.symbol);
+    const slot = familyCompare.indexOf(f.symbol);
     const activeHue = slot >= 0 ? colors.chart[slot % colors.chart.length] : null;
     const spark = slice(f, range.startIndex, range.endIndex);
     return (
       <Pressable
-        onPress={() => onToggle(f.symbol)}
+        onPress={() => collect(f.symbol)}
+        onLongPress={() => open(f.symbol)}
+        delayLongPress={280}
         style={({ pressed }) => [
           styles.row,
           {
@@ -113,7 +114,7 @@ export function FamilyBody({
         ]}
         accessibilityRole="button"
         accessibilityState={{ selected: slot >= 0 }}
-        accessibilityHint="Tap to toggle this family on the comparison chart"
+        accessibilityHint="Tap to add to the compare set, press and hold to open"
       >
         {/* Rank only under the metric sort, matching the card view: under
             Size or A–Z the position is not a rank and must not read as one. */}
@@ -151,37 +152,32 @@ export function FamilyBody({
   }
 
   return (
-    <View style={styles.root}>
-      <View style={styles.chartBlock}>
-        <CompareChart lines={chart} height={160} baseline={100} />
-        <Text style={[type.micro, { color: colors.textFaint }]}>
-          Tap a family to chart it · up to four, oldest rolls off · indexed to 100 at the
-          window start
-        </Text>
-      </View>
-
-      <FlatList
-        data={rows}
-        keyExtractor={(r) => r.family.symbol}
-        renderItem={renderRow}
-        initialNumToRender={16}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingBottom: insets.bottom + space(6) }}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={[type.body, { color: colors.textMuted }]}>
-              Nothing matches those filters.
-            </Text>
-          </View>
-        }
-      />
-    </View>
+    <FlatList
+      data={rows}
+      keyExtractor={(r) => r.family.symbol}
+      renderItem={renderRow}
+      initialNumToRender={16}
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={{ paddingBottom: insets.bottom + space(6) }}
+      ListEmptyComponent={
+        <View style={styles.empty}>
+          <Text style={[type.body, { color: colors.textMuted }]}>
+            Nothing matches those filters.
+          </Text>
+        </View>
+      }
+      ListFooterComponent={
+        rows.length > 0 ? (
+          <Text style={[type.caption, styles.hint, { color: colors.textFaint }]}>
+            Tap a row to compare it · press and hold to open it
+          </Text>
+        ) : null
+      }
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  chartBlock: { paddingHorizontal: space(4), paddingBottom: space(2), gap: space(2) },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -196,4 +192,5 @@ const styles = StyleSheet.create({
   value: { minWidth: 84, textAlign: 'right' },
   empty: { padding: space(10), alignItems: 'center' },
   emptyText: { textAlign: 'center', maxWidth: 300 },
+  hint: { textAlign: 'center', paddingVertical: space(5) },
 });

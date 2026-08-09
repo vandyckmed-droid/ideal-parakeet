@@ -468,6 +468,15 @@ async function main() {
     for (let i = firstEntry; i <= N - 1; i++) familyDates.push(DATES[i]);
   }
 
+  // Today's constituents in the family - what an ETF page calls the current
+  // holdings. Deliberately today's roster rather than the last formation's:
+  // the index rebalances monthly, so mid-month the two can differ by a name
+  // or two, and the app's job is to say what the family IS, not what the
+  // simulation held four weeks ago. The simulated series keeps its own
+  // point-in-time membership regardless.
+  const currentMembersOf = (fam) =>
+    [...rosterAt(iso(today))].filter((sym) => famOf(sym) === fam && px.has(sym)).sort();
+
   function simulateFamily(fam) {
     const values = [];
     let value = START_CASH;
@@ -518,7 +527,13 @@ async function main() {
         process.exit(1);
       }
     }
-    families.push({ key: fam, n: sim.n, minMembers: sim.minMembers, values: sim.values });
+    families.push({
+      key: fam,
+      n: sim.n,
+      minMembers: sim.minMembers,
+      members: currentMembersOf(fam),
+      values: sim.values,
+    });
   }
   families.sort((a, b) => b.n - a.n || (a.key < b.key ? -1 : 1));
   console.log(`  ${families.length} family indices, ${familyDates.length} daily points each`);

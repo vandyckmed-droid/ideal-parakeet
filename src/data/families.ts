@@ -17,7 +17,12 @@ import { RESEARCH } from './research';
  * `marketCap` and `dollarVolume` carry the member count: the Size sort then
  * means "biggest family first", which is the only size a family has.
  */
-export type FamilyTicker = Ticker & { members: number };
+export type FamilyTicker = Ticker & {
+  /** Current member count - holdings.length when the payload carries it. */
+  members: number;
+  /** Current constituents in the family, the ETF-page sense of holdings. */
+  holdings: string[];
+};
 
 function align(values: number[]): { offset: number; closes: number[] } | null {
   const fd = RESEARCH.familyDates;
@@ -46,19 +51,36 @@ export const FAMILY_TICKERS: FamilyTicker[] = (RESEARCH.families ?? [])
   .map((f) => {
     const aligned = align(f.values);
     if (!aligned) return null;
+    // Prefer the exported current holdings; fall back to the formation-time
+    // count for a payload from before `members` existed.
+    const holdings = f.members ?? [];
+    const count = holdings.length || f.n;
     return {
       symbol: f.key,
-      name: `${f.n} members`,
+      name: `${count} members`,
       sector: '',
       industry: '',
       country: '',
       exchange: '',
-      marketCap: f.n,
-      dollarVolume: f.n,
+      marketCap: count,
+      dollarVolume: count,
       offset: aligned.offset,
       closes: aligned.closes,
       lastClose: aligned.closes[aligned.closes.length - 1],
-      members: f.n,
+      members: count,
+      holdings,
     };
   })
   .filter((x): x is FamilyTicker => x != null);
+
+export const FAMILY_BY_KEY = new Map(FAMILY_TICKERS.map((f) => [f.symbol, f]));
+
+/** Reverse lookup: which family a stock belongs to, if any. */
+const FAMILY_OF_SYMBOL = new Map<string, string>();
+for (const f of FAMILY_TICKERS) {
+  for (const sym of f.holdings) FAMILY_OF_SYMBOL.set(sym, f.symbol);
+}
+
+export function familyOfSymbol(symbol: string): string | null {
+  return FAMILY_OF_SYMBOL.get(symbol) ?? null;
+}

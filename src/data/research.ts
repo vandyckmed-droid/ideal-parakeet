@@ -44,7 +44,7 @@ export type ResearchData = {
    * index members, rebalanced monthly. `values` aligned to `familyDates`;
    * `n` is the family's current member count.
    */
-  families: { key: string; n: number; values: number[] }[];
+  families: { key: string; n: number; members?: string[]; values: number[] }[];
 };
 
 export const RESEARCH = raw as unknown as ResearchData;
