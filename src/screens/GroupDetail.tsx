@@ -7,7 +7,7 @@ import { CompareChart } from '../components/CompareChart';
 import { PriceChart } from '../components/PriceChart';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { Sparkline } from '../components/Sparkline';
-import { FAMILY_BY_KEY, FamilyTicker } from '../data/families';
+import { GROUPING_META, GroupTicker, groupByMedoid, groupsForK } from '../data/groups';
 import { BY_SYMBOL, DATES, formatDate, slice } from '../data/market';
 import {
   VOL_FLOOR,
@@ -25,33 +25,32 @@ import { mono, radius, space, type } from '../theme/theme';
 const TABLE_ROWS = PRESETS;
 
 /**
- * One family, laid out exactly like one ticker - deliberately. The headline
- * is the index's dollar value with the window return under it, the chart
- * scrubs with the figures following the finger, and every window's numbers
- * sit in the same table in the same order. A family is Ticker-shaped in the
- * data layer, and this screen is where that pays off for the eyes.
+ * One correlation group, laid out exactly like one ticker - deliberately. The
+ * headline is the index level with the window return under it, the chart
+ * scrubs with the figures following the finger, and every window's numbers sit
+ * in the same table in the same order. A group is Ticker-shaped in the data
+ * layer, and this screen is where that pays off for the eyes.
  *
  * Two things a ticker page cannot have:
  *
- * - **Companions.** When the compare set holds other families, the chart
- *   switches from the price chart to the shared-axis comparison, indexed to
- *   100 at the window start - dollar levels answer "how has the index
- *   grown", but between families they would compare start dates.
+ * - **Companions.** When the compare set holds other groups, the chart
+ *   switches to the shared-axis comparison, indexed to 100 at the window
+ *   start.
  *
- * - **Holdings.** A family is a small ETF, so it shows its current
- *   constituents, ranked by the same window the page is set to. The rows
- *   keep the app's one gesture pair: tap watchlists a stock, press and hold
- *   opens it.
+ * - **Members, ranked by fit.** Not by return: the group is a correlation
+ *   object, so the ordering that explains it is how tightly each name moves
+ *   with the rest. The ones at the bottom are the ones the balance constraint
+ *   had to squeeze in somewhere, and they say where they would rather be.
  */
-export function FamilyDetail({
-  family,
+export function GroupDetail({
+  group,
   initialPreset,
   width,
   skipEnabled,
   sessionsStale,
   onScrubbingChange,
 }: {
-  family: FamilyTicker;
+  group: GroupTicker;
   initialPreset: PresetKey;
   width: number;
   skipEnabled: boolean;
@@ -60,7 +59,7 @@ export function FamilyDetail({
 }) {
   const colors = useColors();
   const router = useRouter();
-  const { familyCompare, familySlots, isWatched, toggleWatch } = useAppState();
+  const { familyCompare, familySlots, groupCount, isWatched, toggleWatch } = useAppState();
   const [preset, setPreset] = useState<PresetKey>(
     initialPreset === 'CUSTOM' ? '1Y' : initialPreset
   );
@@ -74,73 +73,60 @@ export function FamilyDetail({
     [onScrubbingChange]
   );
 
-  // "Max" clamps to the series start, same as a late-listing ticker.
   const clampStart = (w: ReturnType<typeof windowForPreset>) =>
-    w.preset === '2Y' ? { ...w, startIndex: Math.max(w.startIndex, family.offset) } : w;
+    w.preset === '2Y' ? { ...w, startIndex: Math.max(w.startIndex, group.offset) } : w;
 
-  const win = useMemo(() => clampStart(windowForPreset(preset)), [preset, family.offset]);
+  const win = useMemo(() => clampStart(windowForPreset(preset)), [preset, group.offset]);
   const range = useMemo(
     () => withSkip(win, skipEnabled, sessionsStale),
     [win, skipEnabled, sessionsStale]
   );
 
   const stats = useMemo(
-    () => computeWindowStats(family, range.startIndex, range.endIndex),
-    [family, range]
+    () => computeWindowStats(group, range.startIndex, range.endIndex),
+    [group, range]
   );
 
-  // The other families in the compare set ride along as overlays.
   const companions = useMemo(
     () =>
       familyCompare
-        .filter((k) => k !== family.symbol)
-        .map((k) => FAMILY_BY_KEY.get(k))
-        .filter((f): f is FamilyTicker => Boolean(f)),
-    [familyCompare, family.symbol]
+        .filter((k) => k !== group.medoid)
+        .map((k) => groupByMedoid(k, groupCount))
+        .filter((g): g is GroupTicker => Boolean(g)),
+    [familyCompare, group.medoid, groupCount]
   );
   const comparing = companions.length > 0;
 
-  // Alone: the price chart over the full window, excluded tail dimmed, same
-  // as a ticker. Comparing: every line over the measured range, indexed to
-  // 100 at its start, same as the family list's old chart - dollar levels
-  // between families would compare start dates, not performance.
   const soloSeries = useMemo(
-    () => slice(family, win.startIndex, win.endIndex),
-    [family, win]
+    () => slice(group, win.startIndex, win.endIndex),
+    [group, win]
   );
   const measuredSeries = useMemo(
-    () => slice(family, range.startIndex, range.endIndex),
-    [family, range]
+    () => slice(group, range.startIndex, range.endIndex),
+    [group, range]
   );
   const excludeTail = Math.max(0, soloSeries.length - measuredSeries.length);
 
   const compareLines = useMemo(() => {
     if (!comparing) return [];
-    // Every collected family draws in its persistent slot colour - the same
-    // hue its dot wears on the list, whichever family's page you are on. An
-    // opened family that is NOT collected takes the text colour instead: a
-    // neutral protagonist that cannot collide with any slot.
-    return [family, ...companions]
-      .map((f) => {
-        const vals = slice(f, range.startIndex, range.endIndex);
+    return [group, ...companions]
+      .map((g) => {
+        const vals = slice(g, range.startIndex, range.endIndex);
         if (vals.length < 2) return null;
         const base = vals[0];
-        const slot = familySlots[f.symbol];
+        const slot = familySlots[g.medoid];
         return {
-          key: f.symbol,
+          key: g.medoid,
           color: slot != null ? colors.chart[slot % colors.chart.length] : colors.text,
           values: vals.map((v) => (v / base) * 100),
         };
       })
       .filter((x): x is NonNullable<typeof x> => x != null);
-  }, [comparing, family, companions, range, colors, familySlots]);
+  }, [comparing, group, companions, range, colors, familySlots]);
 
-  // While a finger is down the headline reports the scrubbed point, so the
-  // chart and the numbers never disagree. The scrub indexes the series the
-  // visible chart is drawing.
   const scrubSeries = comparing ? measuredSeries : soloSeries;
   const scrubbing = scrub !== null && scrub < scrubSeries.length;
-  const shownValue = scrubbing ? scrubSeries[scrub] : family.lastClose;
+  const shownValue = scrubbing ? scrubSeries[scrub] : group.lastClose;
   const shownReturn = scrubbing
     ? scrubSeries[0] > 0
       ? scrubSeries[scrub] / scrubSeries[0] - 1
@@ -148,7 +134,7 @@ export function FamilyDetail({
     : (stats?.totalReturn ?? null);
   const seriesStart = Math.max(
     comparing ? range.startIndex : win.startIndex,
-    family.offset
+    group.offset
   );
   const shownDate = scrubbing
     ? DATES[Math.min(seriesStart + scrub, range.endIndex)]
@@ -165,34 +151,32 @@ export function FamilyDetail({
           key: row.key,
           label: row.label,
           skip: r.skip,
-          stats: computeWindowStats(family, r.startIndex, r.endIndex),
+          stats: computeWindowStats(group, r.startIndex, r.endIndex),
         };
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [family, skipEnabled, sessionsStale]
+    [group, skipEnabled, sessionsStale]
   );
 
-  // Holdings ranked by the same window the page is set to, best first - the
-  // family's own league table.
-  const holdings = useMemo(() => {
-    const rows = family.holdings
-      .map((sym) => BY_SYMBOL.get(sym))
-      .filter((t): t is NonNullable<typeof t> => Boolean(t))
-      .map((t) => ({
-        ticker: t,
-        stats: computeWindowStats(t, range.startIndex, range.endIndex),
-        series: slice(t, range.startIndex, range.endIndex),
-      }));
-    rows.sort((a, b) => {
-      const av = a.stats?.totalReturn ?? null;
-      const bv = b.stats?.totalReturn ?? null;
-      if (av === null && bv === null) return 0;
-      if (av === null) return 1;
-      if (bv === null) return -1;
-      return bv - av;
-    });
-    return rows;
-  }, [family.holdings, range]);
+  // Members in the order the algorithm ranks them: tightest fit with the rest
+  // of the group first. The window return rides along because it is what the
+  // rest of the app is about, but it is not what orders this list.
+  const members = useMemo(
+    () =>
+      group.members.map((sym, i) => {
+        const t = BY_SYMBOL.get(sym);
+        return {
+          symbol: sym,
+          ticker: t,
+          fit: group.fit[i],
+          weak: group.weak[i],
+          prefers: group.prefers[i],
+          stats: t ? computeWindowStats(t, range.startIndex, range.endIndex) : null,
+          series: t ? slice(t, range.startIndex, range.endIndex) : [],
+        };
+      }),
+    [group, range]
+  );
 
   const openMember = useCallback(
     (symbol: string) => {
@@ -211,6 +195,9 @@ export function FamilyDetail({
     [toggleWatch]
   );
 
+  const weakCount = group.weak.filter(Boolean).length;
+  const set = groupsForK(groupCount);
+
   return (
     <ScrollView
       style={{ width }}
@@ -219,10 +206,10 @@ export function FamilyDetail({
     >
       <View style={styles.headline}>
         <Text style={[type.caption, { color: colors.textMuted }]} numberOfLines={1}>
-          Equal-weight index · {family.members} members
+          Equal-weight index · {group.members.length} members · ρ {group.cohesion.toFixed(2)}
         </Text>
         <Text style={[type.hero, mono, { color: colors.text }]}>
-          ${formatPrice(shownValue)}
+          {formatPrice(shownValue)}
         </Text>
         <View style={styles.changeLine}>
           <Text style={[type.bodyStrong, mono, { color: tone }]}>
@@ -250,9 +237,8 @@ export function FamilyDetail({
               </View>
             ))}
           </View>
-          <Text style={[type.micro, styles.compareNote, { color: colors.textFaint }]}>
-            Indexed to 100 at the window start · tap rows on the Families list to change
-            the set
+          <Text style={[type.micro, { color: colors.textFaint }]}>
+            Indexed to 100 at the window start · tap rows on the Groups list to change the set
           </Text>
         </View>
       ) : (
@@ -315,72 +301,72 @@ export function FamilyDetail({
             );
           })}
         </View>
-        <Text style={[type.caption, { color: colors.textFaint, marginTop: space(2) }]}>
-          Ret ÷ σ is the annualised return over the annualised standard deviation of
-          daily log returns in the same window.
-          {table.some((r) => r.stats?.volFloored)
-            ? ` A starred σ sits below the ${(VOL_FLOOR * 100).toFixed(1)}% floor applied` +
-              ' to the divisor.'
-            : ''}
-        </Text>
       </View>
 
-      {holdings.length > 0 && (
-        <View style={styles.section}>
-          <Text style={[type.micro, { color: colors.textFaint, marginBottom: space(2) }]}>
-            HOLDINGS · RANKED OVER {preset === '2Y' ? 'MAX' : preset}
-          </Text>
-          <View style={[styles.table, { borderColor: colors.hairline }]}>
-            {holdings.map((h, i) => {
-              const rt = h.stats?.totalReturn ?? null;
-              const rowTone = rt === null ? colors.flat : rt >= 0 ? colors.up : colors.down;
-              const watched = isWatched(h.ticker.symbol);
-              return (
-                <Pressable
-                  key={h.ticker.symbol}
-                  onPress={() => watchMember(h.ticker.symbol)}
-                  onLongPress={() => openMember(h.ticker.symbol)}
-                  delayLongPress={280}
-                  style={({ pressed }) => [
-                    styles.holdingRow,
-                    {
-                      borderBottomColor: colors.hairline,
-                      backgroundColor: pressed ? colors.surface : 'transparent',
-                    },
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityHint="Tap to watchlist, press and hold to open"
-                >
-                  <Text style={[type.micro, mono, styles.holdingRank, { color: colors.textFaint }]}>
-                    {i + 1}
-                  </Text>
-                  <View style={styles.holdingIdentity}>
-                    <View style={styles.holdingSymbolRow}>
-                      <Text
-                        style={[type.bodyStrong, { color: watched ? colors.accent : colors.text }]}
-                      >
-                        {h.ticker.symbol}
-                      </Text>
-                      {watched && <View style={[styles.watchDot, { backgroundColor: colors.accent }]} />}
-                    </View>
-                    <Text style={[type.micro, { color: colors.textMuted }]} numberOfLines={1}>
-                      {h.ticker.name}
+      <View style={styles.section}>
+        <Text style={[type.micro, { color: colors.textFaint, marginBottom: space(2) }]}>
+          MEMBERS · BEST FIT FIRST
+        </Text>
+        <View style={[styles.table, { borderColor: colors.hairline }]}>
+          {members.map((m, i) => {
+            const rt = m.stats?.totalReturn ?? null;
+            const rowTone = rt === null ? colors.flat : rt >= 0 ? colors.up : colors.down;
+            const watched = isWatched(m.symbol);
+            return (
+              <Pressable
+                key={m.symbol}
+                onPress={() => watchMember(m.symbol)}
+                onLongPress={() => openMember(m.symbol)}
+                delayLongPress={280}
+                style={({ pressed }) => [
+                  styles.memberRow,
+                  {
+                    borderBottomColor: colors.hairline,
+                    backgroundColor: pressed ? colors.surface : 'transparent',
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityHint="Tap to watchlist, press and hold to open"
+              >
+                <Text style={[type.micro, mono, styles.memberRank, { color: colors.textFaint }]}>
+                  {i + 1}
+                </Text>
+                <View style={styles.memberIdentity}>
+                  <View style={styles.memberSymbolRow}>
+                    <Text
+                      style={[type.bodyStrong, { color: watched ? colors.accent : colors.text }]}
+                    >
+                      {m.symbol}
                     </Text>
+                    {m.symbol === group.medoid && (
+                      <Text style={[type.micro, { color: colors.accent }]}>medoid</Text>
+                    )}
+                    {watched && <View style={[styles.watchDot, { backgroundColor: colors.accent }]} />}
                   </View>
-                  <Sparkline values={h.series} color={rowTone} />
-                  <Text style={[type.bodyStrong, mono, styles.holdingValue, { color: rowTone }]}>
-                    {formatPercent(rt, 1)}
+                  <Text style={[type.micro, { color: colors.textMuted }]} numberOfLines={1}>
+                    ρ {m.fit.toFixed(2)}
+                    {m.weak && m.prefers ? ` · closer to ${m.prefers}` : ''}
+                    {m.ticker ? ` · ${m.ticker.name}` : ''}
                   </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-          <Text style={[type.caption, { color: colors.textFaint, marginTop: space(2) }]}>
-            Current index constituents in this family. Tap a row to watchlist it · press
-            and hold to open it.
-          </Text>
+                </View>
+                <Sparkline values={m.series} color={rowTone} />
+                <Text style={[type.bodyStrong, mono, styles.memberValue, { color: rowTone }]}>
+                  {formatPercent(rt, 1)}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
-      )}
+        <Text style={[type.caption, { color: colors.textFaint, marginTop: space(2) }]}>
+          ρ is the member’s average correlation with the rest of the group. Ordered by
+          that, not by return.
+          {weakCount > 0
+            ? ` ${weakCount} ${weakCount === 1 ? 'name sits' : 'names sit'} closer to another` +
+              ' group than to this one — the price of holding every group to the same size.'
+            : ''}{' '}
+          Tap a row to watchlist it · press and hold to open it.
+        </Text>
+      </View>
 
       <View style={styles.section}>
         <Text style={[type.micro, { color: colors.textFaint, marginBottom: space(2) }]}>
@@ -388,11 +374,14 @@ export function FamilyDetail({
         </Text>
         <View style={[styles.facts, { backgroundColor: colors.surface }]}>
           {[
-            ['Members', String(family.members)],
-            ['Weighting', 'Equal, rebalanced monthly'],
-            ['Membership', 'Point-in-time S&P 500 constituents'],
-            ['Series since', formatDate(DATES[family.offset])],
-            ['Started at', '$10,000'],
+            ['Representative', `${group.medoid} (closest to all members)`],
+            ['Members', `${group.members.length} of ${set.lower}–${set.upper} allowed`],
+            ['Mean correlation', group.cohesion.toFixed(3)],
+            ['Mostly', `${group.dominantSector || 'mixed'} · ${Math.round(group.dominantShare * 100)}%`],
+            ['Weighting', 'Equal, rebalanced daily'],
+            ['Correlation window', `${GROUPING_META.sessions} sessions to ${GROUPING_META.to}`],
+            ['Shrinkage', `${GROUPING_META.shrinkage.toFixed(3)} toward mean ρ ${GROUPING_META.averageCorrelation.toFixed(2)}`],
+            ['Series since', formatDate(DATES[group.offset])],
           ].map(([label, value]) => (
             <View key={label} style={styles.factRow}>
               <Text style={[type.caption, { color: colors.textMuted }]}>{label}</Text>
@@ -402,6 +391,10 @@ export function FamilyDetail({
             </View>
           ))}
         </View>
+        <Text style={[type.caption, { color: colors.textFaint, marginTop: space(2) }]}>
+          Sector is a label, never an input: the grouping sees only how these names
+          moved together.
+        </Text>
       </View>
     </ScrollView>
   );
@@ -422,7 +415,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
-  compareNote: {},
   section: { paddingHorizontal: space(4), paddingTop: space(5) },
   table: { borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.md, overflow: 'hidden' },
   tr: {
@@ -434,7 +426,7 @@ const styles = StyleSheet.create({
   },
   tdLabel: { width: 56, gap: 1 },
   td: { flex: 1, textAlign: 'right' },
-  holdingRow: {
+  memberRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: space(3),
@@ -442,11 +434,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: space(3),
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  holdingRank: { width: 18, textAlign: 'right' },
-  holdingIdentity: { flex: 1, gap: 1 },
-  holdingSymbolRow: { flexDirection: 'row', alignItems: 'center', gap: space(1.5) },
+  memberRank: { width: 18, textAlign: 'right' },
+  memberIdentity: { flex: 1, gap: 1 },
+  memberSymbolRow: { flexDirection: 'row', alignItems: 'center', gap: space(1.5) },
   watchDot: { width: 5, height: 5, borderRadius: 2.5 },
-  holdingValue: { minWidth: 64, textAlign: 'right' },
+  memberValue: { minWidth: 64, textAlign: 'right' },
   facts: { borderRadius: radius.md, paddingHorizontal: space(3.5), paddingVertical: space(1) },
   factRow: {
     flexDirection: 'row',

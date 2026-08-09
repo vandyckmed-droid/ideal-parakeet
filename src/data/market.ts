@@ -35,12 +35,31 @@ export type Ticker = {
   lastClose: number;
 };
 
+/**
+ * The correlation grouping the Market tab's third view is built on. Packed by
+ * the pipeline because the Ledoit-Wolf sweep is O(N^2 T) and has no business
+ * running on a phone; the clustering that consumes it is cheap and runs here,
+ * because the number of groups is the user's to choose.
+ */
+export type RawGrouping = {
+  symbols: string[];
+  sessions: number;
+  from: string;
+  to: string;
+  shrinkage: number;
+  averageCorrelation: number;
+  distances: string; // base64, one byte per upper-triangle pair
+};
+
 const dataset = raw as unknown as {
   generatedAt: string;
   dates: string[];
   market: { s: string; o: number; p: number[] };
   tickers: RawTicker[];
+  grouping?: RawGrouping;
 };
+
+export const GROUPING_RAW: RawGrouping | undefined = dataset.grouping;
 
 export const DATES: string[] = dataset.dates;
 export const GENERATED_AT: string = dataset.generatedAt;

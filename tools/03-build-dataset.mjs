@@ -16,6 +16,8 @@
 
 import { writeFileSync, readFileSync, mkdirSync } from 'node:fs';
 
+import { ledoitWolfCorrelation, packDistances } from './lib/shrinkage.mjs';
+
 const ADV_WINDOW = 60;
 
 // The market the app measures each name against for the residual metric. It is
@@ -178,12 +180,58 @@ function main() {
   }
   console.log(`  market reference ${MARKET_SYMBOL}: ${market.p.length} closes from index ${market.o}`);
 
+  // --- the correlation grouping ---------------------------------------------
+  // Ledoit-Wolf shrunk correlations, converted to distance and packed one byte
+  // per pair. This is an O(N^2 T) sweep - about 380 million multiply-adds -
+  // which is why it lives here and not on a phone. The clustering that reads
+  // it is cheap by comparison and runs in the app, because the number of
+  // groups is the user's choice and has to recompute the instant it changes.
+  //
+  // Eligibility is a complete return history over the window. A name that
+  // listed part-way through cannot be correlated with the rest over the same
+  // sample, and quietly giving it a shorter window would make its distances
+  // mean something different from every other pair in the matrix.
+  const groupable = tickers.filter((t) => t.o === 0 && t.p.length === dates.length);
+  const skipped = tickers.length - groupable.length;
+  const gN = groupable.length;
+  const gT = dates.length - 1;
+
+  const returns = new Float64Array(gN * gT);
+  for (let i = 0; i < gN; i++) {
+    const p = groupable[i].p;
+    for (let k = 0; k < gT; k++) returns[i * gT + k] = Math.log(p[k + 1] / p[k]);
+  }
+  for (let p = 0; p < returns.length; p++) {
+    if (!Number.isFinite(returns[p])) {
+      console.error('  non-finite return in the grouping window - refusing to ship it');
+      process.exit(1);
+    }
+  }
+
+  const lw = ledoitWolfCorrelation(returns, gN, gT);
+  const packed = packDistances(lw.correlation);
+  const grouping = {
+    symbols: groupable.map((t) => t.s),
+    sessions: gT,
+    from: dates[1],
+    to: dates[dates.length - 1],
+    shrinkage: Math.round(lw.intensity * 1e6) / 1e6,
+    averageCorrelation: Math.round(lw.averageCorrelation * 1e6) / 1e6,
+    distances: Buffer.from(packed).toString('base64'),
+  };
+  console.log(
+    `  grouping: ${gN} names over ${gT} sessions` +
+      (skipped ? ` (${skipped} too recently listed to correlate)` : '') +
+      `, shrinkage ${lw.intensity.toFixed(3)}, mean correlation ${lw.averageCorrelation.toFixed(3)}`
+  );
+
   mkdirSync('assets/data', { recursive: true });
   const payload = {
     generatedAt: new Date().toISOString().slice(0, 10),
     dates,
     market,
     tickers,
+    grouping,
   };
   writeFileSync('assets/data/market.json', JSON.stringify(payload));
 

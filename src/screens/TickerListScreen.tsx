@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ListHeader } from '../components/ListHeader';
-import { SectorPicker } from '../components/SectorPicker';
+import { OptionSheet } from '../components/OptionSheet';
 import { StockListBody } from '../components/StockListBody';
 import { WindowPicker } from '../components/WindowPicker';
 import { SECTORS, Ticker } from '../data/market';
@@ -85,12 +85,16 @@ export function TickerListScreen({
         onApply={setCustomWindow}
       />
 
-      <SectorPicker
+      <OptionSheet
         visible={sectorPickerOpen}
-        sectors={SECTORS}
-        sector={sector}
+        title="Sector"
+        options={[
+          { key: '', label: 'All sectors' },
+          ...SECTORS.map((s) => ({ key: s, label: s })),
+        ]}
+        selected={sector ?? ''}
         onClose={() => setSectorPickerOpen(false)}
-        onSelect={setSector}
+        onSelect={(s) => setSector(s === '' ? null : s)}
       />
     </View>
   );

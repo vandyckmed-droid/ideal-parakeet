@@ -11,43 +11,48 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { FAMILY_BY_KEY, FAMILY_TICKERS, FamilyTicker } from '../../src/data/families';
-import { FamilyDetail } from '../../src/screens/FamilyDetail';
+import { GroupTicker, groupsForK } from '../../src/data/groups';
+import { GroupDetail } from '../../src/screens/GroupDetail';
 import { useAppState } from '../../src/state/AppState';
-import { getOrderedFamilies } from '../../src/state/listContext';
+import { getOrderedGroups } from '../../src/state/listContext';
 import { useColors } from '../../src/theme/ThemeProvider';
 import { radius, space, type } from '../../src/theme/theme';
 
 /**
- * The family pager - the same shell as the ticker pager, one swipe apart.
- * The right-hand action mirrors the star with the family's own collect
- * gesture: a dot that adds this family to (or removes it from) the compare
- * set the detail chart overlays.
+ * The group pager - the same shell as the ticker pager, one swipe apart. The
+ * right-hand action mirrors the star with the group's own collect gesture.
  */
-export default function FamilyRoute() {
+export default function GroupRoute() {
   const { key } = useLocalSearchParams<{ key: string }>();
   const router = useRouter();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { window: win, skipEnabled, sessionsStale, familyCompare, toggleFamilyCompare } =
-    useAppState();
+  const {
+    window: win, skipEnabled, sessionsStale, groupCount,
+    familyCompare, toggleFamilyCompare,
+  } = useAppState();
 
-  // Frozen on mount, same reasoning as the ticker pager: the list behind
-  // this screen re-sorts as the window and metric change, and a pager whose
-  // pages reorder underneath the finger swipes somewhere unpredictable.
+  const groups = useMemo(() => groupsForK(groupCount).groups, [groupCount]);
+  const byMedoid = useMemo(
+    () => new Map(groups.map((g) => [g.medoid, g])),
+    [groups]
+  );
+
+  // Frozen on mount, same reasoning as the ticker pager: the list behind this
+  // screen re-sorts as the window and metric change, and a pager whose pages
+  // reorder underneath the finger swipes somewhere unpredictable.
   const keys = useMemo(() => {
-    const ordered = getOrderedFamilies();
-    const usable = ordered.filter((k) => FAMILY_BY_KEY.has(k));
-    return usable.length ? usable : FAMILY_TICKERS.map((f) => f.symbol);
+    const ordered = getOrderedGroups().filter((k) => byMedoid.has(k));
+    return ordered.length ? ordered : groups.map((g) => g.medoid);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const initialIndex = Math.max(0, keys.indexOf(key));
   const [index, setIndex] = useState(initialIndex);
 
-  const current = FAMILY_BY_KEY.get(keys[index]);
-  const compared = current ? familyCompare.includes(current.symbol) : false;
+  const current = byMedoid.get(keys[index]);
+  const compared = current ? familyCompare.includes(current.medoid) : false;
 
   const onScroll = useCallback(
     (e: { nativeEvent: { contentOffset: { x: number } } }) => {
@@ -65,10 +70,11 @@ export default function FamilyRoute() {
 
   const renderPage = useCallback(
     ({ item }: { item: string }) => {
-      const family = FAMILY_BY_KEY.get(item) as FamilyTicker;
+      const group = byMedoid.get(item) as GroupTicker;
+      if (!group) return <View style={{ width }} />;
       return (
-        <FamilyDetail
-          family={family}
+        <GroupDetail
+          group={group}
           initialPreset={win.preset}
           width={width}
           skipEnabled={skipEnabled}
@@ -77,13 +83,23 @@ export default function FamilyRoute() {
         />
       );
     },
-    [win.preset, width, skipEnabled, sessionsStale]
+    [win.preset, width, skipEnabled, sessionsStale, byMedoid]
   );
 
   if (!current) {
     return (
-      <View style={[styles.missing, { backgroundColor: colors.bg }]}>
-        <Text style={[type.body, { color: colors.textMuted }]}>Unknown family.</Text>
+      <View style={[styles.missing, { backgroundColor: colors.bg, paddingTop: insets.top }]}>
+        <Text style={[type.body, { color: colors.textMuted }]}>
+          That group no longer exists at {groupCount} groups.
+        </Text>
+        <Pressable
+          onPress={() => router.back()}
+          style={[styles.circle, { backgroundColor: colors.surface, marginTop: space(4) }]}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+        >
+          <Text style={{ color: colors.text, fontSize: 17 }}>‹</Text>
+        </Pressable>
       </View>
     );
   }
@@ -103,7 +119,7 @@ export default function FamilyRoute() {
 
         <View style={styles.barCentre}>
           <Text style={[type.heading, { color: colors.text }]} numberOfLines={1}>
-            {current.symbol}
+            {current.medoid} group
           </Text>
           <Text style={[type.micro, { color: colors.textFaint }]}>
             {index + 1} of {keys.length} · swipe to browse
@@ -112,7 +128,7 @@ export default function FamilyRoute() {
 
         <Pressable
           onPress={() => {
-            const added = toggleFamilyCompare(current.symbol);
+            const added = toggleFamilyCompare(current.medoid);
             Haptics.impactAsync(
               added ? Haptics.ImpactFeedbackStyle.Light : Haptics.ImpactFeedbackStyle.Medium
             ).catch(() => {});

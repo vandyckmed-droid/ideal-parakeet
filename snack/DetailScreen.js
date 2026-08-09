@@ -158,16 +158,16 @@ function Page({ ticker, dates, initialPreset, width, skipEnabled, sessionsStale,
       <View style={s.section}>
         <Text style={[type.micro, { color: colors.textFaint, marginBottom: space(2) }]}>ABOUT</Text>
         <View style={[s.facts, { backgroundColor: colors.surface }]}>
-          {/* The stock's peer family, when it has one - the bridge from a
-              single name to the group it trades with. */}
+          {/* The stock's correlation group, when it has one - the bridge from
+              a single name to the set it actually moves with. */}
           {familyOf && familyOf.get(ticker.s) ? (
             <Pressable
               onPress={() => onOpenFamily && onOpenFamily(familyOf.get(ticker.s))}
               style={s.factRow}
               accessibilityRole="button"
-              accessibilityLabel={`Open the ${familyOf.get(ticker.s)} family`}
+              accessibilityLabel={`Open the ${familyOf.get(ticker.s)} group`}
             >
-              <Text style={[type.caption, { color: colors.textMuted }]}>Family</Text>
+              <Text style={[type.caption, { color: colors.textMuted }]}>Group</Text>
               <Text style={[type.caption, { color: colors.accent }]} numberOfLines={1}>
                 {familyOf.get(ticker.s)} ›
               </Text>

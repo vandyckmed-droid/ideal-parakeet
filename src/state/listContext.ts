@@ -17,13 +17,13 @@ export function getOrderedSymbols(): string[] {
   return orderedSymbols;
 }
 
-/** Same contract for the family detail's pager. */
-let orderedFamilies: string[] = [];
+/** Same contract for the group detail's pager. */
+let orderedGroups: string[] = [];
 
-export function setOrderedFamilies(keys: string[]) {
-  orderedFamilies = keys;
+export function setOrderedGroups(keys: string[]) {
+  orderedGroups = keys;
 }
 
-export function getOrderedFamilies(): string[] {
-  return orderedFamilies;
+export function getOrderedGroups(): string[] {
+  return orderedGroups;
 }

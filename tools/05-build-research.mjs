@@ -47,7 +47,6 @@
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fmp, mapPool, progress } from './lib/fmp.mjs';
-import { familyForIndustry } from './lib/families.mjs';
 
 const TOP = 50;
 const START_CASH = 10_000;
@@ -403,145 +402,6 @@ async function main() {
     }
   }
 
-  // --- peer-family indices: two years, point in time, equal weight -----------
-  // One $10,000 line per family so the app can draw families against each
-  // other. Same construction discipline as the portfolios above: membership is
-  // the point-in-time index roster intersected with the family's industries,
-  // measured at the last trading day of each month and traded at the next
-  // day's close, equal weight, delistings frozen at their last close.
-  //
-  // Industry labels come from data/candidates.json for current constituents
-  // and from the profile endpoint for names that left the index during the
-  // window - a departed member keeps contributing to its family for the
-  // months it was actually in the index, which is the entire point.
-  const FAMILY_MONTHS = 24;
-
-  const industryOf = new Map();
-  for (const c of JSON.parse(readFileSync('data/candidates.json', 'utf8'))) {
-    if (c.symbol && c.industry) industryOf.set(c.symbol, c.industry);
-  }
-
-  const famCutoff = new Date(today);
-  famCutoff.setMonth(famCutoff.getMonth() - FAMILY_MONTHS);
-  const famMonth = iso(famCutoff).slice(0, 7);
-  const famFormations = monthEnds.filter((i) => i + 1 < N && DATES[i + 1].slice(0, 7) >= famMonth);
-  if (famFormations.length < FAMILY_MONTHS - 2) {
-    console.error(`  only ${famFormations.length} family formations - not enough history`);
-    process.exit(1);
-  }
-
-  // Names that were members at any family formation but are not current
-  // constituents need their industry looked up.
-  const windowMembers = new Set();
-  for (const i of famFormations) for (const sym of rosterAt(DATES[i])) windowMembers.add(sym);
-  const unknownIndustry = [...windowMembers].filter((sym) => !industryOf.has(sym));
-  let unfamilied = 0;
-  await mapPool(unknownIndustry, CONCURRENCY, async (sym) => {
-    try {
-      const [prof] = await fmp('profile', { symbol: sym.replace(/\./g, '-') });
-      if (prof && prof.industry) industryOf.set(sym, prof.industry);
-      else unfamilied++;
-    } catch {
-      unfamilied++;
-    }
-  });
-  console.log(
-    `  family industries: ${industryOf.size} known, ` +
-      `${unknownIndustry.length} looked up for departed members, ${unfamilied} unresolved`
-  );
-
-  const famOf = (sym) => {
-    const ind = industryOf.get(sym);
-    return ind ? familyForIndustry(ind) : null;
-  };
-
-  // Simulate every family over the identical calendar in one pass per family.
-  const famKeys = new Set();
-  for (const sym of windowMembers) {
-    const f = famOf(sym);
-    if (f) famKeys.add(f);
-  }
-
-  const familyDates = [];
-  {
-    const firstEntry = famFormations[0] + 1;
-    for (let i = firstEntry; i <= N - 1; i++) familyDates.push(DATES[i]);
-  }
-
-  // Today's constituents in the family - what an ETF page calls the current
-  // holdings. Deliberately today's roster rather than the last formation's:
-  // the index rebalances monthly, so mid-month the two can differ by a name
-  // or two, and the app's job is to say what the family IS, not what the
-  // simulation held four weeks ago. The simulated series keeps its own
-  // point-in-time membership regardless.
-  const currentMembersOf = (fam) =>
-    [...rosterAt(iso(today))].filter((sym) => famOf(sym) === fam && px.has(sym)).sort();
-
-  function simulateFamily(fam) {
-    const values = [];
-    let value = START_CASH;
-    let minMembers = Infinity;
-    let lastCount = 0;
-    for (let f = 0; f < famFormations.length; f++) {
-      const formIdx = famFormations[f];
-      const entryIdx = formIdx + 1;
-      const holdings = [...rosterAt(DATES[formIdx])].filter(
-        (sym) => famOf(sym) === fam && px.has(sym) && lastPriceUpTo(sym, entryIdx) != null
-      );
-      if (holdings.length < minMembers) minMembers = holdings.length;
-      lastCount = holdings.length;
-      if (holdings.length === 0) return null;
-
-      const units = new Map();
-      const alloc = value / holdings.length;
-      for (const sym of holdings) units.set(sym, alloc / lastPriceUpTo(sym, entryIdx));
-
-      const stop = f + 1 < famFormations.length ? famFormations[f + 1] + 1 : N - 1;
-      for (let i = entryIdx; i <= stop; i++) {
-        let v = 0;
-        for (const [sym, u] of units) {
-          const p = lastPriceUpTo(sym, i);
-          v += p ? u * p : 0;
-        }
-        value = v;
-        if (i < stop || f + 1 === famFormations.length) values.push(Math.round(value * 100) / 100);
-      }
-    }
-    return { values, minMembers, n: lastCount };
-  }
-
-  const families = [];
-  for (const fam of famKeys) {
-    const sim = simulateFamily(fam);
-    if (!sim) {
-      console.error(`  family ${fam} had zero priced members at some formation`);
-      process.exit(1);
-    }
-    if (sim.values.length !== familyDates.length) {
-      console.error(`  family ${fam}: ${sim.values.length} points, expected ${familyDates.length}`);
-      process.exit(1);
-    }
-    for (const v of sim.values) {
-      if (!Number.isFinite(v) || v <= 0) {
-        console.error(`  family ${fam}: bad value ${v}`);
-        process.exit(1);
-      }
-    }
-    families.push({
-      key: fam,
-      n: sim.n,
-      minMembers: sim.minMembers,
-      members: currentMembersOf(fam),
-      values: sim.values,
-    });
-  }
-  families.sort((a, b) => b.n - a.n || (a.key < b.key ? -1 : 1));
-  console.log(`  ${families.length} family indices, ${familyDates.length} daily points each`);
-  const thin = families.filter((f) => f.minMembers < 4);
-  if (thin.length) {
-    console.log(`  thin at some formation: ${thin.map((f) => `${f.key}(${f.minMembers})`).join(' ')}`);
-  }
-
   // --- sanity, then write ----------------------------------------------------
   // ~252 sessions a year since START_MONTH, less generous slack.
   const minPoints = Math.floor(expected * 21 * 0.9);
@@ -598,10 +458,6 @@ async function main() {
     benchmarks,
     // Every strategy shares the calendar in `strategies[0].series`, which is
     // what the benchmark values above are aligned to.
-    // Two-year point-in-time equal-weight family indices; values aligned to
-    // familyDates, all families identical length by assertion above.
-    familyDates,
-    families: families.map((f) => ({ key: f.key, n: f.n, values: f.values })),
     strategies: STRATEGIES.map((st) => ({
       key: st.key,
       label: st.label,

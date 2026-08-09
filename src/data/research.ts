@@ -37,14 +37,6 @@ export type ResearchData = {
    * signal and nothing else.
    */
   strategies: ResearchStrategy[];
-  /** Calendar for the family indices - two years, one entry per session. */
-  familyDates: string[];
-  /**
-   * Peer-family indices: $10,000 equal-weight in each family's point-in-time
-   * index members, rebalanced monthly. `values` aligned to `familyDates`;
-   * `n` is the family's current member count.
-   */
-  families: { key: string; n: number; members?: string[]; values: number[] }[];
 };
 
 export const RESEARCH = raw as unknown as ResearchData;
