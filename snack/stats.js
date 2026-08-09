@@ -106,16 +106,18 @@ export function computeWindowStats(ticker, startIndex, endIndex) {
   // and they make the residual summable.
   let beta = null;
   let residualReturn = null;
+  let annualizedResidualReturn = null;
+  let residualVol = null;
   if (MARKET && observations >= MIN_VOL_OBSERVATIONS) {
     const mLo = startIndex - MARKET.o;
     const mHi = endIndex - MARKET.o;
     if (mLo >= 0 && mHi < MARKET.p.length) {
-      let n = 0, sx = 0, sy = 0, sxx = 0, sxy = 0;
+      let n = 0, sx = 0, sy = 0, sxx = 0, sxy = 0, syy = 0;
       for (let i = 1; i <= hi - lo; i++) {
         const y = Math.log(ticker.p[lo + i] / ticker.p[lo + i - 1]);
         const x = Math.log(MARKET.p[mLo + i] / MARKET.p[mLo + i - 1]);
         if (!isFinite(y) || !isFinite(x)) continue;
-        n++; sx += x; sy += y; sxx += x * x; sxy += x * y;
+        n++; sx += x; sy += y; sxx += x * x; sxy += x * y; syy += y * y;
       }
       const varX = n > 1 ? sxx / n - (sx / n) ** 2 : 0;
       if (n >= MIN_VOL_OBSERVATIONS && varX > 1e-12) {
@@ -124,9 +126,30 @@ export function computeWindowStats(ticker, startIndex, endIndex) {
         // being measured would absorb the drift into it and leave a residual
         // that sums to zero for every name - precisely the thing being ranked.
         residualReturn = Math.expm1(sy - beta * sx);
+
+        const resYears = n / TRADING_DAYS_PER_YEAR;
+        annualizedResidualReturn =
+          resYears > 0 ? Math.pow(1 + residualReturn, 1 / resYears) - 1 : null;
+
+        // Sigma of the daily residuals e_i = y_i - beta*x_i, Bessel-corrected
+        // around their own mean - same construction as annualizedVol, applied
+        // to what the market regression leaves behind. Closed-form from the
+        // sums already collected above (no alpha term was fit, so e's mean
+        // need not be zero): sum(e_i^2) = syy - 2*beta*sxy + beta^2*sxx
+        const sumE = sy - beta * sx;
+        const meanE = sumE / n;
+        const sumE2 = syy - 2 * beta * sxy + beta * beta * sxx;
+        const varE = n > 1 ? (sumE2 - n * meanE * meanE) / (n - 1) : 0;
+        residualVol = Math.sqrt(Math.max(0, varE) * TRADING_DAYS_PER_YEAR);
       }
     }
   }
+
+  const residualDivisor = residualVol === null ? null : Math.max(residualVol, VOL_FLOOR);
+  const residualRatio =
+    annualizedResidualReturn !== null && residualDivisor !== null && residualDivisor > 1e-9
+      ? annualizedResidualReturn / residualDivisor
+      : null;
 
   return {
     startPrice,
@@ -137,15 +160,39 @@ export function computeWindowStats(ticker, startIndex, endIndex) {
     volFloored: annualizedVol !== null && annualizedVol < VOL_FLOOR,
     ratio,
     residualReturn,
+    annualizedResidualReturn,
+    residualVol,
+    residualVolFloored: residualVol !== null && residualVol < VOL_FLOOR,
+    residualRatio,
     beta,
     observations,
   };
+}
+
+// Return, Return÷σ and Residual are two independent questions - "risk-adjust
+// it?" and "strip the market out first?" - not three points on one dial, so
+// they toggle independently rather than picking one of a fixed set. 'return'
+// is what's left when neither toggle is on, not a selectable option of its
+// own. 'residualRatio' (both on) is the fourth combination: the residual
+// return divided by the residual's OWN sigma, not the total sigma.
+export function metricRatioOn(metric) {
+  return metric === 'ratio' || metric === 'residualRatio';
+}
+export function metricResidualOn(metric) {
+  return metric === 'residual' || metric === 'residualRatio';
+}
+export function combineMetric(ratioOn, residualOn) {
+  if (ratioOn && residualOn) return 'residualRatio';
+  if (residualOn) return 'residual';
+  if (ratioOn) return 'ratio';
+  return 'return';
 }
 
 export function metricValue(stats, metric) {
   if (!stats) return null;
   if (metric === 'return') return stats.totalReturn;
   if (metric === 'residual') return stats.residualReturn;
+  if (metric === 'residualRatio') return stats.residualRatio;
   return stats.ratio;
 }
 
@@ -283,7 +330,7 @@ export function formatRatio(v) {
   return `${v >= 0 ? '+' : ''}${v.toFixed(2)}`;
 }
 export function formatMetric(v, metric) {
-  return metric === 'ratio' ? formatRatio(v) : formatPercent(v);
+  return metric === 'ratio' || metric === 'residualRatio' ? formatRatio(v) : formatPercent(v);
 }
 export function formatPrice(v) {
   if (v === null || !isFinite(v)) return '—';

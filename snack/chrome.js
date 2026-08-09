@@ -17,19 +17,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { SegmentedControl } from './ui';
 import { useTheme, mono, radius, space, type } from './theme';
-import { PRESETS, hasMarket } from './stats';
-
-const METRICS = [
-  { key: 'return', label: 'Return' },
-  { key: 'ratio', label: 'Return ÷ σ' },
-  { key: 'residual', label: 'Residual' },
-];
-
-// Residual drops out when the loaded dataset has no market reference (a
-// payload from before the field existed): every value would be a dash, and a
-// control that only produces dashes is worse than none. Evaluated per render,
-// NOT at module scope - the module loads before the data arrives.
-export const availableMetrics = () => METRICS.filter((m) => m.key !== 'residual' || hasMarket());
+import { PRESETS, hasMarket, combineMetric, metricRatioOn, metricResidualOn } from './stats';
 
 export function ListHeader({
   title, caption, query, onQuery, searchPlaceholder, accessory,
@@ -100,10 +88,59 @@ export function ListHeader({
         </Pressable>
       </View>
 
+      {/*
+        Return ÷ σ and Residual are two independent questions - risk-adjust,
+        and strip the market out - not three points on one dial. A segmented
+        control forced them into mutually exclusive options and had no way to
+        say "both": Return was really just "neither toggle is on," and
+        risk-adjusted-residual (an information-ratio-style figure - residual
+        return over the residual's OWN sigma) had no seat at the table at
+        all. Two toggle pills say exactly what they mean and combine freely;
+        Skip joins them since all three are the same kind of control - a
+        modifier, not a mode.
+
+        Residual (and so residualRatio) drops out entirely when the loaded
+        dataset has no market reference - a payload from before the field
+        existed, every value would be a dash. hasMarket() is read per render,
+        not at module scope, since the module loads before the data arrives.
+      */}
       <View style={s.controlRow}>
-        <View style={{ flex: 1 }}>
-          <SegmentedControl segments={availableMetrics()} value={metric} onChange={onMetric} compact />
-        </View>
+        <Pressable
+          onPress={() => onMetric(combineMetric(!metricRatioOn(metric), metricResidualOn(metric)))}
+          style={[
+            s.pillButton,
+            {
+              backgroundColor: metricRatioOn(metric) ? colors.accentMuted : colors.surface,
+              borderColor: metricRatioOn(metric) ? colors.accent : 'transparent',
+            },
+          ]}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: metricRatioOn(metric) }}
+          accessibilityLabel="Risk-adjust: divide return by its volatility"
+        >
+          <Text style={[type.caption, { color: metricRatioOn(metric) ? colors.accent : colors.textMuted }]}>
+            Return ÷ σ
+          </Text>
+        </Pressable>
+        {hasMarket() && (
+          <Pressable
+            onPress={() => onMetric(combineMetric(metricRatioOn(metric), !metricResidualOn(metric)))}
+            style={[
+              s.pillButton,
+              {
+                backgroundColor: metricResidualOn(metric) ? colors.accentMuted : colors.surface,
+                borderColor: metricResidualOn(metric) ? colors.accent : 'transparent',
+              },
+            ]}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: metricResidualOn(metric) }}
+            accessibilityLabel="Strip out the market's contribution first"
+          >
+            <Text style={[type.caption, { color: metricResidualOn(metric) ? colors.accent : colors.textMuted }]}>
+              Residual
+            </Text>
+          </Pressable>
+        )}
         {/* Always the bare word: the number of sessions dropped varies by view
             (the rank table skips per horizon) and lives in the caption, so the
             pill cannot change width as views change. */}

@@ -9,16 +9,10 @@ import {
 
 import { SegmentedControl } from './SegmentedControl';
 import { DATES } from '../data/market';
-import { MetricKey } from '../data/stats';
+import { MetricKey, combineMetric, metricRatioOn, metricResidualOn } from '../data/stats';
 import { DateWindow, EffectiveWindow, PRESETS, PresetKey } from '../data/windows';
 import { useTheme } from '../theme/ThemeProvider';
 import { mono, radius, space, type } from '../theme/theme';
-
-export const METRIC_SEGMENTS: { key: MetricKey; label: string }[] = [
-  { key: 'return', label: 'Return' },
-  { key: 'ratio', label: 'Return ÷ σ' },
-  { key: 'residual', label: 'Residual' },
-];
 
 /**
  * The one header every list screen wears: title and caption, theme button,
@@ -159,15 +153,59 @@ export function ListHeader({
         </Pressable>
       </View>
 
+      {/*
+        Return ÷ σ and Residual are two independent questions - risk-adjust,
+        and strip the market out - not three points on one dial. A segmented
+        control forced them into mutually exclusive options and had no way to
+        say "both": Return was really just "neither toggle is on," and
+        risk-adjusted-residual (an information-ratio-style figure - residual
+        return over the residual's OWN sigma, see WindowStats.residualRatio)
+        had no seat at the table at all. Two toggle pills say exactly what
+        they mean and combine freely; Skip joins them since all three are the
+        same kind of control - a modifier, not a mode.
+      */}
       <View style={styles.controlRow}>
-        <View style={{ flex: 1 }}>
-          <SegmentedControl<MetricKey>
-            segments={METRIC_SEGMENTS}
-            value={metric}
-            onChange={onMetric}
-            compact
-          />
-        </View>
+        <Pressable
+          onPress={() => onMetric(combineMetric(!metricRatioOn(metric), metricResidualOn(metric)))}
+          style={[
+            styles.pillButton,
+            {
+              backgroundColor: metricRatioOn(metric) ? colors.accentMuted : colors.surface,
+              borderColor: metricRatioOn(metric) ? colors.accent : 'transparent',
+            },
+          ]}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: metricRatioOn(metric) }}
+          accessibilityLabel="Risk-adjust: divide return by its volatility"
+        >
+          <Text
+            style={[type.caption, { color: metricRatioOn(metric) ? colors.accent : colors.textMuted }]}
+          >
+            Return ÷ σ
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => onMetric(combineMetric(metricRatioOn(metric), !metricResidualOn(metric)))}
+          style={[
+            styles.pillButton,
+            {
+              backgroundColor: metricResidualOn(metric) ? colors.accentMuted : colors.surface,
+              borderColor: metricResidualOn(metric) ? colors.accent : 'transparent',
+            },
+          ]}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: metricResidualOn(metric) }}
+          accessibilityLabel="Strip out the market's contribution first"
+        >
+          <Text
+            style={[
+              type.caption,
+              { color: metricResidualOn(metric) ? colors.accent : colors.textMuted },
+            ]}
+          >
+            Residual
+          </Text>
+        </Pressable>
         {/* Always the bare word: the number of sessions dropped varies by view
             (the rank table skips per horizon) and lives in the caption, so the
             pill cannot change width as views change. */}

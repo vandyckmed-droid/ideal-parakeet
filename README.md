@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/wbzbIqD8gR5JrFafD3uOv), so it can be opened in
+Snack](https://snack.expo.dev/hzkqnSqvkGEmHstZJtWfM), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -186,8 +186,35 @@ session.
 
 ## Ranking by market residual
 
-Alongside **Return** and **Return ÷ σ**, the lists rank by **Residual**: the
-window's return with the market's contribution removed.
+The lists also rank by **Residual**: the window's return with the market's
+contribution removed. Residual and Return ÷ σ are two independent toggles, not
+three points on one dial — "strip the market out first?" and "risk-adjust the
+result?" are different questions, and a name can answer either, both, or
+neither:
+
+| ÷ σ | Residual | Shows |
+| --- | --- | --- |
+|  |  | **Return** — plain window return |
+| ✓ |  | **Return ÷ σ** — return over its own σ |
+|  | ✓ | **Residual** — return with the market's contribution removed |
+| ✓ | ✓ | **Residual ÷ σ** — the *residual* return over the *residual's own* σ |
+
+Return is what's left when neither toggle is on, not a selectable option of
+its own — the interface used to offer it as a third pill alongside Return ÷ σ
+and Residual, which hid the fourth combination (both at once) entirely and
+implied three mutually exclusive choices where there are really two
+independent ones.
+
+**Residual ÷ σ** answers a genuinely different question from Return ÷ σ: an
+information-ratio-style figure, excess return per unit of the risk that excess
+return actually took, with the market's contribution stripped from *both*
+halves rather than just the numerator. Its divisor is typically much smaller
+than the plain ratio's — most of a name's variance IS the market, so what's
+left over after removing it is a thinner slice — which means the volatility
+floor below binds on it far more often. That's expected, not a bug: a name
+that tracks the market almost exactly has almost no idiosyncratic risk to
+divide by, and a large residual ratio for it would be measurement noise, not
+skill.
 
 Each name is regressed on `SPY` over exactly the window on screen, and what is
 accumulated is `r − beta × r_market` rather than `r`. Ranking on plain return
@@ -232,7 +259,9 @@ pair of integer indices and window maths is pure index arithmetic.
   σ from a handful of points produces a number that looks authoritative and
   means very little.
 - **Return ÷ σ** — a Sharpe-style ratio with no risk-free rate subtracted. The
-  divisor is floored at **12.5%** annualised; see below.
+  divisor is floored at **12.5%** annualised; see below. Combined with the
+  Residual toggle, both halves switch to their residual counterparts — see
+  *Ranking by market residual* above.
 
 One judgement call worth flagging: **both halves of that ratio are
 annualised.** Dividing a raw window return by an annualised σ mixes units, so
@@ -557,8 +586,9 @@ active ("37 of 500 · ranks stay market-wide").
 **Each horizon carries its own skip.** `skipForLength` is sublinear on
 purpose, so with Skip on the four columns drop 10 / 15 / 17 / 20 sessions
 respectively, and the header states that rather than showing one day count
-that would be wrong for three of the four columns. The Return / Return ÷ σ
-toggle applies too - the ranks are on whichever metric is selected.
+that would be wrong for three of the four columns. The Return ÷ σ / Residual
+toggles apply too - the ranks are on whichever of the four metrics is
+selected.
 
 **Sorting is the column headers**, tapping one sorts by that horizon and
 tapping it again flips direction. There is nothing else in this view to sort
@@ -895,7 +925,9 @@ learned by using it.
 - **Window** — presets from 1M to Max, or *Custom* for an explicit start and
   stop day. Days are picked from the trading calendar itself, so a weekend is
   never a selectable answer that silently snaps elsewhere.
-- **Return / Return ÷ σ** — switches what the list shows and ranks by.
+- **Return ÷ σ / Residual** — two independent toggles, not a three-way
+  picker: risk-adjust, strip the market out, both, or neither. See *Ranking
+  by market residual* above for what "both" means.
 - **Sector** — a single dropdown pill (defaults to "All sectors") rather than
   a row of tappable chips. Eleven sectors plus "All" made the chip rail a
   strip of mostly off-screen buttons; the dropdown opens a sheet with every
