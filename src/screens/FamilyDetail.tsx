@@ -60,7 +60,7 @@ export function FamilyDetail({
 }) {
   const colors = useColors();
   const router = useRouter();
-  const { familyCompare, isWatched, toggleWatch } = useAppState();
+  const { familyCompare, familySlots, isWatched, toggleWatch } = useAppState();
   const [preset, setPreset] = useState<PresetKey>(
     initialPreset === 'CUSTOM' ? '1Y' : initialPreset
   );
@@ -116,19 +116,24 @@ export function FamilyDetail({
 
   const compareLines = useMemo(() => {
     if (!comparing) return [];
+    // Every collected family draws in its persistent slot colour - the same
+    // hue its dot wears on the list, whichever family's page you are on. An
+    // opened family that is NOT collected takes the text colour instead: a
+    // neutral protagonist that cannot collide with any slot.
     return [family, ...companions]
-      .map((f, slot) => {
+      .map((f) => {
         const vals = slice(f, range.startIndex, range.endIndex);
         if (vals.length < 2) return null;
         const base = vals[0];
+        const slot = familySlots[f.symbol];
         return {
           key: f.symbol,
-          color: colors.chart[slot % colors.chart.length],
+          color: slot != null ? colors.chart[slot % colors.chart.length] : colors.text,
           values: vals.map((v) => (v / base) * 100),
         };
       })
       .filter((x): x is NonNullable<typeof x> => x != null);
-  }, [comparing, family, companions, range, colors]);
+  }, [comparing, family, companions, range, colors, familySlots]);
 
   // While a finger is down the headline reports the scrubbed point, so the
   // chart and the numbers never disagree. The scrub indexes the series the

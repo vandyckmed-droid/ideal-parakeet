@@ -65,16 +65,36 @@ function Shell() {
   // The families picked for comparison - the family analogue of the
   // watchlist. Session-local on purpose: a comparison is a question being
   // asked now, not a portfolio being kept.
-  const [familyCompare, setFamilyCompare] = useState([]);
+  //
+  // Order (for the oldest-rolls-off rule) and colour slots are tracked
+  // separately: eviction is by age, but colour is by slot, held from collect
+  // to release - conflating them made every remaining family change colour
+  // whenever one was released.
+  const [familyCompareState, setFamilyCompareState] = useState({ order: [], slots: {} });
   const toggleFamilyCompare = useCallback((key) => {
-    setFamilyCompare((prev) => {
-      if (prev.includes(key)) return prev.filter((k) => k !== key);
-      const next = [...prev, key];
+    setFamilyCompareState((prev) => {
+      if (prev.order.includes(key)) {
+        const slots = { ...prev.slots };
+        delete slots[key];
+        return { order: prev.order.filter((k) => k !== key), slots };
+      }
+      let order = prev.order;
+      const slots = { ...prev.slots };
       // Four lines is where a comparison chart stops being readable; the
-      // oldest pick rolls off.
-      return next.length > 4 ? next.slice(1) : next;
+      // oldest pick rolls off and only ITS slot is freed.
+      if (order.length >= 4) {
+        delete slots[order[0]];
+        order = order.slice(1);
+      }
+      const used = new Set(Object.values(slots));
+      let slot = 0;
+      while (used.has(slot)) slot++;
+      slots[key] = slot;
+      return { order: [...order, key], slots };
     });
   }, []);
+  const familyCompare = familyCompareState.order;
+  const familySlots = familyCompareState.slots;
 
   const [win, setWin] = useState(null);
   const [metric, setMetric] = useState('return');
@@ -249,6 +269,7 @@ function Shell() {
           skipEnabled={skipEnabled}
           sessionsStale={sessionsStale}
           familyCompare={familyCompare}
+          familySlots={familySlots}
           toggleFamilyCompare={toggleFamilyCompare}
           isWatched={isWatched}
           toggleWatch={toggleWatch}
@@ -336,6 +357,7 @@ function Shell() {
           overlapCaption={overlapCaption}
           tab={tabBar}
           familyCompare={familyCompare}
+          familySlots={familySlots}
           toggleFamilyCompare={toggleFamilyCompare}
           onOpenFamily={pushFamily}
         />

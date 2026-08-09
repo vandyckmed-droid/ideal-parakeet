@@ -43,6 +43,13 @@ type AppStateValue = {
    * question being asked now, not a portfolio being kept.
    */
   familyCompare: string[];
+  /**
+   * Chart-colour slot per collected family. A slot is claimed on collect
+   * and held until release, so releasing one family never recolours the
+   * rest and the detail chart always matches the list's dots. Colouring by
+   * list position instead is exactly the bug this exists to prevent.
+   */
+  familySlots: Record<string, number>;
   toggleFamilyCompare: (key: string) => boolean;
 };
 
@@ -118,20 +125,42 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
 
   const clearWatchlist = useCallback(() => setWatchlist([]), []);
 
-  const [familyCompare, setFamilyCompare] = useState<string[]>([]);
+  // Order (for the oldest-rolls-off rule) and colour slots are tracked
+  // separately: eviction is by age, but colour is by slot, and conflating
+  // them is what made every remaining family change colour on a release.
+  const [familyCompareState, setFamilyCompareState] = useState<{
+    order: string[];
+    slots: Record<string, number>;
+  }>({ order: [], slots: {} });
+
   /** Returns the resulting state so callers can pick the right haptic. */
   const toggleFamilyCompare = useCallback((key: string) => {
     let added = false;
-    setFamilyCompare((prev) => {
-      if (prev.includes(key)) return prev.filter((k) => k !== key);
+    setFamilyCompareState((prev) => {
+      if (prev.order.includes(key)) {
+        const slots = { ...prev.slots };
+        delete slots[key];
+        return { order: prev.order.filter((k) => k !== key), slots };
+      }
       added = true;
+      let order = prev.order;
+      const slots = { ...prev.slots };
       // Four lines is where a comparison chart stops being readable; the
-      // oldest pick rolls off, same as the market-view rule always was.
-      const next = [...prev, key];
-      return next.length > 4 ? next.slice(1) : next;
+      // oldest pick rolls off and only ITS slot is freed.
+      if (order.length >= 4) {
+        delete slots[order[0]];
+        order = order.slice(1);
+      }
+      const used = new Set(Object.values(slots));
+      let slot = 0;
+      while (used.has(slot)) slot++;
+      slots[key] = slot;
+      return { order: [...order, key], slots };
     });
     return added;
   }, []);
+  const familyCompare = familyCompareState.order;
+  const familySlots = familyCompareState.slots;
 
   const value = useMemo(
     () => ({
@@ -148,12 +177,13 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       toggleWatch,
       clearWatchlist,
       familyCompare,
+      familySlots,
       toggleFamilyCompare,
     }),
     [
       window, setPreset, setCustomWindow, metric, skipEnabled, setSkipEnabled,
       sessionsStale, watchlist, isWatched, toggleWatch, clearWatchlist,
-      familyCompare, toggleFamilyCompare,
+      familyCompare, familySlots, toggleFamilyCompare,
     ]
   );
 
