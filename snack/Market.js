@@ -61,7 +61,16 @@ export function MarketScreen({
     () => (view === 'groups' ? groupsForK(groupCount).groups : []),
     [view, groupCount]
   );
-  const groupIndex = useMemo(() => groupIndexFor(groupCount), [groupCount]);
+  // Only the table's standings need this, and building it means running the
+  // clustering. Computed unconditionally it ran on the very first Market
+  // render - before the card list had painted - so the app sat on the loading
+  // screen for seconds while a view that does not use groups waited for them.
+  // src/screens/RankTableScreen.tsx has always asked for it from inside the
+  // table; this is that build's behaviour, restored.
+  const groupIndex = useMemo(
+    () => (view === 'table' ? groupIndexFor(groupCount) : null),
+    [view, groupCount]
+  );
 
   // The table's sorted column IS the shared window, resolved to the nearest
   // horizon; tapping a column that is already leading flips the direction,
