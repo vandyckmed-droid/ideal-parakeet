@@ -13,7 +13,7 @@
 // view is the point rather than a glitch.
 
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { SegmentedControl } from './ui';
 import { useTheme, mono, radius, space, type } from './theme';
@@ -34,7 +34,7 @@ export const availableMetrics = () => METRICS.filter((m) => m.key !== 'residual'
 export function ListHeader({
   title, caption, query, onQuery, searchPlaceholder, accessory,
   win, onPreset, onOpenPicker, metric, onMetric, skipEnabled, onToggleSkip,
-  range, sessionsStale, dates, chipGroups,
+  range, sessionsStale, dates, sector, sectors, onOpenSectorPicker,
 }) {
   const { colors, scheme, preference, setPreference } = useTheme();
 
@@ -141,31 +141,21 @@ export function ListHeader({
         </Text>
       )}
 
-      {chipGroups.some((g) => g.length > 0) && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chipRow}>
-          {chipGroups.map((group, g) => (
-            <React.Fragment key={g}>
-              {g > 0 && <View style={[s.chipDivider, { backgroundColor: colors.border }]} />}
-              {group.map((chip) => (
-                <Pressable
-                  key={chip.key}
-                  onPress={chip.onPress}
-                  style={[
-                    s.chip,
-                    {
-                      backgroundColor: chip.active ? colors.accentMuted : colors.surface,
-                      borderColor: chip.active ? colors.accent : 'transparent',
-                    },
-                  ]}
-                >
-                  <Text style={[type.caption, { color: chip.active ? colors.accent : colors.textMuted }]}>
-                    {chip.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </React.Fragment>
-          ))}
-        </ScrollView>
+      {sectors.length > 0 && (
+        <Pressable
+          onPress={onOpenSectorPicker}
+          style={[
+            s.sectorButton,
+            { backgroundColor: colors.surface, borderColor: sector ? colors.accent : 'transparent' },
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={`Sector filter: ${sector || 'All sectors'}`}
+        >
+          <Text style={[type.caption, { color: sector ? colors.accent : colors.textMuted }]} numberOfLines={1}>
+            {sector || 'All sectors'}
+          </Text>
+          <Text style={[type.caption, { color: sector ? colors.accent : colors.textFaint }]}>▾</Text>
+        </Pressable>
       )}
     </View>
   );
@@ -184,7 +174,12 @@ const s = StyleSheet.create({
   accessory: { width: 208, justifyContent: 'center' },
   controlRow: { flexDirection: 'row', alignItems: 'center', gap: space(2) },
   pillButton: { paddingHorizontal: space(3.5), paddingVertical: space(2), borderRadius: radius.md, borderWidth: 1 },
-  chipRow: { gap: space(2), paddingRight: space(4), alignItems: 'center' },
-  chip: { paddingHorizontal: space(3), paddingVertical: space(1.75), borderRadius: radius.pill, borderWidth: 1 },
-  chipDivider: { width: StyleSheet.hairlineWidth, height: 20, marginHorizontal: space(1) },
+  // Self-sized and left-aligned, not full width: this is a filter reading
+  // "here's what's active, tap to change it," not a control that deserves
+  // equal billing with the window and metric rows above it.
+  sectorButton: {
+    flexDirection: 'row', alignSelf: 'flex-start', alignItems: 'center', gap: space(1.5),
+    maxWidth: '100%', paddingHorizontal: space(3.5), paddingVertical: space(2),
+    borderRadius: radius.pill, borderWidth: 1,
+  },
 });

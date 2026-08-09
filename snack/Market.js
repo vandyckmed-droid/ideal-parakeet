@@ -20,6 +20,7 @@ import { StockListBody, filterUniverse } from './ListScreen';
 import { RankTableBody } from './RankTable';
 import { FamilyBody, alignFamilies, familyBySymbol, filterFamilies } from './FamilyScreen';
 import { WindowPicker } from './WindowPicker';
+import { SectorPicker } from './SectorPicker';
 import { SegmentedControl } from './ui';
 import { useTheme } from './theme';
 import { HORIZONS, horizonIndexForWindow } from './ranks';
@@ -44,6 +45,7 @@ export function MarketScreen({
   const [query, setQuery] = useState('');
   const [sector, setSector] = useState(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [sectorPickerOpen, setSectorPickerOpen] = useState(false);
 
   const [bestFirst, setBestFirst] = useState(true);
 
@@ -102,23 +104,9 @@ export function MarketScreen({
     return `${stockCount} ${stockCount === 1 ? 'name' : 'names'} · ${through}${skipNote}`;
   }, [view, stockCount, familyCount, families.length, tickers.length, dates, range, skipEnabled, sessionsStale, lastIndex]);
 
-  // The chip rail is the sector filter and nothing else. There used to be
-  // sort chips ahead of the sectors (metric / Size / A–Z / Overlap), but the
-  // metric control above already names the ranking, so they were a second
-  // control for the same choice - and they pushed the sectors a full screen
-  // of scrolling to the right. The list always ranks by the selected metric,
-  // best first. Families have no sectors, so their rail is empty and the
-  // list gets the row back.
-  const chipGroups = useMemo(() => {
-    if (view === 'families') return [];
-    const sectorChips = [null].concat(sectors).map((sec) => ({
-      key: sec || 'all',
-      label: sec || 'All sectors',
-      active: sector === sec,
-      onPress: () => setSector(sec),
-    }));
-    return [sectorChips];
-  }, [view, sector, sectors]);
+  // The family view has no sectors to filter by, so it gets no sector row at
+  // all rather than a dropdown that would always say "All sectors."
+  const sectorOptions = view === 'families' ? [] : sectors;
 
   const viewSwitch = (
     <SegmentedControl segments={VIEW_SEGMENTS} value={view} onChange={setView} compact />
@@ -143,7 +131,9 @@ export function MarketScreen({
         range={range}
         sessionsStale={sessionsStale}
         dates={dates}
-        chipGroups={chipGroups}
+        sector={sector}
+        sectors={sectorOptions}
+        onOpenSectorPicker={() => setSectorPickerOpen(true)}
       />
 
       {view === 'card' && (
@@ -207,6 +197,14 @@ export function MarketScreen({
         dates={dates}
         onClose={() => setPickerOpen(false)}
         onApply={setCustomWindow}
+      />
+
+      <SectorPicker
+        visible={sectorPickerOpen}
+        sectors={sectorOptions}
+        sector={sector}
+        onClose={() => setSectorPickerOpen(false)}
+        onSelect={setSector}
       />
     </View>
   );

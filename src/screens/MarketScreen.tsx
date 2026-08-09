@@ -2,7 +2,8 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Chip, ListHeader } from '../components/ListHeader';
+import { ListHeader } from '../components/ListHeader';
+import { SectorPicker } from '../components/SectorPicker';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { StockListBody, filterUniverse } from '../components/StockListBody';
 import { WindowPicker } from '../components/WindowPicker';
@@ -52,6 +53,7 @@ export function MarketScreen() {
   const [query, setQuery] = useState('');
   const [sector, setSector] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [sectorPickerOpen, setSectorPickerOpen] = useState(false);
 
   const [bestFirst, setBestFirst] = useState(true);
 
@@ -123,23 +125,9 @@ export function MarketScreen() {
     return `${stockCount} ${stockCount === 1 ? 'name' : 'names'} · ${through}${skipNote}`;
   }, [view, stockCount, familyCount, range, skipEnabled, sessionsStale]);
 
-  // The chip rail is the sector filter and nothing else. There used to be
-  // sort chips ahead of the sectors (metric / Size / A–Z / Overlap), but the
-  // metric control above already names the ranking, so they were a second
-  // control for the same choice - and they pushed the sectors a full screen
-  // of scrolling to the right. The list always ranks by the selected metric,
-  // best first. Families have no sectors, so their rail is empty and the
-  // list gets the row back.
-  const chipGroups = useMemo((): Chip[][] => {
-    if (view === 'families') return [];
-    const sectorChips: Chip[] = [null, ...SECTORS].map((s) => ({
-      key: s ?? 'all',
-      label: s ?? 'All sectors',
-      active: sector === s,
-      onPress: () => setSector(s),
-    }));
-    return [sectorChips];
-  }, [view, sector]);
+  // The family view has no sectors to filter by, so it gets no sector row at
+  // all rather than a dropdown that would always say "All sectors."
+  const sectorOptions = view === 'families' ? [] : SECTORS;
 
   const viewSwitch = (
     <SegmentedControl<MarketView> segments={VIEW_SEGMENTS} value={view} onChange={setView} compact />
@@ -163,7 +151,9 @@ export function MarketScreen() {
         onToggleSkip={() => setSkipEnabled(!skipEnabled)}
         range={range}
         sessionsStale={sessionsStale}
-        chipGroups={chipGroups}
+        sector={sector}
+        sectors={sectorOptions}
+        onOpenSectorPicker={() => setSectorPickerOpen(true)}
       />
 
       {view === 'card' && (
@@ -194,6 +184,14 @@ export function MarketScreen() {
         window={win}
         onClose={() => setPickerOpen(false)}
         onApply={setCustomWindow}
+      />
+
+      <SectorPicker
+        visible={sectorPickerOpen}
+        sectors={sectorOptions}
+        sector={sector}
+        onClose={() => setSectorPickerOpen(false)}
+        onSelect={setSector}
       />
     </View>
   );

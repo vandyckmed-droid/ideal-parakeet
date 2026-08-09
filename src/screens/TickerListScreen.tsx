@@ -2,7 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Chip, ListHeader } from '../components/ListHeader';
+import { ListHeader } from '../components/ListHeader';
+import { SectorPicker } from '../components/SectorPicker';
 import { StockListBody } from '../components/StockListBody';
 import { WindowPicker } from '../components/WindowPicker';
 import { SECTORS, Ticker } from '../data/market';
@@ -42,23 +43,12 @@ export function TickerListScreen({
   const [query, setQuery] = useState('');
   const [sector, setSector] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [sectorPickerOpen, setSectorPickerOpen] = useState(false);
 
   const range = useMemo(
     () => withSkip(win, skipEnabled, sessionsStale),
     [win, skipEnabled, sessionsStale]
   );
-
-  // Sector filter only - the metric control above is the sort, same rule as
-  // the Market tab.
-  const chipGroups = useMemo((): Chip[][] => {
-    const sectorChips: Chip[] = [null, ...SECTORS].map((s) => ({
-      key: s ?? 'all',
-      label: s ?? 'All sectors',
-      active: sector === s,
-      onPress: () => setSector(s),
-    }));
-    return [sectorChips];
-  }, [sector]);
 
   return (
     <View style={[styles.root, { backgroundColor: colors.bg, paddingTop: insets.top }]}>
@@ -75,7 +65,9 @@ export function TickerListScreen({
         onToggleSkip={() => setSkipEnabled(!skipEnabled)}
         range={range}
         sessionsStale={sessionsStale}
-        chipGroups={chipGroups}
+        sector={sector}
+        sectors={SECTORS}
+        onOpenSectorPicker={() => setSectorPickerOpen(true)}
       />
 
       <StockListBody
@@ -91,6 +83,14 @@ export function TickerListScreen({
         window={win}
         onClose={() => setPickerOpen(false)}
         onApply={setCustomWindow}
+      />
+
+      <SectorPicker
+        visible={sectorPickerOpen}
+        sectors={SECTORS}
+        sector={sector}
+        onClose={() => setSectorPickerOpen(false)}
+        onSelect={setSector}
       />
     </View>
   );

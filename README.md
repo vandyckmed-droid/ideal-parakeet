@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/xH2s8Nc4gwWHFG6ITQ0q8), so it can be opened in
+Snack](https://snack.expo.dev/niqmrbh3lHcf3GmJYwlLv), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -883,6 +883,12 @@ learned by using it.
   stop day. Days are picked from the trading calendar itself, so a weekend is
   never a selectable answer that silently snaps elsewhere.
 - **Return / Return ÷ σ** — switches what the list shows and ranks by.
+- **Sector** — a single dropdown pill (defaults to "All sectors") rather than
+  a row of tappable chips. Eleven sectors plus "All" made the chip rail a
+  strip of mostly off-screen buttons; the dropdown opens a sheet with every
+  sector listed, one tap picks it and closes, and the pill itself always
+  states the active filter. Families have no sectors, so their view carries
+  no sector row at all.
 - **Skip** — drops the recent tail of every window, scaled to its length. See
   *Skipping the recent tail* above. The setting persists across launches.
 - **Overlap** — an amber `⇄` badge on a row means that name is redundant with

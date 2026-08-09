@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -20,8 +19,6 @@ export const METRIC_SEGMENTS: { key: MetricKey; label: string }[] = [
   { key: 'ratio', label: 'Return ÷ σ' },
   { key: 'residual', label: 'Residual' },
 ];
-
-export type Chip = { key: string; label: string; active: boolean; onPress: () => void };
 
 /**
  * The one header every list screen wears: title and caption, theme button,
@@ -55,7 +52,9 @@ export function ListHeader({
   onToggleSkip,
   range,
   sessionsStale,
-  chipGroups,
+  sector,
+  sectors,
+  onOpenSectorPicker,
 }: {
   title: string;
   /** One line under the title. Omit for none (the Watchlist's choice). */
@@ -74,8 +73,11 @@ export function ListHeader({
   onToggleSkip: () => void;
   range: EffectiveWindow;
   sessionsStale: number;
-  /** Chip rail contents; groups are separated by a hairline divider. */
-  chipGroups: Chip[][];
+  /** null means "All sectors". */
+  sector: string | null;
+  /** Omit or pass an empty list to hide the sector row entirely (the family view has none). */
+  sectors: string[];
+  onOpenSectorPicker: () => void;
 }) {
   const { colors, scheme, preference, setPreference } = useTheme();
 
@@ -203,42 +205,29 @@ export function ListHeader({
         </Text>
       )}
 
-      {chipGroups.some((g) => g.length > 0) && (
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chipRow}
-      >
-        {chipGroups.map((group, g) => (
-          <React.Fragment key={g}>
-            {g > 0 && (
-              <View style={[styles.chipDivider, { backgroundColor: colors.border }]} />
-            )}
-            {group.map((chip) => (
-              <Pressable
-                key={chip.key}
-                onPress={chip.onPress}
-                style={[
-                  styles.chip,
-                  {
-                    backgroundColor: chip.active ? colors.accentMuted : colors.surface,
-                    borderColor: chip.active ? colors.accent : 'transparent',
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    type.caption,
-                    { color: chip.active ? colors.accent : colors.textMuted },
-                  ]}
-                >
-                  {chip.label}
-                </Text>
-              </Pressable>
-            ))}
-          </React.Fragment>
-        ))}
-      </ScrollView>
+      {sectors.length > 0 && (
+        <Pressable
+          onPress={onOpenSectorPicker}
+          style={[
+            styles.sectorButton,
+            {
+              backgroundColor: colors.surface,
+              borderColor: sector ? colors.accent : 'transparent',
+            },
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={`Sector filter: ${sector ?? 'All sectors'}`}
+        >
+          <Text
+            style={[type.caption, { color: sector ? colors.accent : colors.textMuted }]}
+            numberOfLines={1}
+          >
+            {sector ?? 'All sectors'}
+          </Text>
+          <Text style={[type.caption, { color: sector ? colors.accent : colors.textFaint }]}>
+            ▾
+          </Text>
+        </Pressable>
       )}
     </View>
   );
@@ -278,12 +267,18 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
   },
-  chipRow: { gap: space(2), paddingRight: space(4), alignItems: 'center' },
-  chip: {
-    paddingHorizontal: space(3),
-    paddingVertical: space(1.75),
+  // Self-sized and left-aligned, not full width: this is a filter reading
+  // "here's what's active, tap to change it," not a control that deserves
+  // equal billing with the window and metric rows above it.
+  sectorButton: {
+    flexDirection: 'row',
+    alignSelf: 'flex-start',
+    alignItems: 'center',
+    gap: space(1.5),
+    maxWidth: '100%',
+    paddingHorizontal: space(3.5),
+    paddingVertical: space(2),
     borderRadius: radius.pill,
     borderWidth: 1,
   },
-  chipDivider: { width: StyleSheet.hairlineWidth, height: 20, marginHorizontal: space(1) },
 });
