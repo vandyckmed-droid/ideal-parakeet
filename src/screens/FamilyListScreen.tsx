@@ -1,84 +1,84 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CompareChart } from '../components/CompareChart';
-import { SegmentedControl } from '../components/SegmentedControl';
 import { Sparkline } from '../components/Sparkline';
-import { WindowPicker } from '../components/WindowPicker';
 import { FAMILY_TICKERS, FamilyTicker } from '../data/families';
-import { DATES, formatDateShort, slice } from '../data/market';
-import { MetricKey, computeWindowStats, formatMetric, metricValue } from '../data/stats';
-import { PRESETS, PresetKey, withSkip } from '../data/windows';
+import { slice } from '../data/market';
+import { computeWindowStats, formatMetric, metricValue } from '../data/stats';
+import { withSkip } from '../data/windows';
 import { useAppState } from '../state/AppState';
-import { useColors, useTheme } from '../theme/ThemeProvider';
-import { mono, radius, space, type } from '../theme/theme';
+import { useColors } from '../theme/ThemeProvider';
+import { mono, space, type } from '../theme/theme';
 
-const METRIC_SEGMENTS: { key: MetricKey; label: string }[] = [
-  { key: 'return', label: 'Return' },
-  { key: 'ratio', label: 'Return ÷ σ' },
-  { key: 'residual', label: 'Residual' },
-];
+export type FamilySortKey = 'metric' | 'size' | 'name';
+
+/** The one filter predicate, shared with the header's live family count. */
+export function filterFamilies(query: string): FamilyTicker[] {
+  const needle = query.trim().toUpperCase();
+  return needle
+    ? FAMILY_TICKERS.filter((f) => f.symbol.toUpperCase().includes(needle))
+    : FAMILY_TICKERS;
+}
 
 /**
- * The Market tab's third view: the 38 industry families as rows that behave
- * like stocks. Same shared window, Skip and metric state as the card view -
- * the families are Ticker-shaped, so computeWindowStats, the skip and the
- * residual regression all apply unchanged - and the rows are always ranked by
- * the selected metric, best first.
+ * The Market tab's family body: the 38 industry families as rows that behave
+ * like stocks. The families are Ticker-shaped, so the shared window, Skip and
+ * metric state - and the same computeWindowStats, skip clamp and residual
+ * regression - apply unchanged; under the metric sort the rows rank
+ * best-first exactly like the card view.
  *
  * Tap toggles a family onto the comparison chart, the same gesture that
  * toggles a stock onto the watchlist. Up to four, oldest rolls off, never
- * below one.
+ * below one. The chart draws the measured stretch - the same span every
+ * row's number covers - indexed to 100 at the window start, because the
+ * families opened their $10,000 on different dates and raw levels would
+ * compare start dates rather than performance.
  */
-export function FamilyListScreen({ headerAccessory }: { headerAccessory?: React.ReactNode }) {
+export function FamilyBody({
+  query,
+  sortKey,
+  descending,
+  selected,
+  onToggle,
+}: {
+  query: string;
+  sortKey: FamilySortKey;
+  descending: boolean;
+  selected: string[];
+  onToggle: (key: string) => void;
+}) {
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const { preference, setPreference, scheme } = useTheme();
-  const {
-    window: win, setPreset, setCustomWindow, metric, setMetric,
-    skipEnabled, setSkipEnabled, sessionsStale,
-  } = useAppState();
+  const { window: win, metric, skipEnabled, sessionsStale } = useAppState();
 
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [selected, setSelected] = useState<string[]>(() =>
-    FAMILY_TICKERS.slice(0, 2).map((f) => f.symbol)
-  );
-
-  const toggleFamily = useCallback((key: string) => {
-    setSelected((prev) => {
-      if (prev.includes(key)) return prev.length > 1 ? prev.filter((k) => k !== key) : prev;
-      const next = [...prev, key];
-      return next.length > 4 ? next.slice(1) : next;
-    });
-  }, []);
-
-  // The range the maths actually uses - identical to the stock list.
   const range = useMemo(
     () => withSkip(win, skipEnabled, sessionsStale),
     [win, skipEnabled, sessionsStale]
   );
 
-  // Always ranked by the metric, best first: rank IS this view's order.
   const rows = useMemo(() => {
-    const scored = FAMILY_TICKERS.map((f) => ({
+    const scored = filterFamilies(query).map((f) => ({
       family: f,
       stats: computeWindowStats(f, range.startIndex, range.endIndex),
     }));
+    const dir = descending ? -1 : 1;
     scored.sort((a, b) => {
+      if (sortKey === 'name') return a.family.symbol.localeCompare(b.family.symbol) * dir;
+      if (sortKey === 'size') return (a.family.members - b.family.members) * dir;
       const av = metricValue(a.stats, metric);
       const bv = metricValue(b.stats, metric);
       if (av === null && bv === null) return 0;
       if (av === null) return 1;
       if (bv === null) return -1;
-      return bv - av;
+      return (av - bv) * dir;
     });
     return scored;
-  }, [range, metric]);
+  }, [query, range, metric, sortKey, descending]);
 
-  // The chart draws the measured stretch - the same span the number covers.
   const chart = useMemo(() => {
-    const lines = selected
+    return selected
       .map((key, slot) => {
         const f = FAMILY_TICKERS.find((x) => x.symbol === key);
         if (!f) return null;
@@ -88,28 +88,22 @@ export function FamilyListScreen({ headerAccessory }: { headerAccessory?: React.
         return {
           key,
           color: colors.chart[slot % colors.chart.length],
-          // Indexed to 100 at the window start: families started their $10,000
-          // on different dates, so raw levels would compare start dates, not
-          // performance.
           values: vals.map((v) => (v / base) * 100),
         };
       })
       .filter((x): x is NonNullable<typeof x> => x != null);
-    return lines;
   }, [selected, range, colors]);
-
-  const slotOf = (key: string) => selected.indexOf(key);
 
   const renderRow = ({ item, index }: { item: (typeof rows)[number]; index: number }) => {
     const f = item.family;
     const v = metricValue(item.stats, metric);
     const tone = v === null ? colors.flat : v >= 0 ? colors.up : colors.down;
-    const slot = slotOf(f.symbol);
+    const slot = selected.indexOf(f.symbol);
     const activeHue = slot >= 0 ? colors.chart[slot % colors.chart.length] : null;
     const spark = slice(f, range.startIndex, range.endIndex);
     return (
       <Pressable
-        onPress={() => toggleFamily(f.symbol)}
+        onPress={() => onToggle(f.symbol)}
         style={({ pressed }) => [
           styles.row,
           {
@@ -121,8 +115,10 @@ export function FamilyListScreen({ headerAccessory }: { headerAccessory?: React.
         accessibilityState={{ selected: slot >= 0 }}
         accessibilityHint="Tap to toggle this family on the comparison chart"
       >
+        {/* Rank only under the metric sort, matching the card view: under
+            Size or A–Z the position is not a rank and must not read as one. */}
         <Text style={[type.micro, mono, styles.rank, { color: colors.textFaint }]}>
-          {index + 1}
+          {sortKey === 'metric' ? index + 1 : ''}
         </Text>
         {activeHue ? (
           <View style={[styles.dot, { backgroundColor: activeHue }]} />
@@ -143,94 +139,20 @@ export function FamilyListScreen({ headerAccessory }: { headerAccessory?: React.
     );
   };
 
+  if (!FAMILY_TICKERS.length) {
+    return (
+      <View style={styles.empty}>
+        <Text style={[type.body, styles.emptyText, { color: colors.textMuted }]}>
+          The family series hasn’t been published yet. It arrives with the next
+          data update.
+        </Text>
+      </View>
+    );
+  }
+
   return (
-    <View style={[styles.root, { backgroundColor: colors.bg, paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <View>
-            <Text style={[type.hero, { color: colors.text }]}>Market</Text>
-            <Text style={[type.caption, { color: colors.textMuted }]}>
-              {FAMILY_TICKERS.length} families · through {formatDateShort(DATES[range.endIndex])}
-              {range.skip > 0 ? ` · ${range.skip}d skipped` : ''}
-            </Text>
-          </View>
-          <Pressable
-            onPress={() =>
-              setPreference(
-                preference === 'system' ? (scheme === 'dark' ? 'light' : 'dark') : 'system'
-              )
-            }
-            style={[styles.themeButton, { backgroundColor: colors.surface }]}
-            accessibilityRole="button"
-            accessibilityLabel={`Theme: ${preference}`}
-          >
-            <Text style={{ fontSize: 16 }}>
-              {preference === 'system' ? '◐' : scheme === 'dark' ? '☾' : '☀'}
-            </Text>
-          </Pressable>
-        </View>
-
-        {headerAccessory ? <View style={styles.accessoryRow}>{headerAccessory}</View> : null}
-
-        <View style={styles.windowRow}>
-          <View style={{ flex: 1 }}>
-            <SegmentedControl<PresetKey>
-              segments={PRESETS}
-              value={win.preset}
-              onChange={setPreset}
-              compact
-            />
-          </View>
-          <Pressable
-            onPress={() => setPickerOpen(true)}
-            style={[
-              styles.pillButton,
-              {
-                backgroundColor: win.preset === 'CUSTOM' ? colors.accentMuted : colors.surface,
-                borderColor: win.preset === 'CUSTOM' ? colors.accent : 'transparent',
-              },
-            ]}
-          >
-            <Text
-              style={[
-                type.caption,
-                { color: win.preset === 'CUSTOM' ? colors.accent : colors.textMuted },
-              ]}
-            >
-              Custom
-            </Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.windowRow}>
-          <View style={{ flex: 1 }}>
-            <SegmentedControl<MetricKey>
-              segments={METRIC_SEGMENTS}
-              value={metric}
-              onChange={setMetric}
-              compact
-            />
-          </View>
-          <Pressable
-            onPress={() => setSkipEnabled(!skipEnabled)}
-            style={[
-              styles.pillButton,
-              {
-                backgroundColor: skipEnabled ? colors.accentMuted : colors.surface,
-                borderColor: skipEnabled ? colors.accent : 'transparent',
-              },
-            ]}
-            accessibilityRole="switch"
-            accessibilityState={{ checked: skipEnabled }}
-          >
-            <Text
-              style={[type.caption, { color: skipEnabled ? colors.accent : colors.textMuted }]}
-            >
-              {skipEnabled ? `Skip ${range.skip}d` : 'Skip'}
-            </Text>
-          </Pressable>
-        </View>
-
+    <View style={styles.root}>
+      <View style={styles.chartBlock}>
         <CompareChart lines={chart} height={160} baseline={100} />
         <Text style={[type.micro, { color: colors.textFaint }]}>
           Tap a family to chart it · up to four, oldest rolls off · indexed to 100 at the
@@ -243,17 +165,15 @@ export function FamilyListScreen({ headerAccessory }: { headerAccessory?: React.
         keyExtractor={(r) => r.family.symbol}
         renderItem={renderRow}
         initialNumToRender={16}
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingBottom: insets.bottom + space(6) }}
-      />
-
-      <WindowPicker
-        visible={pickerOpen}
-        window={win}
-        onClose={() => setPickerOpen(false)}
-        onApply={(a, b) => {
-          setCustomWindow(a, b);
-          setPickerOpen(false);
-        }}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Text style={[type.body, { color: colors.textMuted }]}>
+              Nothing matches those filters.
+            </Text>
+          </View>
+        }
       />
     </View>
   );
@@ -261,27 +181,7 @@ export function FamilyListScreen({ headerAccessory }: { headerAccessory?: React.
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { paddingHorizontal: space(4), paddingBottom: space(2.5), gap: space(2) },
-  headerTop: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-  },
-  themeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  accessoryRow: { alignSelf: 'flex-start', width: 208 },
-  windowRow: { flexDirection: 'row', alignItems: 'center', gap: space(2) },
-  pillButton: {
-    paddingHorizontal: space(3.5),
-    paddingVertical: space(2),
-    borderRadius: radius.md,
-    borderWidth: 1,
-  },
+  chartBlock: { paddingHorizontal: space(4), paddingBottom: space(2), gap: space(2) },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -294,4 +194,6 @@ const styles = StyleSheet.create({
   dot: { width: 8, height: 8, borderRadius: 4 },
   identity: { flex: 1, gap: 1 },
   value: { minWidth: 84, textAlign: 'right' },
+  empty: { padding: space(10), alignItems: 'center' },
+  emptyText: { textAlign: 'center', maxWidth: 300 },
 });

@@ -1,77 +1,68 @@
 import { useRouter } from 'expo-router';
-import React, { useCallback, useDeferredValue, useMemo, useState } from 'react';
-import {
-  FlatList,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import React, { useCallback, useDeferredValue, useMemo } from 'react';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { RANK_ROW_HEIGHT, RankRow } from '../components/RankRow';
-import { SegmentedControl } from '../components/SegmentedControl';
-import { SECTORS, TICKERS } from '../data/market';
+import { filterUniverse } from '../components/StockListBody';
+import { TICKERS } from '../data/market';
 import { HORIZONS, buildRankTable } from '../data/ranks';
-import { MetricKey } from '../data/stats';
 import { useAppState } from '../state/AppState';
-import { useTheme } from '../theme/ThemeProvider';
-import { mono, radius, space, type } from '../theme/theme';
-
-const METRIC_SEGMENTS: { key: MetricKey; label: string }[] = [
-  { key: 'return', label: 'Return' },
-  { key: 'ratio', label: 'Return ÷ σ' },
-  { key: 'residual', label: 'Residual' },
-];
-
-/** Default sort column: the longest horizon, where rank is least noisy. */
-const DEFAULT_SORT = HORIZONS.length - 1;
+import { useColors } from '../theme/ThemeProvider';
+import { mono, space, type } from '../theme/theme';
 
 /**
- * The Market tab's table view: every name's rank at 1M / 3M / 6M / 9M / 12M at
+ * The Market tab's table body: every name's rank at 3M / 6M / 9M / 12M at
  * once, as a heatmap.
  *
  * The card view answers "how is this name doing over the one window I chose";
- * this answers the question that needs five windows side by side - whether a
+ * this answers the question that needs four windows side by side - whether a
  * name is strong everywhere or only recently, which is invisible when you can
- * only see one horizon at a time and have to hold the other four in memory.
+ * only see one horizon at a time and have to hold the others in memory.
+ *
+ * The sorted column is not local state: it is the shared window control,
+ * resolved to the nearest horizon. Pick 6M in the header and the table leads
+ * with the 6M column; tap the 9M column and the header's window follows. One
+ * time axis, whichever view is showing.
  *
  * Deliberately carries no overlap badges or overlap header count. Those exist
  * to warn about redundancy against your watchlist, which is a different
  * question from momentum persistence, and at this row density the badges would
  * crowd out the thing the view is for.
  */
-export function RankTableScreen({ headerAccessory }: { headerAccessory?: React.ReactNode }) {
+export function RankTableBody({
+  query,
+  sector,
+  sortColumn,
+  bestFirst,
+  onCycleSort,
+}: {
+  query: string;
+  sector: string | null;
+  sortColumn: number;
+  bestFirst: boolean;
+  onCycleSort: (column: number) => void;
+}) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { colors, scheme, preference, setPreference } = useTheme();
-  const {
-    metric, setMetric, skipEnabled, setSkipEnabled, sessionsStale, isWatched, toggleWatch,
-  } = useAppState();
-
-  const [query, setQuery] = useState('');
-  const [sector, setSector] = useState<string | null>(null);
-  const [sortColumn, setSortColumn] = useState(DEFAULT_SORT);
-  const [bestFirst, setBestFirst] = useState(true);
+  const colors = useColors();
+  const { metric, skipEnabled, sessionsStale, isWatched, toggleWatch } = useAppState();
 
   const deferredQuery = useDeferredValue(query);
 
-  // Five horizons over 500 names. Keyed only on metric and skip, so it survives
-  // typing, filtering, sorting and scrolling - none of which change a rank.
+  // Four horizons over 500 names. Keyed only on metric and skip, so it
+  // survives typing, filtering, sorting and scrolling - none of which change
+  // a rank.
   const table = useMemo(
     () => buildRankTable(TICKERS, metric, skipEnabled, sessionsStale),
     [metric, skipEnabled, sessionsStale]
   );
 
   const rows = useMemo(() => {
-    const needle = deferredQuery.trim().toUpperCase();
-    const built = TICKERS.filter((t) => (sector ? t.sector === sector : true))
-      .filter((t) =>
-        needle ? t.symbol.includes(needle) || t.name.toUpperCase().includes(needle) : true
-      )
-      .map((t) => ({ ticker: t, ranks: table.ranks.get(t.symbol)! }));
+    const built = filterUniverse(TICKERS, deferredQuery, sector).map((t) => ({
+      ticker: t,
+      ranks: table.ranks.get(t.symbol)!,
+    }));
 
     const dir = bestFirst ? 1 : -1;
     built.sort((a, b) => {
@@ -89,17 +80,6 @@ export function RankTableScreen({ headerAccessory }: { headerAccessory?: React.R
 
   const openDetail = useCallback((symbol: string) => router.push(`/ticker/${symbol}`), [router]);
 
-  const cycleSort = useCallback((column: number) => {
-    setSortColumn((prev) => {
-      if (prev === column) {
-        setBestFirst((b) => !b);
-        return prev;
-      }
-      setBestFirst(true);
-      return column;
-    });
-  }, []);
-
   const renderItem = useCallback(
     ({ item }: { item: (typeof rows)[number] }) => (
       <RankRow
@@ -114,115 +94,8 @@ export function RankTableScreen({ headerAccessory }: { headerAccessory?: React.R
     [table.counts, isWatched, toggleWatch, openDetail]
   );
 
-  const skipNote = skipEnabled ? ` · skipping ${table.skips.join('/')}d` : '';
-
   return (
-    <View style={[styles.root, { backgroundColor: colors.bg, paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <View style={{ flex: 1 }}>
-            <Text style={[type.hero, { color: colors.text }]}>Market</Text>
-            <Text style={[type.caption, { color: colors.textMuted }]}>
-              {rows.length === TICKERS.length
-                ? `${TICKERS.length} names`
-                : `${rows.length} of ${TICKERS.length} · ranks stay market-wide`}
-              {skipNote}
-            </Text>
-          </View>
-          <Pressable
-            onPress={() =>
-              setPreference(
-                preference === 'system' ? (scheme === 'dark' ? 'light' : 'dark') : 'system'
-              )
-            }
-            style={[styles.themeButton, { backgroundColor: colors.surface }]}
-            accessibilityRole="button"
-            accessibilityLabel={`Theme: ${preference}`}
-          >
-            <Text style={{ fontSize: 16 }}>
-              {preference === 'system' ? '◐' : scheme === 'dark' ? '☾' : '☀'}
-            </Text>
-          </Pressable>
-        </View>
-
-        {/* Same row as the search box, matching the card view: both are
-            "what am I looking at" controls and neither deserves a full row. */}
-        <View style={styles.searchRow}>
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search symbol or company"
-            placeholderTextColor={colors.textFaint}
-            autoCapitalize="characters"
-            autoCorrect={false}
-            clearButtonMode="while-editing"
-            style={[styles.search, type.body, { backgroundColor: colors.surface, color: colors.text }]}
-          />
-          {headerAccessory ? <View style={styles.accessory}>{headerAccessory}</View> : null}
-        </View>
-
-        <View style={styles.controlRow}>
-          <View style={{ flex: 1 }}>
-            <SegmentedControl<MetricKey>
-              segments={METRIC_SEGMENTS}
-              value={metric}
-              onChange={setMetric}
-              compact
-            />
-          </View>
-          <Pressable
-            onPress={() => setSkipEnabled(!skipEnabled)}
-            style={[
-              styles.skipButton,
-              {
-                backgroundColor: skipEnabled ? colors.accentMuted : colors.surface,
-                borderColor: skipEnabled ? colors.accent : 'transparent',
-              },
-            ]}
-            accessibilityRole="switch"
-            accessibilityState={{ checked: skipEnabled }}
-            accessibilityLabel={
-              skipEnabled
-                ? `Skipping recent sessions: ${table.skips.join(', ')} by horizon`
-                : 'Include the most recent trading days'
-            }
-          >
-            <Text
-              style={[type.caption, { color: skipEnabled ? colors.accent : colors.textMuted }]}
-            >
-              Skip
-            </Text>
-          </Pressable>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chipRow}
-        >
-          {[null, ...SECTORS].map((s) => {
-            const active = sector === s;
-            return (
-              <Pressable
-                key={s ?? 'all'}
-                onPress={() => setSector(s)}
-                style={[
-                  styles.chip,
-                  {
-                    backgroundColor: active ? colors.accentMuted : colors.surface,
-                    borderColor: active ? colors.accent : 'transparent',
-                  },
-                ]}
-              >
-                <Text style={[type.caption, { color: active ? colors.accent : colors.textMuted }]}>
-                  {s ?? 'All sectors'}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
-
+    <View style={styles.root}>
       {/* Column headers double as the sort control - there is nothing else in
           this view to sort by, so a separate row of sort chips would be a
           second way to say the same thing. */}
@@ -233,18 +106,14 @@ export function RankTableScreen({ headerAccessory }: { headerAccessory?: React.R
           return (
             <Pressable
               key={horizon.key}
-              onPress={() => cycleSort(i)}
+              onPress={() => onCycleSort(i)}
               style={styles.headerCell}
               accessibilityRole="button"
               accessibilityState={{ selected: active }}
               accessibilityLabel={`Sort by ${horizon.label} rank`}
             >
               <Text
-                style={[
-                  type.micro,
-                  mono,
-                  { color: active ? colors.accent : colors.textFaint },
-                ]}
+                style={[type.micro, mono, { color: active ? colors.accent : colors.textFaint }]}
               >
                 {horizon.label}
               </Text>
@@ -292,35 +161,6 @@ export function RankTableScreen({ headerAccessory }: { headerAccessory?: React.R
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { paddingHorizontal: space(4), paddingBottom: space(2), gap: space(2) },
-  headerTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  themeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  searchRow: { flexDirection: 'row', alignItems: 'stretch', gap: space(2) },
-  // minWidth 0: otherwise the placeholder's width is the field's minimum and
-  // the view switch gets shoved off the right edge.
-  search: { flex: 1, minWidth: 0, borderRadius: radius.md, paddingHorizontal: space(3.5), paddingVertical: space(2.75) },
-  // Three segments now (Card / Table / Families); 148 fit two.
-  accessory: { width: 208, justifyContent: 'center' },
-  controlRow: { flexDirection: 'row', alignItems: 'center', gap: space(2) },
-  skipButton: {
-    paddingHorizontal: space(3.5),
-    paddingVertical: space(2),
-    borderRadius: radius.md,
-    borderWidth: 1,
-  },
-  chipRow: { gap: space(2), paddingRight: space(4), alignItems: 'center' },
-  chip: {
-    paddingHorizontal: space(3),
-    paddingVertical: space(1.75),
-    borderRadius: radius.pill,
-    borderWidth: 1,
-  },
   columnHeader: {
     flexDirection: 'row',
     alignItems: 'center',
