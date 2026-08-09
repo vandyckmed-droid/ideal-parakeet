@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Chip, ListHeader } from '../components/ListHeader';
-import { StockListBody, StockSortKey } from '../components/StockListBody';
+import { StockListBody } from '../components/StockListBody';
 import { WindowPicker } from '../components/WindowPicker';
 import { SECTORS, Ticker } from '../data/market';
 import { OverlapSummary } from '../data/overlap';
@@ -41,8 +41,6 @@ export function TickerListScreen({
 
   const [query, setQuery] = useState('');
   const [sector, setSector] = useState<string | null>(null);
-  const [sortKey, setSortKey] = useState<StockSortKey>('metric');
-  const [descending, setDescending] = useState(true);
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const range = useMemo(
@@ -50,41 +48,17 @@ export function TickerListScreen({
     [win, skipEnabled, sessionsStale]
   );
 
+  // Sector filter only - the metric control above is the sort, same rule as
+  // the Market tab.
   const chipGroups = useMemo((): Chip[][] => {
-    const cycle = (key: StockSortKey) => {
-      if (sortKey === key) {
-        setDescending((d) => !d);
-      } else {
-        setSortKey(key);
-        // Overlap's useful direction is ascending, same as Symbol: lowest
-        // correlation to the rest of the list first, so the top of the list
-        // is whichever name would add the most diversification.
-        setDescending(key !== 'symbol' && key !== 'overlap');
-      }
-    };
-    const arrow = (active: boolean) => (active ? (descending ? ' ↓' : ' ↑') : '');
-    const metricLabel =
-      metric === 'return' ? 'Return' : metric === 'residual' ? 'Residual' : 'Ratio';
-    const sortChips: Chip[] = [
-      { key: 'metric', label: `${metricLabel}${arrow(sortKey === 'metric')}` },
-      { key: 'cap', label: `Size${arrow(sortKey === 'cap')}` },
-      { key: 'symbol', label: `A–Z${arrow(sortKey === 'symbol')}` },
-      ...(overlap && overlap.reason === 'ok'
-        ? [{ key: 'overlap', label: `Overlap${arrow(sortKey === 'overlap')}` }]
-        : []),
-    ].map((c) => ({
-      ...c,
-      active: sortKey === c.key,
-      onPress: () => cycle(c.key as StockSortKey),
-    }));
     const sectorChips: Chip[] = [null, ...SECTORS].map((s) => ({
       key: s ?? 'all',
       label: s ?? 'All sectors',
       active: sector === s,
       onPress: () => setSector(s),
     }));
-    return [sortChips, sectorChips];
-  }, [sortKey, descending, metric, overlap, sector]);
+    return [sectorChips];
+  }, [sector]);
 
   return (
     <View style={[styles.root, { backgroundColor: colors.bg, paddingTop: insets.top }]}>
@@ -108,8 +82,6 @@ export function TickerListScreen({
         universe={universe}
         query={query}
         sector={sector}
-        sortKey={sortKey}
-        descending={descending}
         overlap={overlap}
         emptyState={emptyState}
       />

@@ -14,8 +14,6 @@ import { setOrderedFamilies } from '../state/listContext';
 import { useColors } from '../theme/ThemeProvider';
 import { mono, space, type } from '../theme/theme';
 
-export type FamilySortKey = 'metric' | 'size' | 'name';
-
 /** The one filter predicate, shared with the header's live family count. */
 export function filterFamilies(query: string): FamilyTicker[] {
   const needle = query.trim().toUpperCase();
@@ -32,15 +30,7 @@ export function filterFamilies(query: string): FamilyTicker[] {
  * hold opens the family's own page - chart, every window's numbers, and its
  * holdings - which is also where the compare set gets drawn.
  */
-export function FamilyBody({
-  query,
-  sortKey,
-  descending,
-}: {
-  query: string;
-  sortKey: FamilySortKey;
-  descending: boolean;
-}) {
+export function FamilyBody({ query }: { query: string }) {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const router = useRouter();
@@ -54,24 +44,23 @@ export function FamilyBody({
     [win, skipEnabled, sessionsStale]
   );
 
+  // Always ranked by the selected metric, best first - the metric control
+  // IS the sort, same as the stock list.
   const rows = useMemo(() => {
     const scored = filterFamilies(query).map((f) => ({
       family: f,
       stats: computeWindowStats(f, range.startIndex, range.endIndex),
     }));
-    const dir = descending ? -1 : 1;
     scored.sort((a, b) => {
-      if (sortKey === 'name') return a.family.symbol.localeCompare(b.family.symbol) * dir;
-      if (sortKey === 'size') return (a.family.members - b.family.members) * dir;
       const av = metricValue(a.stats, metric);
       const bv = metricValue(b.stats, metric);
       if (av === null && bv === null) return 0;
       if (av === null) return 1;
       if (bv === null) return -1;
-      return (av - bv) * dir;
+      return bv - av;
     });
     return scored;
-  }, [query, range, metric, sortKey, descending]);
+  }, [query, range, metric]);
 
   const collect = useCallback(
     (key: string) => {
@@ -119,10 +108,8 @@ export function FamilyBody({
         accessibilityState={{ selected: slot != null }}
         accessibilityHint="Tap to add to the compare set, press and hold to open"
       >
-        {/* Rank only under the metric sort, matching the card view: under
-            Size or A–Z the position is not a rank and must not read as one. */}
         <Text style={[type.micro, mono, styles.rank, { color: colors.textFaint }]}>
-          {sortKey === 'metric' ? index + 1 : ''}
+          {index + 1}
         </Text>
         {activeHue ? (
           <View style={[styles.dot, { backgroundColor: activeHue }]} />

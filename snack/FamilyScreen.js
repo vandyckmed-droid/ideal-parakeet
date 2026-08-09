@@ -62,7 +62,7 @@ export function filterFamilies(families, query) {
 
 export function FamilyBody({
   families, dates, win, metric, skipEnabled, sessionsStale,
-  query, sortKey, descending,
+  query,
   // Defaulted so a missing prop degrades to "nothing collected" rather than
   // throwing inside a render and blanking the whole app - which is exactly
   // what an unpassed familyCompare did once.
@@ -75,24 +75,23 @@ export function FamilyBody({
     [win, skipEnabled, sessionsStale, dates.length]
   );
 
+  // Always ranked by the selected metric, best first - the metric control
+  // IS the sort, same as the stock list.
   const rows = useMemo(() => {
     const scored = filterFamilies(families, query).map((f) => ({
       family: f,
       stats: computeWindowStats(f, range.startIndex, range.endIndex),
     }));
-    const dir = descending ? -1 : 1;
     scored.sort((a, b) => {
-      if (sortKey === 'name') return a.family.s.localeCompare(b.family.s) * dir;
-      if (sortKey === 'size') return (a.family.members - b.family.members) * dir;
       const av = metricValue(a.stats, metric);
       const bv = metricValue(b.stats, metric);
       if (av === null && bv === null) return 0;
       if (av === null) return 1;
       if (bv === null) return -1;
-      return (av - bv) * dir;
+      return bv - av;
     });
     return scored;
-  }, [families, query, range, metric, sortKey, descending]);
+  }, [families, query, range, metric]);
 
   if (!families.length) {
     return (
@@ -140,10 +139,8 @@ export function FamilyBody({
         accessibilityState={{ selected: slot != null }}
         accessibilityHint="Tap to add to the compare set, press and hold to open"
       >
-        {/* Rank only under the metric sort, matching the card view: under
-            Size or A–Z the position is not a rank and must not read as one. */}
         <Text style={[type.micro, mono, s.rank, { color: colors.textFaint }]}>
-          {sortKey === 'metric' ? index + 1 : ''}
+          {index + 1}
         </Text>
         <View style={[s.dot, activeHue ? { backgroundColor: activeHue } : null]} />
         <View style={s.identity}>

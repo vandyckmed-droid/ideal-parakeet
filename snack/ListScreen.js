@@ -26,7 +26,7 @@ export function filterUniverse(universe, query, sector) {
  */
 export function StockListBody({
   universe, dates, win, metric, skipEnabled, sessionsStale,
-  query, sector, sortKey, descending,
+  query, sector,
   overlap, overlapCaption, emptyState, showGestureHint,
   isWatched, toggleWatch, onOpenDetail, onOrder,
 }) {
@@ -37,21 +37,19 @@ export function StockListBody({
     [win, skipEnabled, sessionsStale, dates.length]
   );
 
-  // Every scored name, keyed by symbol. Sorting by Overlap needs every row's
-  // own number to rank against, not just the ones that clear the flag
-  // threshold - while that sort is active this widens from "flagged only" to
-  // "every non-null score," and TickerRow shows the distinction with colour
-  // instead of only rendering a badge for some rows.
+  // Flagged names only: the badge warns about redundancy against the
+  // watchlist, and TickerRow renders it for exactly the rows in this map.
   const overlapScores = useMemo(() => {
     if (!overlap) return null;
     const m = new Map();
     for (const s of overlap.scores) {
-      if (s.score === null) continue;
-      if (sortKey === 'overlap' || overlap.flagged.has(s.symbol)) m.set(s.symbol, s.score);
+      if (s.score !== null && overlap.flagged.has(s.symbol)) m.set(s.symbol, s.score);
     }
     return m;
-  }, [overlap, sortKey]);
+  }, [overlap]);
 
+  // Always ranked by the selected metric, best first - the metric control
+  // above IS the sort.
   const rows = useMemo(() => {
     const built = filterUniverse(universe, query, sector).map((t) => ({
       ticker: t,
@@ -61,18 +59,7 @@ export function StockListBody({
       series: slice(t, range.startIndex, range.endIndex),
     }));
 
-    const dir = descending ? -1 : 1;
     built.sort((a, b) => {
-      if (sortKey === 'symbol') return a.ticker.s.localeCompare(b.ticker.s) * dir;
-      if (sortKey === 'cap') return (a.ticker.mc - b.ticker.mc) * dir;
-      if (sortKey === 'overlap') {
-        const av = overlapScores ? overlapScores.get(a.ticker.s) ?? null : null;
-        const bv = overlapScores ? overlapScores.get(b.ticker.s) ?? null : null;
-        if (av === null && bv === null) return 0;
-        if (av === null) return 1;
-        if (bv === null) return -1;
-        return (av - bv) * dir;
-      }
       const av = metricValue(a.stats, metric);
       const bv = metricValue(b.stats, metric);
       // Names with no history in the window sort to the bottom either way,
@@ -80,10 +67,10 @@ export function StockListBody({
       if (av === null && bv === null) return 0;
       if (av === null) return 1;
       if (bv === null) return -1;
-      return (av - bv) * dir;
+      return bv - av;
     });
     return built;
-  }, [universe, query, sector, sortKey, descending, metric, range, overlapScores]);
+  }, [universe, query, sector, metric, range]);
 
   // Publish the visible order so the detail view swipes through the same list.
   const symbols = useMemo(() => rows.map((r) => r.ticker.s), [rows]);
@@ -106,11 +93,11 @@ export function StockListBody({
         watched={isWatched(item.ticker.s)}
         onToggleWatch={toggleWatch}
         onOpenDetail={openDetail}
-        rank={sortKey === 'metric' || sortKey === 'overlap' ? index + 1 : undefined}
+        rank={index + 1}
         overlapScore={overlapScores?.get(item.ticker.s)}
       />
     ),
-    [metric, isWatched, toggleWatch, openDetail, sortKey, overlapScores]
+    [metric, isWatched, toggleWatch, openDetail, overlapScores]
   );
 
   return (
@@ -167,8 +154,6 @@ export function ListScreen({
 }) {
   const [query, setQuery] = useState('');
   const [sector, setSector] = useState(null);
-  const [sortKey, setSortKey] = useState('metric');
-  const [descending, setDescending] = useState(true);
   const [pickerOpen, setPickerOpen] = useState(false);
   const { colors } = useTheme();
 
@@ -177,36 +162,17 @@ export function ListScreen({
     [win, skipEnabled, sessionsStale, dates.length]
   );
 
+  // Sector filter only - the metric control above is the sort, same rule as
+  // the Market tab.
   const chipGroups = useMemo(() => {
-    const cycle = (key) => {
-      if (sortKey === key) setDescending((d) => !d);
-      else {
-        setSortKey(key);
-        // Overlap's useful direction is ascending, same as Symbol: lowest
-        // correlation to the rest of the list first, so the top of the list
-        // is whichever name would add the most diversification.
-        setDescending(key !== 'symbol' && key !== 'overlap');
-      }
-    };
-    const arrow = (active) => (active ? (descending ? ' ↓' : ' ↑') : '');
-    const metricLabel =
-      metric === 'return' ? 'Return' : metric === 'residual' ? 'Residual' : 'Ratio';
-    const sortChips = [
-      { key: 'metric', label: `${metricLabel}${arrow(sortKey === 'metric')}` },
-      { key: 'cap', label: `Size${arrow(sortKey === 'cap')}` },
-      { key: 'symbol', label: `A–Z${arrow(sortKey === 'symbol')}` },
-      ...(overlap && overlap.reason === 'ok'
-        ? [{ key: 'overlap', label: `Overlap${arrow(sortKey === 'overlap')}` }]
-        : []),
-    ].map((c) => ({ ...c, active: sortKey === c.key, onPress: () => cycle(c.key) }));
     const sectorChips = [null].concat(sectors).map((sec) => ({
       key: sec || 'all',
       label: sec || 'All sectors',
       active: sector === sec,
       onPress: () => setSector(sec),
     }));
-    return [sortChips, sectorChips];
-  }, [sortKey, descending, metric, overlap, sector, sectors]);
+    return [sectorChips];
+  }, [sector, sectors]);
 
   return (
     <View style={[s.root, { backgroundColor: colors.bg }]}>
@@ -236,8 +202,6 @@ export function ListScreen({
         sessionsStale={sessionsStale}
         query={query}
         sector={sector}
-        sortKey={sortKey}
-        descending={descending}
         overlap={overlap}
         emptyState={emptyState}
         isWatched={isWatched}

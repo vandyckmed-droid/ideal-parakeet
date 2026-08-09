@@ -203,6 +203,7 @@ export function ListHeader({
         </Text>
       )}
 
+      {chipGroups.some((g) => g.length > 0) && (
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -238,6 +239,7 @@ export function ListHeader({
           </React.Fragment>
         ))}
       </ScrollView>
+      )}
     </View>
   );
 }
