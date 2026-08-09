@@ -7,6 +7,7 @@ import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { ROW_HEIGHT, TickerRow } from './ui';
 import { ListHeader } from './chrome';
 import { WindowPicker } from './WindowPicker';
+import { SectorPicker } from './SectorPicker';
 import { useTheme, space, type } from './theme';
 import { computeWindowStats, metricValue, slice, withSkip } from './stats';
 
@@ -155,24 +156,13 @@ export function ListScreen({
   const [query, setQuery] = useState('');
   const [sector, setSector] = useState(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [sectorPickerOpen, setSectorPickerOpen] = useState(false);
   const { colors } = useTheme();
 
   const range = useMemo(
     () => withSkip(win, skipEnabled, sessionsStale, dates.length - 1),
     [win, skipEnabled, sessionsStale, dates.length]
   );
-
-  // Sector filter only - the metric control above is the sort, same rule as
-  // the Market tab.
-  const chipGroups = useMemo(() => {
-    const sectorChips = [null].concat(sectors).map((sec) => ({
-      key: sec || 'all',
-      label: sec || 'All sectors',
-      active: sector === sec,
-      onPress: () => setSector(sec),
-    }));
-    return [sectorChips];
-  }, [sector, sectors]);
 
   return (
     <View style={[s.root, { backgroundColor: colors.bg }]}>
@@ -190,7 +180,9 @@ export function ListScreen({
         range={range}
         sessionsStale={sessionsStale}
         dates={dates}
-        chipGroups={chipGroups}
+        sector={sector}
+        sectors={sectors}
+        onOpenSectorPicker={() => setSectorPickerOpen(true)}
       />
 
       <StockListBody
@@ -218,6 +210,14 @@ export function ListScreen({
         dates={dates}
         onClose={() => setPickerOpen(false)}
         onApply={setCustomWindow}
+      />
+
+      <SectorPicker
+        visible={sectorPickerOpen}
+        sectors={sectors}
+        sector={sector}
+        onClose={() => setSectorPickerOpen(false)}
+        onSelect={setSector}
       />
     </View>
   );
