@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/OManScXxZLYp53K9po5lF), so it can be opened in
+Snack](https://snack.expo.dev/xH2s8Nc4gwWHFG6ITQ0q8), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -564,6 +564,14 @@ toggle applies too - the ranks are on whichever metric is selected.
 tapping it again flips direction. There is nothing else in this view to sort
 by, so a separate row of sort chips would have been a second way to say the
 same thing. It opens on 12M, the horizon where a rank is least noisy.
+
+**Each row also states its standings** — "Family 3/9 · Sector 12/87", the
+name's rank inside its own peer groups at the sorted horizon. These are
+derived from the market-wide ranks rather than recomputed (a name's position
+among its sector peers ordered by market rank *is* its within-sector rank on
+the same metric), so the note and the cells can never disagree, and the
+market-wide numbers in the cells stay market-wide. Names outside any family
+show the sector half alone.
 
 ### The heatmap
 

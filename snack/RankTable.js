@@ -29,7 +29,7 @@ import { useTheme, mono, space, type } from './theme';
 export function RankTableBody({
   universe, dates, metric, skipEnabled, sessionsStale,
   query, sector, sortColumn, bestFirst, onCycleSort,
-  isWatched, toggleWatch, onOpenDetail,
+  famOf, isWatched, toggleWatch, onOpenDetail,
 }) {
   const { colors } = useTheme();
 
@@ -40,6 +40,50 @@ export function RankTableBody({
     () => buildRankTable(universe, dates, metric, skipEnabled, sessionsStale),
     [universe, dates, metric, skipEnabled, sessionsStale]
   );
+
+  // The same name's standing inside its own peer groups, at the sorted
+  // horizon. Derived from the market-wide ranks rather than recomputed: a
+  // name's position among its sector (or family) peers ordered by market
+  // rank IS its rank within that group on the same metric, so the note and
+  // the cells can never disagree. Market-wide ranks stay market-wide - this
+  // adds context to a row, it does not renumber the table.
+  const scopeNotes = useMemo(() => {
+    const bySector = new Map();
+    const byFamily = new Map();
+    for (const t of universe) {
+      const rank = table.ranks.get(t.s)[sortColumn];
+      if (rank === null) continue;
+      if (t.se) {
+        if (!bySector.has(t.se)) bySector.set(t.se, []);
+        bySector.get(t.se).push({ symbol: t.s, rank });
+      }
+      const fam = famOf ? famOf.get(t.s) : null;
+      if (fam) {
+        if (!byFamily.has(fam)) byFamily.set(fam, []);
+        byFamily.get(fam).push({ symbol: t.s, rank });
+      }
+    }
+    const position = (groups) => {
+      const out = new Map();
+      for (const members of groups.values()) {
+        members.sort((a, b) => a.rank - b.rank);
+        members.forEach((m, i) => out.set(m.symbol, `${i + 1}/${members.length}`));
+      }
+      return out;
+    };
+    const sectorPos = position(bySector);
+    const familyPos = position(byFamily);
+    const notes = new Map();
+    for (const t of universe) {
+      const parts = [];
+      const f = familyPos.get(t.s);
+      if (f) parts.push(`Family ${f}`);
+      const s = sectorPos.get(t.s);
+      if (s) parts.push(`Sector ${s}`);
+      if (parts.length) notes.set(t.s, parts.join(' · '));
+    }
+    return notes;
+  }, [universe, table, sortColumn, famOf]);
 
   const rows = useMemo(() => {
     const built = filterUniverse(universe, query, sector).map((t) => ({
@@ -67,12 +111,13 @@ export function RankTableBody({
         ticker={item.ticker}
         ranks={item.ranks}
         counts={table.counts}
+        scopeNote={scopeNotes.get(item.ticker.s)}
         watched={isWatched(item.ticker.s)}
         onToggleWatch={toggleWatch}
         onOpenDetail={onOpenDetail}
       />
     ),
-    [table.counts, isWatched, toggleWatch, onOpenDetail]
+    [table.counts, scopeNotes, isWatched, toggleWatch, onOpenDetail]
   );
 
   return (
@@ -123,6 +168,7 @@ export function RankTableBody({
           rows.length > 0 ? (
             <Text style={[type.caption, s.hint, { color: colors.textFaint }]}>
               1 is the best rank of {table.counts[sortColumn]} · tap a column to sort by it
+              {'\n'}family and sector standings follow the sorted column
             </Text>
           ) : null
         }

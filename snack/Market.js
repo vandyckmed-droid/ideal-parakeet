@@ -18,7 +18,7 @@ import { StyleSheet, View } from 'react-native';
 import { ListHeader } from './chrome';
 import { StockListBody, filterUniverse } from './ListScreen';
 import { RankTableBody } from './RankTable';
-import { FamilyBody, alignFamilies, filterFamilies } from './FamilyScreen';
+import { FamilyBody, alignFamilies, familyBySymbol, filterFamilies } from './FamilyScreen';
 import { WindowPicker } from './WindowPicker';
 import { SegmentedControl } from './ui';
 import { useTheme } from './theme';
@@ -54,6 +54,7 @@ export function MarketScreen({
   );
 
   const families = useMemo(() => alignFamilies(research, dates), [research, dates]);
+  const famOf = useMemo(() => familyBySymbol(families), [families]);
 
   // The table's sorted column IS the shared window, resolved to the nearest
   // horizon; tapping a column that is already leading flips the direction,
@@ -176,6 +177,7 @@ export function MarketScreen({
           sortColumn={sortColumn}
           bestFirst={bestFirst}
           onCycleSort={cycleColumn}
+          famOf={famOf}
           isWatched={isWatched}
           toggleWatch={toggleWatch}
           onOpenDetail={onOpenDetail}

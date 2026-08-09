@@ -705,7 +705,7 @@ const row = StyleSheet.create({
 
 // --- rank table row ----------------------------------------------------------
 
-export const RANK_ROW_HEIGHT = 44;
+export const RANK_ROW_HEIGHT = 56;
 /** Width of one rank cell. Five of these plus the symbol column fit a phone. */
 export const RANK_CELL_WIDTH = 46;
 
@@ -750,7 +750,10 @@ function RankCell({ rank, count }) {
  * the same touch.
  */
 export const RankRow = React.memo(function RankRow({
-  ticker, ranks, counts, watched, onToggleWatch, onOpenDetail,
+  // scopeNote: "Family 3/9 · Sector 12/78" - the name's standing inside its
+  // own peer groups at the sorted horizon, derived by the table from the
+  // same ranks the cells show so the two can never disagree.
+  ticker, ranks, counts, scopeNote, watched, onToggleWatch, onOpenDetail,
 }) {
   const colors = useColors();
 
@@ -786,6 +789,11 @@ export const RankRow = React.memo(function RankRow({
         >
           {ticker.s}
         </Text>
+        {scopeNote ? (
+          <Text style={[type.micro, mono, { color: colors.textFaint }]} numberOfLines={1}>
+            {scopeNote}
+          </Text>
+        ) : null}
       </View>
       {ranks.map((r, i) => (
         <RankCell key={i} rank={r} count={counts[i]} />
