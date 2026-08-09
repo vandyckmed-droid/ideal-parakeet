@@ -1,15 +1,15 @@
-// Mirrors src/screens/FamilyDetail.tsx and app/family/[key].tsx - if these
-// ever disagree, the .tsx files are the ones that are wrong.
+// Mirrors src/screens/GroupDetail.tsx and app/group/[key].tsx - if these ever
+// disagree, the .tsx files are the ones that are wrong.
 //
-// One family, laid out exactly like one ticker - deliberately. The headline
-// is the index's dollar value with the window return under it, the chart
-// scrubs with the figures following the finger, and every window's numbers
-// sit in the same table in the same order.
+// One correlation group, laid out exactly like one ticker - deliberately. The
+// headline is the index level with the window return under it, the chart
+// scrubs with the figures following the finger, and every window's numbers sit
+// in the same table in the same order.
 //
 // Two things a ticker page cannot have: companions (the compare set rides
-// along as overlays, indexed to 100 at the window start) and holdings (a
-// family is a small ETF, so it lists its current constituents, ranked over
-// the same window the page is set to, with the app's one gesture pair).
+// along as overlays, indexed to 100 at the window start) and members ranked by
+// FIT rather than return - the group is a correlation object, so the ordering
+// that explains it is how tightly each name moves with the rest.
 
 import React, { useCallback, useMemo, useState } from 'react';
 import {
@@ -26,7 +26,8 @@ import {
 
 function Page({
   family, byKey, bySymbol, dates, initialPreset, width, skipEnabled, sessionsStale,
-  familyCompare, familySlots = {}, isWatched, toggleWatch, onOpenTicker, onScrubbingChange,
+  familyCompare, familySlots = {}, meta, bounds, isWatched, toggleWatch, onOpenTicker,
+  onScrubbingChange,
 }) {
   const { colors } = useTheme();
   const [preset, setPreset] = useState(initialPreset === 'CUSTOM' ? '1Y' : initialPreset);
@@ -61,7 +62,7 @@ function Page({
   const companions = useMemo(
     () =>
       familyCompare
-        .filter((k) => k !== family.s)
+        .filter((k) => k !== family.medoid)
         .map((k) => byKey.get(k))
         .filter(Boolean),
     [familyCompare, family.s, byKey]
@@ -86,9 +87,9 @@ function Page({
         const vals = slice(f, range.startIndex, range.endIndex);
         if (vals.length < 2) return null;
         const base = vals[0];
-        const slot = familySlots[f.s];
+        const slot = familySlots[f.medoid];
         return {
-          key: f.s,
+          key: f.medoid,
           color: slot != null ? colors.chart[slot % colors.chart.length] : colors.text,
           values: vals.map((v) => (v / base) * 100),
         };
@@ -135,34 +136,34 @@ function Page({
     [family, dates, skipEnabled, sessionsStale, clamp]
   );
 
-  // Holdings ranked by the same window the page is set to, best first.
-  const holdings = useMemo(() => {
-    const rows = (family.holdings || [])
-      .map((sym) => bySymbol.get(sym))
-      .filter(Boolean)
-      .map((t) => ({
-        ticker: t,
-        stats: computeWindowStats(t, range.startIndex, range.endIndex),
-        series: slice(t, range.startIndex, range.endIndex),
-      }));
-    rows.sort((a, b) => {
-      const av = a.stats ? a.stats.totalReturn : null;
-      const bv = b.stats ? b.stats.totalReturn : null;
-      if (av === null && bv === null) return 0;
-      if (av === null) return 1;
-      if (bv === null) return -1;
-      return bv - av;
-    });
-    return rows;
-  }, [family.holdings, bySymbol, range]);
+  // Members in the order the algorithm ranks them: tightest fit with the rest
+  // of the group first. The window return rides along because it is what the
+  // rest of the app is about, but it is not what orders this list.
+  const members = useMemo(
+    () =>
+      family.members.map((sym, i) => {
+        const t = bySymbol.get(sym);
+        return {
+          symbol: sym,
+          ticker: t,
+          fit: family.fit[i],
+          weak: family.weak[i],
+          prefers: family.prefers[i],
+          stats: t ? computeWindowStats(t, range.startIndex, range.endIndex) : null,
+          series: t ? slice(t, range.startIndex, range.endIndex) : [],
+        };
+      }),
+    [family, bySymbol, range]
+  );
+  const weakCount = family.weak.filter(Boolean).length;
 
   return (
     <ScrollView style={{ width }} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
       <View style={s.headline}>
         <Text style={[type.caption, { color: colors.textMuted }]} numberOfLines={1}>
-          Equal-weight index · {family.members} members
+          Equal-weight index · {family.members.length} members · ρ {family.cohesion.toFixed(2)}
         </Text>
-        <Text style={[type.hero, mono, { color: colors.text }]}>${formatPrice(shownValue)}</Text>
+        <Text style={[type.hero, mono, { color: colors.text }]}>{formatPrice(shownValue)}</Text>
         <View style={s.changeLine}>
           <Text style={[type.bodyStrong, mono, { color: tone }]}>{formatPercent(shownReturn)}</Text>
           <Text style={[type.caption, { color: colors.textMuted }]}>
@@ -188,8 +189,7 @@ function Page({
             ))}
           </View>
           <Text style={[type.micro, { color: colors.textFaint }]}>
-            Indexed to 100 at the window start · tap rows on the Families list to change
-            the set
+            Indexed to 100 at the window start · tap rows on the Groups list to change the set
           </Text>
         </View>
       ) : (
@@ -256,81 +256,92 @@ function Page({
         </Text>
       </View>
 
-      {holdings.length > 0 && (
-        <View style={s.section}>
-          <Text style={[type.micro, { color: colors.textFaint, marginBottom: space(2) }]}>
-            HOLDINGS · RANKED OVER {preset === '2Y' ? 'MAX' : preset}
-          </Text>
-          <View style={[s.table, { borderColor: colors.hairline }]}>
-            {holdings.map((h, i) => {
-              const rt = h.stats ? h.stats.totalReturn : null;
-              const rowTone = rt === null ? colors.flat : rt >= 0 ? colors.up : colors.down;
-              const watched = isWatched(h.ticker.s);
-              return (
-                <Pressable
-                  key={h.ticker.s}
-                  onPress={() => {
-                    const adding = !watched;
-                    haptic(() =>
-                      Haptics.impactAsync(
-                        adding ? Haptics.ImpactFeedbackStyle.Light : Haptics.ImpactFeedbackStyle.Medium
-                      )
-                    );
-                    toggleWatch(h.ticker.s);
-                  }}
-                  onLongPress={() => {
-                    haptic(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success));
-                    onOpenTicker(h.ticker.s);
-                  }}
-                  delayLongPress={280}
-                  style={({ pressed }) => [
-                    s.holdingRow,
-                    {
-                      borderBottomColor: colors.hairline,
-                      backgroundColor: pressed ? colors.surface : 'transparent',
-                    },
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityHint="Tap to watchlist, press and hold to open"
-                >
-                  <Text style={[type.micro, mono, s.holdingRank, { color: colors.textFaint }]}>
-                    {i + 1}
-                  </Text>
-                  <View style={s.holdingIdentity}>
-                    <View style={s.holdingSymbolRow}>
-                      <Text style={[type.bodyStrong, { color: watched ? colors.accent : colors.text }]}>
-                        {h.ticker.s}
-                      </Text>
-                      {watched && <View style={[s.watchDot, { backgroundColor: colors.accent }]} />}
-                    </View>
-                    <Text style={[type.micro, { color: colors.textMuted }]} numberOfLines={1}>
-                      {h.ticker.n}
+      <View style={s.section}>
+        <Text style={[type.micro, { color: colors.textFaint, marginBottom: space(2) }]}>
+          MEMBERS · BEST FIT FIRST
+        </Text>
+        <View style={[s.table, { borderColor: colors.hairline }]}>
+          {members.map((m, i) => {
+            const rt = m.stats ? m.stats.totalReturn : null;
+            const rowTone = rt === null ? colors.flat : rt >= 0 ? colors.up : colors.down;
+            const watched = isWatched(m.symbol);
+            return (
+              <Pressable
+                key={m.symbol}
+                onPress={() => {
+                  const adding = !watched;
+                  haptic(() =>
+                    Haptics.impactAsync(
+                      adding ? Haptics.ImpactFeedbackStyle.Light : Haptics.ImpactFeedbackStyle.Medium
+                    )
+                  );
+                  toggleWatch(m.symbol);
+                }}
+                onLongPress={() => {
+                  haptic(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success));
+                  onOpenTicker(m.symbol);
+                }}
+                delayLongPress={280}
+                style={({ pressed }) => [
+                  s.holdingRow,
+                  {
+                    borderBottomColor: colors.hairline,
+                    backgroundColor: pressed ? colors.surface : 'transparent',
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityHint="Tap to watchlist, press and hold to open"
+              >
+                <Text style={[type.micro, mono, s.holdingRank, { color: colors.textFaint }]}>
+                  {i + 1}
+                </Text>
+                <View style={s.holdingIdentity}>
+                  <View style={s.holdingSymbolRow}>
+                    <Text style={[type.bodyStrong, { color: watched ? colors.accent : colors.text }]}>
+                      {m.symbol}
                     </Text>
+                    {m.symbol === family.medoid && (
+                      <Text style={[type.micro, { color: colors.accent }]}>medoid</Text>
+                    )}
+                    {watched && <View style={[s.watchDot, { backgroundColor: colors.accent }]} />}
                   </View>
-                  <Sparkline values={h.series} color={rowTone} />
-                  <Text style={[type.bodyStrong, mono, s.holdingValue, { color: rowTone }]}>
-                    {formatPercent(rt, 1)}
+                  <Text style={[type.micro, { color: colors.textMuted }]} numberOfLines={1}>
+                    ρ {m.fit.toFixed(2)}
+                    {m.weak && m.prefers ? ` · closer to ${m.prefers}` : ''}
+                    {m.ticker ? ` · ${m.ticker.n}` : ''}
                   </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-          <Text style={[type.caption, { color: colors.textFaint, marginTop: space(2) }]}>
-            Current index constituents in this family. Tap a row to watchlist it · press
-            and hold to open it.
-          </Text>
+                </View>
+                <Sparkline values={m.series} color={rowTone} />
+                <Text style={[type.bodyStrong, mono, s.holdingValue, { color: rowTone }]}>
+                  {formatPercent(rt, 1)}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
-      )}
+        <Text style={[type.caption, { color: colors.textFaint, marginTop: space(2) }]}>
+          ρ is the member’s average correlation with the rest of the group. Ordered by
+          that, not by return.
+          {weakCount > 0
+            ? ` ${weakCount} ${weakCount === 1 ? 'name sits' : 'names sit'} closer to another` +
+              ' group than to this one — the price of holding every group to the same size.'
+            : ''}{' '}
+          Tap a row to watchlist it · press and hold to open it.
+        </Text>
+      </View>
 
       <View style={s.section}>
         <Text style={[type.micro, { color: colors.textFaint, marginBottom: space(2) }]}>ABOUT</Text>
         <View style={[s.facts, { backgroundColor: colors.surface }]}>
           {[
-            ['Members', String(family.members)],
-            ['Weighting', 'Equal, rebalanced monthly'],
-            ['Membership', 'Point-in-time S&P 500 constituents'],
+            ['Representative', `${family.medoid} (closest to all members)`],
+            ['Members', `${family.members.length} of ${bounds.lower}–${bounds.upper} allowed`],
+            ['Mean correlation', family.cohesion.toFixed(3)],
+            ['Mostly', `${family.dominantSector || 'mixed'} · ${Math.round(family.dominantShare * 100)}%`],
+            ['Weighting', 'Equal, rebalanced daily'],
+            ['Correlation window', `${meta.sessions} sessions to ${meta.to}`],
+            ['Shrinkage', `${meta.shrinkage.toFixed(3)} toward mean ρ ${meta.averageCorrelation.toFixed(2)}`],
             ['Series since', formatDate(dates[family.o])],
-            ['Started at', '$10,000'],
           ].map(([label, value]) => (
             <View key={label} style={s.factRow}>
               <Text style={[type.caption, { color: colors.textMuted }]}>{label}</Text>
@@ -345,17 +356,18 @@ function Page({
   );
 }
 
-export function FamilyDetailScreen({
+export function GroupDetailScreen({
   families, bySymbol, dates, initialKey, order, preset, skipEnabled, sessionsStale,
-  familyCompare, familySlots, toggleFamilyCompare, isWatched, toggleWatch, onOpenTicker, onBack,
+  familyCompare, familySlots, meta, bounds, toggleFamilyCompare, isWatched, toggleWatch,
+  onOpenTicker, onBack,
 }) {
   const colors = useColors();
   const { width } = useWindowDimensions();
 
-  const byKey = useMemo(() => new Map(families.map((f) => [f.s, f])), [families]);
+  const byKey = useMemo(() => new Map(families.map((f) => [f.medoid, f])), [families]);
   const keys = useMemo(() => {
     const usable = (order || []).filter((k) => byKey.has(k));
-    return usable.length ? usable : families.map((f) => f.s);
+    return usable.length ? usable : families.map((f) => f.medoid);
   }, [order, byKey, families]);
 
   const initialIndex = Math.max(0, keys.indexOf(initialKey));
@@ -363,7 +375,7 @@ export function FamilyDetailScreen({
   const [scrubbing, setScrubbing] = useState(false);
 
   const current = byKey.get(keys[index]);
-  const compared = current ? familyCompare.includes(current.s) : false;
+  const compared = current ? familyCompare.includes(current.medoid) : false;
 
   const onScroll = useCallback(
     (e) => {
@@ -387,7 +399,7 @@ export function FamilyDetailScreen({
         </Pressable>
         <View style={s.barCentre}>
           <Text style={[type.heading, { color: colors.text }]} numberOfLines={1}>
-            {current.s}
+            {current.medoid} group
           </Text>
           <Text style={[type.micro, { color: colors.textFaint }]}>
             {index + 1} of {keys.length} · swipe to browse
@@ -401,7 +413,7 @@ export function FamilyDetailScreen({
                 adding ? Haptics.ImpactFeedbackStyle.Light : Haptics.ImpactFeedbackStyle.Medium
               )
             );
-            toggleFamilyCompare(current.s);
+            toggleFamilyCompare(current.medoid);
           }}
           hitSlop={12}
           style={[s.circle, { backgroundColor: compared ? colors.accent : colors.surface }]}
@@ -427,6 +439,8 @@ export function FamilyDetailScreen({
             sessionsStale={sessionsStale}
             familyCompare={familyCompare}
             familySlots={familySlots}
+            meta={meta}
+            bounds={bounds}
             isWatched={isWatched}
             toggleWatch={toggleWatch}
             onOpenTicker={onOpenTicker}

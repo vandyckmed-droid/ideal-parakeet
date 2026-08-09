@@ -18,9 +18,10 @@ import { StyleSheet, View } from 'react-native';
 import { ListHeader } from './chrome';
 import { StockListBody, filterUniverse } from './ListScreen';
 import { RankTableBody } from './RankTable';
-import { FamilyBody, alignFamilies, familyBySymbol, filterFamilies } from './FamilyScreen';
+import { GroupBody, filterGroups } from './GroupScreen';
 import { WindowPicker } from './WindowPicker';
-import { SectorPicker } from './SectorPicker';
+import { OptionSheet } from './OptionSheet';
+import { K_CHOICES, groupIndexFor, groupsForK, hasGrouping, ungroupedCount } from './groups';
 import { SegmentedControl } from './ui';
 import { useTheme } from './theme';
 import { HORIZONS, horizonIndexForWindow } from './ranks';
@@ -29,7 +30,7 @@ import { formatDateShort, windowForPreset, withSkip } from './stats';
 const VIEW_SEGMENTS = [
   { key: 'card', label: 'Card' },
   { key: 'table', label: 'Table' },
-  { key: 'families', label: 'Families' },
+  { key: 'groups', label: 'Groups' },
 ];
 
 export function MarketScreen({
@@ -37,6 +38,7 @@ export function MarketScreen({
   metric, setMetric, skipEnabled, setSkipEnabled, sessionsStale,
   isWatched, toggleWatch, onOpenDetail, onOrder, overlap, overlapCaption, tab,
   familyCompare, familySlots, toggleFamilyCompare, onOpenFamily,
+  groupCount, setGroupCount,
 }) {
   const { colors } = useTheme();
   const { dates, tickers, sectors } = data;
@@ -45,7 +47,7 @@ export function MarketScreen({
   const [query, setQuery] = useState('');
   const [sector, setSector] = useState(null);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [sectorPickerOpen, setSectorPickerOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const [bestFirst, setBestFirst] = useState(true);
 
@@ -55,8 +57,11 @@ export function MarketScreen({
     [win, skipEnabled, sessionsStale, lastIndex]
   );
 
-  const families = useMemo(() => alignFamilies(research, dates), [research, dates]);
-  const famOf = useMemo(() => familyBySymbol(families), [families]);
+  const groups = useMemo(
+    () => (view === 'groups' ? groupsForK(groupCount).groups : []),
+    [view, groupCount]
+  );
+  const groupIndex = useMemo(() => groupIndexFor(groupCount), [groupCount]);
 
   // The table's sorted column IS the shared window, resolved to the nearest
   // horizon; tapping a column that is already leading flips the direction,
@@ -78,10 +83,7 @@ export function MarketScreen({
     () => filterUniverse(tickers, query, sector).length,
     [tickers, query, sector]
   );
-  const familyCount = useMemo(
-    () => filterFamilies(families, query).length,
-    [families, query]
-  );
+  const groupCountShown = useMemo(() => filterGroups(groups, query).length, [groups, query]);
 
   const caption = useMemo(() => {
     const through = `through ${formatDateShort(dates[range.endIndex])}`;
@@ -97,16 +99,17 @@ export function MarketScreen({
           : `${stockCount} of ${tickers.length} · ranks stay market-wide`;
       return `${names}${skipEnabled ? ` · skipping ${skips.join('/')}d` : ''}`;
     }
-    if (view === 'families') {
-      if (!families.length) return 'family series not published yet';
-      return `${familyCount} ${familyCount === 1 ? 'family' : 'families'} · ${through}${skipNote}`;
+    if (view === 'groups') {
+      if (!hasGrouping()) return 'correlation matrix not published yet';
+      const ungrouped = ungroupedCount() ? ` · ${ungroupedCount()} ungrouped` : '';
+      return `${groupCountShown} of ${groupCount} groups${ungrouped} · ${through}${skipNote}`;
     }
     return `${stockCount} ${stockCount === 1 ? 'name' : 'names'} · ${through}${skipNote}`;
-  }, [view, stockCount, familyCount, families.length, tickers.length, dates, range, skipEnabled, sessionsStale, lastIndex]);
+  }, [view, stockCount, groupCountShown, groupCount, tickers.length, dates, range, skipEnabled, sessionsStale, lastIndex]);
 
-  // The family view has no sectors to filter by, so it gets no sector row at
-  // all rather than a dropdown that would always say "All sectors."
-  const sectorOptions = view === 'families' ? [] : sectors;
+  // Groups are not a sector cut, so that view swaps the sector dropdown for
+  // the control that actually governs it: how many groups to make.
+  const sectorOptions = view === 'groups' ? [] : sectors;
 
   const viewSwitch = (
     <SegmentedControl segments={VIEW_SEGMENTS} value={view} onChange={setView} compact />
@@ -119,7 +122,9 @@ export function MarketScreen({
         caption={caption}
         query={query}
         onQuery={setQuery}
-        searchPlaceholder={view === 'families' ? 'Search families' : 'Search symbol or company'}
+        searchPlaceholder={
+          view === 'groups' ? 'Search a group or its members' : 'Search symbol or company'
+        }
         accessory={viewSwitch}
         win={win}
         onPreset={setPreset}
@@ -131,9 +136,9 @@ export function MarketScreen({
         range={range}
         sessionsStale={sessionsStale}
         dates={dates}
-        sector={sector}
-        sectors={sectorOptions}
-        onOpenSectorPicker={() => setSectorPickerOpen(true)}
+        sector={view === 'groups' ? `${groupCount} groups` : sector}
+        sectors={view === 'groups' ? ['groups'] : sectorOptions}
+        onOpenSectorPicker={() => setSheetOpen(true)}
       />
 
       {view === 'card' && (
@@ -167,25 +172,25 @@ export function MarketScreen({
           sortColumn={sortColumn}
           bestFirst={bestFirst}
           onCycleSort={cycleColumn}
-          famOf={famOf}
+          famOf={groupIndex}
           isWatched={isWatched}
           toggleWatch={toggleWatch}
           onOpenDetail={onOpenDetail}
         />
       )}
-      {view === 'families' && (
-        <FamilyBody
-          families={families}
+      {view === 'groups' && (
+        <GroupBody
           dates={dates}
           win={win}
           metric={metric}
           skipEnabled={skipEnabled}
           sessionsStale={sessionsStale}
           query={query}
+          groupCount={groupCount}
           familyCompare={familyCompare}
           familySlots={familySlots}
           toggleFamilyCompare={toggleFamilyCompare}
-          onOpenFamily={onOpenFamily}
+          onOpenGroup={onOpenFamily}
         />
       )}
 
@@ -199,13 +204,34 @@ export function MarketScreen({
         onApply={setCustomWindow}
       />
 
-      <SectorPicker
-        visible={sectorPickerOpen}
-        sectors={sectorOptions}
-        sector={sector}
-        onClose={() => setSectorPickerOpen(false)}
-        onSelect={setSector}
-      />
+      {view === 'groups' ? (
+        <OptionSheet
+          visible={sheetOpen}
+          title="Groups"
+          footnote={`Every group holds within ±20% of ${Math.round(
+            groupsForK(groupCount).target
+          )} names. Fewer groups means broader themes; more means tighter ones.`}
+          options={K_CHOICES.map((k) => ({
+            key: String(k),
+            label: `${k} groups`,
+            caption: `about ${Math.round((tickers.length - ungroupedCount()) / k)} names each`,
+          }))}
+          selected={String(groupCount)}
+          onClose={() => setSheetOpen(false)}
+          onSelect={(k) => setGroupCount(Number(k))}
+        />
+      ) : (
+        <OptionSheet
+          visible={sheetOpen}
+          title="Sector"
+          options={[{ key: '', label: 'All sectors' }].concat(
+            sectors.map((x) => ({ key: x, label: x }))
+          )}
+          selected={sector || ''}
+          onClose={() => setSheetOpen(false)}
+          onSelect={(x) => setSector(x === '' ? null : x)}
+        />
+      )}
     </View>
   );
 }

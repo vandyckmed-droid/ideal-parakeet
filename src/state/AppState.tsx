@@ -8,6 +8,7 @@ import React, {
   useState,
 } from 'react';
 
+import { DEFAULT_K, K_CHOICES } from '../data/groups';
 import { MetricKey } from '../data/stats';
 import {
   DateWindow,
@@ -37,10 +38,18 @@ type AppStateValue = {
   clearWatchlist: () => void;
 
   /**
-   * The families picked for comparison - the family analogue of the
-   * watchlist. Tap a family row to collect it here; any family's detail
-   * chart overlays the set. Session-local on purpose: a comparison is a
-   * question being asked now, not a portfolio being kept.
+   * How many correlation groups to cut the universe into. Persisted: it
+   * changes what the whole Groups view means, which makes it a setting rather
+   * than a glance.
+   */
+  groupCount: number;
+  setGroupCount: (k: number) => void;
+
+  /**
+   * The groups picked for comparison - the group analogue of the watchlist.
+   * Tap a group row to collect it here; any group's detail chart overlays the
+   * set. Session-local on purpose: a comparison is a question being asked
+   * now, not a portfolio being kept.
    */
   familyCompare: string[];
   /**
@@ -56,11 +65,13 @@ type AppStateValue = {
 const AppStateContext = createContext<AppStateValue | null>(null);
 const WATCHLIST_KEY = 'parakeet.watchlist';
 const SKIP_KEY = 'parakeet.skip';
+const GROUP_COUNT_KEY = 'parakeet.groupCount';
 
 export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const [window, setWindow] = useState<DateWindow>(() => windowForPreset('1Y'));
   const [metric, setMetric] = useState<MetricKey>('return');
   const [skipEnabled, setSkipEnabledState] = useState(false);
+  const [groupCount, setGroupCountState] = useState(DEFAULT_K);
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
@@ -84,11 +95,25 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     AsyncStorage.getItem(SKIP_KEY)
       .then((saved) => setSkipEnabledState(saved === '1'))
       .catch(() => {});
+
+    AsyncStorage.getItem(GROUP_COUNT_KEY)
+      .then((saved) => {
+        const k = Number(saved);
+        // Only accept a K the app still offers, so a stale value from an older
+        // build cannot leave the view on a setting the picker cannot show.
+        if (K_CHOICES.includes(k)) setGroupCountState(k);
+      })
+      .catch(() => {});
   }, []);
 
   const setSkipEnabled = useCallback((v: boolean) => {
     setSkipEnabledState(v);
     AsyncStorage.setItem(SKIP_KEY, v ? '1' : '0').catch(() => {});
+  }, []);
+
+  const setGroupCount = useCallback((k: number) => {
+    setGroupCountState(k);
+    AsyncStorage.setItem(GROUP_COUNT_KEY, String(k)).catch(() => {});
   }, []);
 
   // Guarded on `hydrated` so the initial empty state cannot race ahead of the
@@ -176,6 +201,8 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       isWatched,
       toggleWatch,
       clearWatchlist,
+      groupCount,
+      setGroupCount,
       familyCompare,
       familySlots,
       toggleFamilyCompare,
@@ -183,7 +210,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     [
       window, setPreset, setCustomWindow, metric, skipEnabled, setSkipEnabled,
       sessionsStale, watchlist, isWatched, toggleWatch, clearWatchlist,
-      familyCompare, familySlots, toggleFamilyCompare,
+      groupCount, setGroupCount, familyCompare, familySlots, toggleFamilyCompare,
     ]
   );
 

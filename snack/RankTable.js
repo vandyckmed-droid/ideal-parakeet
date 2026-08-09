@@ -41,12 +41,12 @@ export function RankTableBody({
     [universe, dates, metric, skipEnabled, sessionsStale]
   );
 
-  // The same name's standing inside its own peer groups, at the sorted
-  // horizon. Derived from the market-wide ranks rather than recomputed: a
-  // name's position among its sector (or family) peers ordered by market
-  // rank IS its rank within that group on the same metric, so the note and
-  // the cells can never disagree. Market-wide ranks stay market-wide - this
-  // adds context to a row, it does not renumber the table.
+  // The same name's standing inside its own peer sets, at the sorted horizon.
+  // Derived from the market-wide ranks rather than recomputed: a name's
+  // position among its sector (or correlation-group) peers ordered by market
+  // rank IS its rank within that set on the same metric, so the note and the
+  // cells can never disagree. Market-wide ranks stay market-wide - this adds
+  // context to a row, it does not renumber the table.
   const scopeNotes = useMemo(() => {
     const bySector = new Map();
     const byFamily = new Map();
@@ -77,7 +77,7 @@ export function RankTableBody({
     for (const t of universe) {
       const parts = [];
       const f = familyPos.get(t.s);
-      if (f) parts.push(`Family ${f}`);
+      if (f) parts.push(`Group ${f}`);
       const s = sectorPos.get(t.s);
       if (s) parts.push(`Sector ${s}`);
       if (parts.length) notes.set(t.s, parts.join(' · '));
@@ -168,7 +168,7 @@ export function RankTableBody({
           rows.length > 0 ? (
             <Text style={[type.caption, s.hint, { color: colors.textFaint }]}>
               1 is the best rank of {table.counts[sortColumn]} · tap a column to sort by it
-              {'\n'}family and sector standings follow the sorted column
+              {'\n'}group and sector standings follow the sorted column
             </Text>
           ) : null
         }

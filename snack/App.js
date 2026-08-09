@@ -20,8 +20,11 @@ import { ListScreen } from './ListScreen';
 import { MarketScreen } from './Market';
 import { ResearchScreen } from './Research';
 import { DetailScreen } from './DetailScreen';
-import { FamilyDetailScreen } from './FamilyDetail';
-import { alignFamilies, familyBySymbol } from './FamilyScreen';
+import { GroupDetailScreen } from './GroupDetail';
+import { setGrouping } from './grouping';
+import {
+  DEFAULT_K, K_CHOICES, groupIndexFor, groupingMeta, groupsForK, setUniverse,
+} from './groups';
 
 // Main first; the working branch second so a payload shape that has not
 // merged yet still reaches the phone. Once main carries it the first URL
@@ -36,6 +39,7 @@ const RESEARCH_URLS = [
 ];
 const WATCHLIST_KEY = 'parakeet.watchlist';
 const SKIP_KEY = 'parakeet.skip';
+const GROUP_COUNT_KEY = 'parakeet.groupCount';
 
 function Shell() {
   const { colors, scheme } = useTheme();
@@ -99,6 +103,7 @@ function Shell() {
   const [win, setWin] = useState(null);
   const [metric, setMetric] = useState('return');
   const [skipEnabled, setSkipEnabledState] = useState(false);
+  const [groupCount, setGroupCountState] = useState(DEFAULT_K);
   const [sessionsStale, setSessionsStale] = useState(0);
   const [watchlist, setWatchlist] = useState([]);
   const [hydrated, setHydrated] = useState(false);
@@ -121,12 +126,16 @@ function Shell() {
           // The residual metric measures each name against this; hand it over
           // before anything computes a window.
           setMarket(json.market);
+          // The grouping matrix must be in place before anything clusters.
+          setGrouping(json.grouping);
           // Cache the last close per name so rows do not walk the array to find it.
           const tickers = json.tickers.map((t) => ({ ...t, last: t.p[t.p.length - 1] }));
+          const bySymbol = new Map(tickers.map((t) => [t.s, t]));
+          setUniverse(bySymbol, json.dates.length - 1);
           setData({
             dates: json.dates,
             tickers,
-            bySymbol: new Map(tickers.map((t) => [t.s, t])),
+            bySymbol,
             sectors: Array.from(new Set(tickers.map((t) => t.se))).sort(),
             generatedAt: json.generatedAt,
           });
@@ -172,11 +181,25 @@ function Shell() {
     AsyncStorage.getItem(SKIP_KEY)
       .then((v) => setSkipEnabledState(v === '1'))
       .catch(() => {});
+
+    AsyncStorage.getItem(GROUP_COUNT_KEY)
+      .then((v) => {
+        // Only accept a K the app still offers, so a stale value from an older
+        // build cannot leave the view on a setting the picker cannot show.
+        const k = Number(v);
+        if (K_CHOICES.includes(k)) setGroupCountState(k);
+      })
+      .catch(() => {});
   }, []);
 
   const setSkipEnabled = useCallback((v) => {
     setSkipEnabledState(v);
     AsyncStorage.setItem(SKIP_KEY, v ? '1' : '0').catch(() => {});
+  }, []);
+
+  const setGroupCount = useCallback((k) => {
+    setGroupCountState(k);
+    AsyncStorage.setItem(GROUP_COUNT_KEY, String(k)).catch(() => {});
   }, []);
 
   // Guarded on `hydrated` so the initial empty state cannot race ahead of the
@@ -197,11 +220,11 @@ function Shell() {
   );
 
   // Above the early returns: hooks must run in the same order every render.
-  const families = useMemo(
-    () => (data && research ? alignFamilies(research, data.dates) : []),
-    [data, research]
+  const groupSet = useMemo(
+    () => (data ? groupsForK(groupCount) : { groups: [], lower: 0, upper: 0 }),
+    [data, groupCount]
   );
-  const famOf = useMemo(() => familyBySymbol(families), [families]);
+  const famOf = useMemo(() => (data ? groupIndexFor(groupCount) : new Map()), [data, groupCount]);
   const setCustomWindow = useCallback(
     (a, b) => setWin({ startIndex: Math.min(a, b), endIndex: Math.max(a, b), preset: 'CUSTOM' }),
     []
@@ -259,8 +282,8 @@ function Shell() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
         <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} />
-        <FamilyDetailScreen
-          families={families}
+        <GroupDetailScreen
+          families={groupSet.groups}
           bySymbol={data.bySymbol}
           dates={data.dates}
           initialKey={top.key}
@@ -270,6 +293,8 @@ function Shell() {
           sessionsStale={sessionsStale}
           familyCompare={familyCompare}
           familySlots={familySlots}
+          meta={groupingMeta()}
+          bounds={{ lower: groupSet.lower, upper: groupSet.upper }}
           toggleFamilyCompare={toggleFamilyCompare}
           isWatched={isWatched}
           toggleWatch={toggleWatch}
@@ -360,6 +385,8 @@ function Shell() {
           familySlots={familySlots}
           toggleFamilyCompare={toggleFamilyCompare}
           onOpenFamily={pushFamily}
+          groupCount={groupCount}
+          setGroupCount={setGroupCount}
         />
       </SafeAreaView>
     );

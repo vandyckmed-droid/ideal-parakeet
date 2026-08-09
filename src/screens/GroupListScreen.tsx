@@ -5,38 +5,43 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Sparkline } from '../components/Sparkline';
-import { FAMILY_TICKERS, FamilyTicker } from '../data/families';
+import { GROUPING_AVAILABLE, GroupTicker, groupsForK } from '../data/groups';
 import { slice } from '../data/market';
 import { computeWindowStats, formatMetric, metricValue } from '../data/stats';
 import { withSkip } from '../data/windows';
 import { useAppState } from '../state/AppState';
-import { setOrderedFamilies } from '../state/listContext';
+import { setOrderedGroups } from '../state/listContext';
 import { useColors } from '../theme/ThemeProvider';
 import { mono, space, type } from '../theme/theme';
 
-/** The one filter predicate, shared with the header's live family count. */
-export function filterFamilies(query: string): FamilyTicker[] {
+/** The one filter predicate, shared with the header's live group count. */
+export function filterGroups(groups: GroupTicker[], query: string): GroupTicker[] {
   const needle = query.trim().toUpperCase();
-  return needle
-    ? FAMILY_TICKERS.filter((f) => f.symbol.toUpperCase().includes(needle))
-    : FAMILY_TICKERS;
+  if (!needle) return groups;
+  // Searching a group by any of its members is the useful behaviour: you know
+  // the stock, not which medoid happens to represent it.
+  return groups.filter(
+    (g) =>
+      g.medoid.includes(needle) ||
+      g.dominantSector.toUpperCase().includes(needle) ||
+      g.members.some((m) => m.includes(needle))
+  );
 }
 
 /**
- * The Market tab's family body: the 38 industry families as rows that behave
- * like stocks - the same look, the same maths, and now the same gesture pair
- * as the card view. Tap collects a family into the compare set (the family
- * analogue of the watchlist; its dot takes the comparison colour). Press and
- * hold opens the family's own page - chart, every window's numbers, and its
- * holdings - which is also where the compare set gets drawn.
+ * The Market tab's third view: correlation groups as rows that behave like
+ * stocks. Each group is an equal-weight index of its members, so the shared
+ * window, Skip and metric state all apply unchanged.
+ *
+ * Tap collects a group onto the comparison chart; press and hold opens it.
  */
-export function FamilyBody({ query }: { query: string }) {
+export function GroupBody({ query }: { query: string }) {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const router = useRouter();
   const {
-    window: win, metric, skipEnabled, sessionsStale,
-    familyCompare, familySlots, toggleFamilyCompare,
+    window: win, metric, skipEnabled, sessionsStale, groupCount,
+    familyCompare, toggleFamilyCompare, familySlots,
   } = useAppState();
 
   const range = useMemo(
@@ -44,12 +49,12 @@ export function FamilyBody({ query }: { query: string }) {
     [win, skipEnabled, sessionsStale]
   );
 
-  // Always ranked by the selected metric, best first - the metric control
-  // IS the sort, same as the stock list.
+  const groups = useMemo(() => groupsForK(groupCount).groups, [groupCount]);
+
   const rows = useMemo(() => {
-    const scored = filterFamilies(query).map((f) => ({
-      family: f,
-      stats: computeWindowStats(f, range.startIndex, range.endIndex),
+    const scored = filterGroups(groups, query).map((g) => ({
+      group: g,
+      stats: computeWindowStats(g, range.startIndex, range.endIndex),
     }));
     scored.sort((a, b) => {
       const av = metricValue(a.stats, metric);
@@ -60,7 +65,7 @@ export function FamilyBody({ query }: { query: string }) {
       return bv - av;
     });
     return scored;
-  }, [query, range, metric]);
+  }, [groups, query, range, metric]);
 
   const collect = useCallback(
     (key: string) => {
@@ -74,28 +79,24 @@ export function FamilyBody({ query }: { query: string }) {
 
   const open = useCallback(
     (key: string) => {
-      // Publish the visible order so the detail pager swipes through the
-      // same list the finger just left.
-      setOrderedFamilies(rows.map((r) => r.family.symbol));
+      setOrderedGroups(rows.map((r) => r.group.medoid));
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      router.push(`/family/${encodeURIComponent(key)}`);
+      router.push(`/group/${encodeURIComponent(key)}`);
     },
     [rows, router]
   );
 
   const renderRow = ({ item, index }: { item: (typeof rows)[number]; index: number }) => {
-    const f = item.family;
+    const g = item.group;
     const v = metricValue(item.stats, metric);
     const tone = v === null ? colors.flat : v >= 0 ? colors.up : colors.down;
-    // The persistent slot, not the list position: a family keeps its colour
-    // for as long as it stays collected.
-    const slot = familySlots[f.symbol];
+    const slot = familySlots[g.medoid];
     const activeHue = slot != null ? colors.chart[slot % colors.chart.length] : null;
-    const spark = slice(f, range.startIndex, range.endIndex);
+    const spark = slice(g, range.startIndex, range.endIndex);
     return (
       <Pressable
-        onPress={() => collect(f.symbol)}
-        onLongPress={() => open(f.symbol)}
+        onPress={() => collect(g.medoid)}
+        onLongPress={() => open(g.medoid)}
         delayLongPress={280}
         style={({ pressed }) => [
           styles.row,
@@ -118,9 +119,13 @@ export function FamilyBody({ query }: { query: string }) {
         )}
         <View style={styles.identity}>
           <Text style={[type.bodyStrong, { color: colors.text }]} numberOfLines={1}>
-            {f.symbol}
+            {g.medoid}
+            <Text style={[type.micro, { color: colors.textFaint }]}> group</Text>
           </Text>
-          <Text style={[type.micro, { color: colors.textMuted }]}>{f.members} members</Text>
+          <Text style={[type.micro, { color: colors.textMuted }]} numberOfLines={1}>
+            {g.members.length} · {g.dominantSector || 'mixed'} {Math.round(g.dominantShare * 100)}% · ρ{' '}
+            {g.cohesion.toFixed(2)}
+          </Text>
         </View>
         <Sparkline values={spark} color={tone} />
         <Text style={[type.bodyStrong, mono, styles.value, { color: tone }]}>
@@ -130,12 +135,12 @@ export function FamilyBody({ query }: { query: string }) {
     );
   };
 
-  if (!FAMILY_TICKERS.length) {
+  if (!GROUPING_AVAILABLE) {
     return (
       <View style={styles.empty}>
         <Text style={[type.body, styles.emptyText, { color: colors.textMuted }]}>
-          The family series hasn’t been published yet. It arrives with the next
-          data update.
+          The correlation matrix hasn’t been published yet. It arrives with the
+          next data update.
         </Text>
       </View>
     );
@@ -144,7 +149,7 @@ export function FamilyBody({ query }: { query: string }) {
   return (
     <FlatList
       data={rows}
-      keyExtractor={(r) => r.family.symbol}
+      keyExtractor={(r) => r.group.medoid}
       renderItem={renderRow}
       initialNumToRender={16}
       keyboardShouldPersistTaps="handled"
@@ -152,14 +157,14 @@ export function FamilyBody({ query }: { query: string }) {
       ListEmptyComponent={
         <View style={styles.empty}>
           <Text style={[type.body, { color: colors.textMuted }]}>
-            Nothing matches those filters.
+            No group matches that search.
           </Text>
         </View>
       }
       ListFooterComponent={
         rows.length > 0 ? (
           <Text style={[type.caption, styles.hint, { color: colors.textFaint }]}>
-            Tap a row to compare it · press and hold to open it
+            Tap a group to compare it · press and hold to open it
           </Text>
         ) : null
       }

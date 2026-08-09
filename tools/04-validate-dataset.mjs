@@ -136,6 +136,77 @@ if (!market || typeof market !== 'object') {
   if (symbols.has('SPY')) fail('SPY appears in the universe, it is not an index member');
 }
 
+// --- the correlation grouping ------------------------------------------------
+// The Groups view reads this and nothing else, so a matrix that does not line
+// up with the universe would silently group the wrong names together - the one
+// failure that would look plausible on screen.
+
+const g = data.grouping;
+if (!g) {
+  fail('grouping is missing');
+} else {
+  const symbols = Array.isArray(g.symbols) ? g.symbols : [];
+  const known = new Set(data.tickers.map((t) => t.s));
+
+  if (symbols.length < MIN_TICKERS - 25) {
+    fail(`grouping covers only ${symbols.length} names`);
+  }
+  if (new Set(symbols).size !== symbols.length) fail('grouping symbols contain duplicates');
+  const strangers = symbols.filter((s) => !known.has(s));
+  if (strangers.length) {
+    fail(`grouping names not in the universe: ${strangers.slice(0, 5).join(', ')}`);
+  }
+  // Every grouped name must have a full series, since that is the eligibility
+  // rule the matrix was built on - a short one would mean the returns behind
+  // its row were not the same sample as everyone else's.
+  const short = symbols.filter((s) => {
+    const t = data.tickers.find((x) => x.s === s);
+    return !t || t.o !== 0 || t.p.length !== data.dates.length;
+  });
+  if (short.length) {
+    fail(`grouping includes names without a full history: ${short.slice(0, 5).join(', ')}`);
+  }
+
+  if (!(g.shrinkage >= 0 && g.shrinkage <= 1)) {
+    fail(`shrinkage intensity ${g.shrinkage} outside [0,1]`);
+  }
+  if (!(g.averageCorrelation > -1 && g.averageCorrelation < 1)) {
+    fail(`average correlation ${g.averageCorrelation} outside (-1,1)`);
+  }
+  if (!(g.sessions > 200)) fail(`grouping used only ${g.sessions} sessions`);
+
+  const expected = (symbols.length * (symbols.length - 1)) / 2;
+  let bytes = null;
+  try {
+    bytes = Buffer.from(g.distances, 'base64');
+  } catch {
+    fail('grouping distances are not valid base64');
+  }
+  if (bytes && bytes.length !== expected) {
+    fail(`grouping has ${bytes.length} distances, expected ${expected}`);
+  }
+  if (bytes && bytes.length === expected) {
+    // Distances are bytes, so range is automatic; what is worth asserting is
+    // that they are not degenerate. An all-zero or all-identical matrix would
+    // cluster into arbitrary groups without erroring anywhere downstream.
+    let min = 255;
+    let max = 0;
+    let sum = 0;
+    for (const b of bytes) {
+      if (b < min) min = b;
+      if (b > max) max = b;
+      sum += b;
+    }
+    const mean = sum / bytes.length / 255;
+    if (min === max) fail('every pairwise distance is identical');
+    // sqrt((1-rho)/2) for equity pairs sits near 0.6-0.7; well outside that
+    // band means the returns behind it were not returns.
+    if (!(mean > 0.45 && mean < 0.85)) {
+      fail(`mean pairwise distance ${mean.toFixed(3)} is implausible for equities`);
+    }
+  }
+}
+
 // --- universe landmarks ------------------------------------------------------
 
 for (const s of MUST_INCLUDE) if (!symbols.has(s)) fail(`expected ${s} in the universe`);

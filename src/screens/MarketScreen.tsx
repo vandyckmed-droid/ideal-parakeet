@@ -3,32 +3,34 @@ import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ListHeader } from '../components/ListHeader';
-import { SectorPicker } from '../components/SectorPicker';
+import { OptionSheet } from '../components/OptionSheet';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { StockListBody, filterUniverse } from '../components/StockListBody';
 import { WindowPicker } from '../components/WindowPicker';
-import { FAMILY_TICKERS } from '../data/families';
+import {
+  GROUPING_AVAILABLE, K_CHOICES, UNGROUPED_COUNT, groupsForK,
+} from '../data/groups';
 import { BY_SYMBOL, DATES, SECTORS, TICKERS, Ticker, formatDateShort } from '../data/market';
 import { computeOverlap, describeCandidateOverlap } from '../data/overlap';
 import { HORIZONS, horizonIndexForWindow } from '../data/ranks';
 import { windowForPreset, withSkip } from '../data/windows';
 import { useAppState } from '../state/AppState';
 import { useColors } from '../theme/ThemeProvider';
-import { FamilyBody, filterFamilies } from './FamilyListScreen';
+import { GroupBody, filterGroups } from './GroupListScreen';
 import { RankTableBody } from './RankTableScreen';
 
-type MarketView = 'card' | 'table' | 'families';
+type MarketView = 'card' | 'table' | 'groups';
 
 const VIEW_SEGMENTS: { key: MarketView; label: string }[] = [
   { key: 'card', label: 'Card' },
   { key: 'table', label: 'Table' },
-  { key: 'families', label: 'Families' },
+  { key: 'groups', label: 'Groups' },
 ];
 
 /**
  * The Market tab: one screen, three bodies.
  *
- * Card, Table and Families used to be three separate screens that each built
+ * Card, Table and Groups used to be three separate screens that each built
  * their own header, and switching between them moved every control a little -
  * the view switch hopped rows, the window row appeared and vanished, even the
  * theme button changed size. Now the screen owns one ListHeader and only the
@@ -37,7 +39,7 @@ const VIEW_SEGMENTS: { key: MarketView; label: string }[] = [
  * The same move made the state shared instead of per-view: the search text,
  * the sector filter and the sort survive a view switch, the window control
  * drives the table's leading column (and tapping a column drives it back),
- * and the family view is searchable and sortable like everything else. All of
+ * and the groups view is searchable like everything else. All of
  * it is local rather than persisted - the screen stays mounted for the life
  * of the session, which is the only continuity a glance needs.
  */
@@ -47,13 +49,14 @@ export function MarketScreen() {
   const {
     watchlist, window: win, setPreset, setCustomWindow,
     metric, setMetric, skipEnabled, setSkipEnabled, sessionsStale,
+    groupCount, setGroupCount,
   } = useAppState();
 
   const [view, setView] = useState<MarketView>('card');
   const [query, setQuery] = useState('');
   const [sector, setSector] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [sectorPickerOpen, setSectorPickerOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const [bestFirst, setBestFirst] = useState(true);
 
@@ -102,7 +105,14 @@ export function MarketScreen() {
     () => filterUniverse(TICKERS, query, sector).length,
     [query, sector]
   );
-  const familyCount = useMemo(() => filterFamilies(query).length, [query]);
+  const groups = useMemo(
+    () => (view === 'groups' ? groupsForK(groupCount).groups : []),
+    [view, groupCount]
+  );
+  const groupCountShown = useMemo(
+    () => filterGroups(groups, query).length,
+    [groups, query]
+  );
 
   const caption = useMemo(() => {
     const through = `through ${formatDateShort(DATES[range.endIndex])}`;
@@ -118,16 +128,17 @@ export function MarketScreen() {
           : `${stockCount} of ${TICKERS.length} · ranks stay market-wide`;
       return `${names}${skipEnabled ? ` · skipping ${skips.join('/')}d` : ''}`;
     }
-    if (view === 'families') {
-      if (!FAMILY_TICKERS.length) return 'family series not published yet';
-      return `${familyCount} ${familyCount === 1 ? 'family' : 'families'} · ${through}${skipNote}`;
+    if (view === 'groups') {
+      if (!GROUPING_AVAILABLE) return 'correlation matrix not published yet';
+      const ungrouped = UNGROUPED_COUNT ? ` · ${UNGROUPED_COUNT} ungrouped` : '';
+      return `${groupCountShown} of ${groupCount} groups${ungrouped} · ${through}${skipNote}`;
     }
     return `${stockCount} ${stockCount === 1 ? 'name' : 'names'} · ${through}${skipNote}`;
-  }, [view, stockCount, familyCount, range, skipEnabled, sessionsStale]);
+  }, [view, stockCount, groupCountShown, groupCount, range, skipEnabled, sessionsStale]);
 
-  // The family view has no sectors to filter by, so it gets no sector row at
-  // all rather than a dropdown that would always say "All sectors."
-  const sectorOptions = view === 'families' ? [] : SECTORS;
+  // Groups are not a sector cut, so that view swaps the sector dropdown for
+  // the control that actually governs it: how many groups to make.
+  const sectorOptions = view === 'groups' ? [] : SECTORS;
 
   const viewSwitch = (
     <SegmentedControl<MarketView> segments={VIEW_SEGMENTS} value={view} onChange={setView} compact />
@@ -140,7 +151,9 @@ export function MarketScreen() {
         caption={caption}
         query={query}
         onQuery={setQuery}
-        searchPlaceholder={view === 'families' ? 'Search families' : 'Search symbol or company'}
+        searchPlaceholder={
+          view === 'groups' ? 'Search a group or its members' : 'Search symbol or company'
+        }
         accessory={viewSwitch}
         win={win}
         onPreset={setPreset}
@@ -151,9 +164,9 @@ export function MarketScreen() {
         onToggleSkip={() => setSkipEnabled(!skipEnabled)}
         range={range}
         sessionsStale={sessionsStale}
-        sector={sector}
-        sectors={sectorOptions}
-        onOpenSectorPicker={() => setSectorPickerOpen(true)}
+        sector={view === 'groups' ? `${groupCount} groups` : sector}
+        sectors={view === 'groups' ? ['groups'] : sectorOptions}
+        onOpenSectorPicker={() => setSheetOpen(true)}
       />
 
       {view === 'card' && (
@@ -175,9 +188,7 @@ export function MarketScreen() {
           onCycleSort={cycleColumn}
         />
       )}
-      {view === 'families' && (
-        <FamilyBody query={query} />
-      )}
+      {view === 'groups' && <GroupBody query={query} />}
 
       <WindowPicker
         visible={pickerOpen}
@@ -186,13 +197,35 @@ export function MarketScreen() {
         onApply={setCustomWindow}
       />
 
-      <SectorPicker
-        visible={sectorPickerOpen}
-        sectors={sectorOptions}
-        sector={sector}
-        onClose={() => setSectorPickerOpen(false)}
-        onSelect={setSector}
-      />
+      {view === 'groups' ? (
+        <OptionSheet
+          visible={sheetOpen}
+          title="Groups"
+          footnote={`Every group holds within ±20% of ${Math.round(
+            (GROUPING_AVAILABLE ? groupsForK(groupCount).target : 0)
+          )} names. Fewer groups means broader themes; more means tighter ones.`}
+          options={K_CHOICES.map((k) => ({
+            key: String(k),
+            label: `${k} groups`,
+            caption: `about ${Math.round((503 - UNGROUPED_COUNT) / k)} names each`,
+          }))}
+          selected={String(groupCount)}
+          onClose={() => setSheetOpen(false)}
+          onSelect={(k) => setGroupCount(Number(k))}
+        />
+      ) : (
+        <OptionSheet
+          visible={sheetOpen}
+          title="Sector"
+          options={[
+            { key: '', label: 'All sectors' },
+            ...SECTORS.map((s) => ({ key: s, label: s })),
+          ]}
+          selected={sector ?? ''}
+          onClose={() => setSheetOpen(false)}
+          onSelect={(s) => setSector(s === '' ? null : s)}
+        />
+      )}
     </View>
   );
 }

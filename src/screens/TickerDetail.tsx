@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { PriceChart } from '../components/PriceChart';
 import { SegmentedControl } from '../components/SegmentedControl';
-import { familyOfSymbol } from '../data/families';
+import { groupOfSymbol } from '../data/groups';
 import { DATES, Ticker, formatDate, slice } from '../data/market';
 import {
   computeWindowStats,
@@ -16,6 +16,7 @@ import {
   VOL_FLOOR,
 } from '../data/stats';
 import { PRESETS, PresetKey, windowForPreset, withSkip } from '../data/windows';
+import { useAppState } from '../state/AppState';
 import { useColors } from '../theme/ThemeProvider';
 import { mono, radius, space, type } from '../theme/theme';
 
@@ -40,7 +41,8 @@ export function TickerDetail({
 }) {
   const colors = useColors();
   const router = useRouter();
-  const family = familyOfSymbol(ticker.symbol);
+  const { groupCount } = useAppState();
+  const group = groupOfSymbol(ticker.symbol, groupCount);
   const [preset, setPreset] = useState<PresetKey>(
     initialPreset === 'CUSTOM' ? '1Y' : initialPreset
   );
@@ -234,18 +236,18 @@ export function TickerDetail({
           ABOUT
         </Text>
         <View style={[styles.facts, { backgroundColor: colors.surface }]}>
-          {/* The stock's peer family, when it has one - the bridge from a
-              single name to the group it trades with. */}
-          {family && (
+          {/* The stock's correlation group, when it has one - the bridge from
+              a single name to the set it actually moves with. */}
+          {group && (
             <Pressable
-              onPress={() => router.push(`/family/${encodeURIComponent(family)}`)}
+              onPress={() => router.push(`/group/${encodeURIComponent(group)}`)}
               style={styles.factRow}
               accessibilityRole="button"
-              accessibilityLabel={`Open the ${family} family`}
+              accessibilityLabel={`Open the ${group} group`}
             >
-              <Text style={[type.caption, { color: colors.textMuted }]}>Family</Text>
+              <Text style={[type.caption, { color: colors.textMuted }]}>Group</Text>
               <Text style={[type.caption, { color: colors.accent }]} numberOfLines={1}>
-                {family} ›
+                {group} ›
               </Text>
             </Pressable>
           )}

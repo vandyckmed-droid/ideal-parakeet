@@ -21,9 +21,9 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/hzkqnSqvkGEmHstZJtWfM), so it can be opened in
+Snack](https://snack.expo.dev/pZ6M8-WmmmFLeAvvmkNkN), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
-file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
+file sizes well below the 1.9MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
 
 - the dataset is fetched from this repository over the network instead of being
@@ -61,7 +61,7 @@ fetch costs ~500 API calls and is worth resuming rather than repeating.
 | --- | --- | --- |
 | 1 | `01-build-candidates.mjs` | Takes the S&P 500 constituent list, joins on screener metadata |
 | 2 | `02-fetch-prices.mjs` | Pulls ~2 years of adjusted daily closes, one file per symbol |
-| 3 | `03-build-dataset.mjs` | Aligns every series to one calendar and packs the app asset |
+| 3 | `03-build-dataset.mjs` | Aligns every series to one calendar, estimates the correlation matrix, and packs the app asset |
 | 4 | `04-validate-dataset.mjs` | Refuses to ship a misshapen snapshot |
 | 5 | `05-build-research.mjs` | Builds the Research tab's backtest series |
 
@@ -118,6 +118,22 @@ Verified by corrupting a real snapshot seven ways — truncating the universe to
 for its baby bond, dating the file to 2099, unsorting the calendar, and zeroing
 a market cap. All seven exit 1 with the specific cause named; the untouched
 file exits 0.
+
+**The correlation block is gated the same way.** It is the input to every
+group the app draws, and unlike a price it has no obvious wrongness — a
+scrambled distance matrix still clusters into something that looks like an
+answer. So stage 4 also checks that the grouping exists and covers a real
+share of the universe, that its symbols are in the universe and free of
+duplicates, that every one of them has complete history, that the shrinkage
+intensity is a probability and the average correlation a correlation, that the
+window is longer than 200 sessions, that the packed distances decode to
+exactly *N(N−1)/2* bytes, that they are not degenerate (min ≠ max), and that
+their mean lands in 0.45–0.85 — the band a real equity correlation matrix
+produces, and one a matrix of zeros, ones or noise would miss. Verified the
+same way, by corrupting the block six ways: removing it, truncating the
+distances, inserting a symbol that is not in the universe, pushing the
+shrinkage out of range, flattening every distance to one value, and including
+a name with short history. All six exit 1 with the cause named.
 
 Before it can run you need to do two things it cannot do for itself:
 
@@ -595,13 +611,14 @@ tapping it again flips direction. There is nothing else in this view to sort
 by, so a separate row of sort chips would have been a second way to say the
 same thing. It opens on 12M, the horizon where a rank is least noisy.
 
-**Each row also states its standings** — "Family 3/9 · Sector 12/87", the
+**Each row also states its standings** — "Group 3/23 · Sector 12/87", the
 name's rank inside its own peer groups at the sorted horizon. These are
 derived from the market-wide ranks rather than recomputed (a name's position
 among its sector peers ordered by market rank *is* its within-sector rank on
 the same metric), so the note and the cells can never disagree, and the
-market-wide numbers in the cells stay market-wide. Names outside any family
-show the sector half alone.
+market-wide numbers in the cells stay market-wide. The group half follows
+whatever K is set in the Groups view, and the four names with too little
+history to be grouped show the sector half alone.
 
 ### The heatmap
 
@@ -844,61 +861,162 @@ rather than a real answer.
 Going meaningfully earlier needs a survivorship-bias-free dataset such as CRSP
 — the academic standard — which this data source does not offer.
 
-### Industry families
+### Correlation groups
 
-The Market tab's third view — Card, Table, **Families** — ranks 38 peer
-groups consolidated from FMP's 116 fine-grained industry labels. Each family
-is an index: $10,000 equally weighted across the family's **point-in-time
-index members**, rebalanced monthly per the standard, over the trailing two
-years. A member that left the index contributes for exactly the months it was
-in. The series are built entirely by the pipeline and shipped in
-`research.json`; the app re-aligns them onto its own trading calendar and
-treats each one as if it were a ticker.
+The Market tab's third view — Card, Table, **Groups** — divides the universe
+into peer groups **measured from how the stocks actually trade**, not from
+what anyone calls them. There is no taxonomy behind it and no industry label
+anywhere in the input. The number of groups is yours to set.
 
-That last part is the design: because a family index is ticker-shaped, **every
-control the stock list has works on families unchanged** — the same search
-box, the same shared window presets and Custom picker, the same Skip toggle,
-and the same three metrics, including Residual, which regresses the family's
-daily returns on the same packed market series the stocks use. The rows always
-rank by the selected metric, best first: the list doubles as a league table
-for whatever window and metric are on screen.
+This replaced a hand-built industry taxonomy, and the reason is worth stating
+plainly. A label is a claim about a business; a correlation is a measurement
+of a stock. The old 38 families were an honest attempt at the first, but every
+merge in it was a judgement call defended in prose, the boundaries could not
+move, and the thing being ranked was ultimately a sector scheme with extra
+steps. Groups are the second: reproducible, tunable, and falsifiable against
+the returns they came from.
 
-The gestures match the stock list too: **tap collects, press and hold opens.**
-A tap adds the family to the compare set — the family analogue of the
-watchlist, and the reason its row shows a coloured dot. Press and hold opens
-the family's own page.
+#### What the pipeline computes
 
-**A family page is a ticker page.** Same headline (the index's dollar value,
-the window's return under it), same scrubbable chart with the figures
-following your finger, same *performance by window* table at every horizon,
-same swipe left/right to move through the list you came from. Two things a
-ticker page cannot have:
+Stage 3 does the expensive half, once per refresh, because it depends only on
+prices:
 
-- **Companions.** When the compare set holds other families, the chart
-  switches to a shared axis and draws them together, each line indexed to 100
-  at the window's start — the families opened their $10,000 on different
-  dates, so raw levels would compare start dates rather than performance. Up
-  to four, oldest rolls off. A family's colour is claimed when you collect it
-  and held until you release it, so the dot on its list row and its line on
-  any page always agree, and releasing one family never recolours the rest.
-- **Holdings.** A family *is* a small ETF, so the page lists its current
-  constituents, ranked by the same window the page is set to. Those rows keep
-  the app's one gesture pair: tap watchlists a stock, press and hold opens it.
+1. **Aligned daily log returns** for every name with a complete history over
+   the snapshot — currently **499 of 503 names across 508 sessions**, about
+   two years. Completeness is the eligibility test: a shorter overlap would
+   estimate some pairs on fewer days than others, and a correlation matrix
+   assembled from unequal windows is not one matrix.
+2. **A Ledoit–Wolf shrinkage correlation matrix.** With N=499 and T=508 the
+   sample matrix is barely estimable — 124,251 pairs from 508 observations —
+   and its extreme correlations are mostly noise, exactly the values a
+   clustering algorithm reaches for first. Ledoit–Wolf (2004) pulls every
+   entry toward the constant-correlation target by the intensity that
+   minimises expected squared error, estimated from the data rather than
+   chosen. On this snapshot **δ = 0.145** toward a mean correlation of
+   **r̄ = 0.210**.
+3. **Correlation → distance**, `d = √((1−ρ)/2)`. This is a true metric, not a
+   convenience: it is the chord distance between the return vectors on the
+   unit sphere, so the triangle inequality holds and "closer" means what a
+   clustering algorithm assumes it means. It reads 0 at ρ=1, 0.707 at ρ=0 and
+   1 at ρ=−1.
+4. **Packed** as a base64 upper triangle of unsigned bytes — 124,251 of them,
+   about 165KB, roughly a tenth of the file. Quantizing *distance* uniformly
+   is deliberately finest where it matters: near ρ=1 a single byte step
+   separates 1.0000 from 0.99997, while out in the uncorrelated middle it is
+   coarse, which is where nobody is looking.
 
-The link runs both ways. A stock's own page names its family under *About*
-and opens it in a tap, so you can go from one name to its peer group and back
-without losing your place.
+The whole sweep is O(N²T) — about 380 million multiply-adds — and it runs in
+four seconds. It ships in `market.json` rather than `research.json` because
+`research.json` is explicitly optional and groups are not, and because
+`market.json` is the file stage 4 gates.
 
-The taxonomy behind the families is in `tools/lib/families.mjs`, derived by
-correlating each industry's market-residual returns: industries merged when
-the residual correlation was high AND the businesses are related (Banks at
-0.80, the REITs, Insurance, Oil & Gas), two new families formed where orphans
-trade with each other (Housing; the Electrical & Construction datacenter
-complex), and lookalikes vetoed - Waste-vs-Insurance at 0.54 co-move as a
-defensive *style*, not a business, and adopting them would turn a peer group
-back into the style factor this whole layer exists to remove. Industries with
-no family (autos, railroads, airlines, Apple alone in consumer electronics)
-stay out on purpose.
+Verified against a line-by-line transcription of the paper's formulas —
+nested loops, no algebraic shortcuts — which agrees on the shrinkage intensity
+to 6.7e-16 and on r̄ to 2.9e-15. The production code takes one shortcut worth
+knowing: because the shrinkage target matches the sample matrix exactly on the
+diagonal, the shrunk *correlation* collapses to `ρ = δ·r̄ + (1−δ)·r`, no
+covariance rescaling needed. That identity holds to 1e-15 against the long
+form.
+
+#### What the app computes
+
+Everything that depends on **K** stays in the app, because K is a control:
+
+- **Target size** `T = N/K`, with bounds **`L = ⌊0.8T⌋`** and **`U = ⌈1.2T⌉`**
+  — ±20%, so no group can collapse to a pair or swallow half the market.
+- **Constrained k-medoids.** k-medoids++ seeding, greedy assignment in order
+  of how strongly each stock prefers its best group over its second-best
+  (respecting `U`), a repair pass that fills any group under `L` with the
+  members it costs least to move, then local improvement by single moves and
+  pairwise swaps that keep every group inside its bounds, then medoid update —
+  repeated to convergence.
+- **Medoids, not centroids**, per the algorithm: a group is represented by an
+  actual member stock. There is no average stock to point at, and a name is
+  something you can go read about.
+- **Eight restarts**, keeping the lowest total distance. The seeding is
+  randomised, so one run finds a local minimum; eight find a better one.
+- **Deterministic.** The PRNG is a seeded `mulberry32`, and every tie breaks
+  by index, so both builds produce identical groups and the list does not
+  reshuffle itself between visits. Verified identical across two independent
+  JavaScript engines.
+
+K is chosen from the same dropdown slot the sector filter uses elsewhere —
+6, 8, 10, 12, 16, 20, 24, 30, 40, defaulting to 20 and remembered across
+launches. Changing it recomputes the bounds and re-clusters from scratch in
+about 130ms.
+
+#### Reading a group
+
+**Members are ranked by fit**, best first: each member's average correlation
+with the rest of its group, which is step 9 of the algorithm and also the
+useful reading order — the top of the list is what the group *is*, the bottom
+is what it barely is.
+
+**Weak fit is flagged** where a member sits closer, on average, to another
+group's members than to its own — the silhouette sign. The page names the
+group it leans toward ("· closer to ETN"). These are not errors: the balance
+constraint is doing exactly what it was asked to, and a name pinned between
+two groups is a fact about the name worth seeing rather than hiding.
+
+**A group is an index**, equal-weighted across its members and rebalanced
+daily, starting at 100. Daily rebalancing rather than buy-and-hold so the line
+is a property of the group and not of the day it started — the window control
+lets you start it anywhere. Because every grouped name has complete history by
+construction, the series spans the whole calendar with no late-listing edge
+case.
+
+That index is shaped as a ticker, which is the point: **every control the
+stock list has works on groups unchanged** — the same search box (which also
+matches member symbols, so typing `LRCX` finds the group holding it), the same
+window presets and Custom picker, the same Skip toggle, the same metrics
+including Residual, which regresses the group's daily returns on the same
+packed market series the stocks use. Rows rank by the selected metric, best
+first.
+
+The gestures match too: **tap collects, press and hold opens.** A tap adds the
+group to the compare set — the reason its row carries a coloured dot; press
+and hold opens its page, which is a ticker page: same headline, same scrubbable
+chart, same performance-by-window table, same swipe through the list you came
+from. Two things a ticker page cannot have:
+
+- **Companions.** With more than one group collected the chart switches to a
+  shared axis and draws them together, each indexed to 100 at the window's
+  start. Up to four, oldest rolls off. A group's colour is claimed when you
+  collect it and held until you release it, so the dot on its row and its line
+  on any page always agree.
+- **Holdings.** A group *is* a small ETF, so the page lists its members with
+  their returns over the window on screen. Those rows keep the app's gesture
+  pair: tap watchlists a stock, press and hold opens it.
+
+The link runs both ways — a stock's own page names its group under *About* and
+opens it in a tap.
+
+#### Does it find anything real?
+
+Sectors are never an input. So the fact that the groups line up with them is a
+result, not a construction. Share of names sitting in their group's dominant
+sector:
+
+| K | 6 | 8 | 10 | 12 | 16 | 20 | 24 | 30 | 40 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Sector purity | 38% | 45% | 52% | 56% | 65% | 65% | 69% | 66% | 73% |
+
+More telling than the number is what shows up in the gaps. From correlations
+alone the algorithm rebuilt both peer groups the old taxonomy could only
+assemble by hand — **Housing** (LOW, HD, PHM, NVR, LEN, DHI, BLDR: a retailer,
+four homebuilders and a distributor, spread across two sectors) and the
+**electrical/datacenter complex** (ETN, VRT, FIX, PWR, EME, GEV). Neither
+exists as an industry label. Both trade as one thing, and both land together
+at every K from 12 to 24.
+
+The dominant sector is shown on each row purely as a human-readable handle, at
+the share it actually holds ("Technology 91%"). It labels the group; it never
+formed it.
+
+**Four names are ungrouped** — SNDK, HONA, Q, FDXF — recent listings and
+spinoffs without the full two years of history the correlation window needs.
+They are counted in the caption rather than quietly dropped, and they keep
+their place everywhere else in the app.
 
 ## Using it
 
@@ -914,9 +1032,9 @@ a watchlist to look at, the convention it exists to teach has already been
 learned by using it.
 
 - **Market** — three views inside one fixed frame. *Card* is the list of all
-  500; *Table* ranks every name at 3M / 6M / 9M / 12M as a heatmap; *Families*
-  ranks the 38 industry-family indices, each with its own ticker-style page
-  and holdings list (see *Industry families* above). The
+  500; *Table* ranks every name at 3M / 6M / 9M / 12M as a heatmap; *Groups*
+  ranks the correlation-group indices at whatever K you set, each with its own
+  ticker-style page and member list (see *Correlation groups* above). The
   header never moves when you switch: one search box, one window control, one
   metric control and one Skip toggle span all three, and what you type or pick
   survives the switch. In the table the window control picks which column
@@ -932,8 +1050,9 @@ learned by using it.
   a row of tappable chips. Eleven sectors plus "All" made the chip rail a
   strip of mostly off-screen buttons; the dropdown opens a sheet with every
   sector listed, one tap picks it and closes, and the pill itself always
-  states the active filter. Families have no sectors, so their view carries
-  no sector row at all.
+  states the active filter. In the Groups view that same slot becomes the **K**
+  control — groups have no sector to filter by, and one dropdown in one place
+  beats a second control appearing and disappearing as you switch views.
 - **Skip** — drops the recent tail of every window, scaled to its length. See
   *Skipping the recent tail* above. The setting persists across launches.
 - **Overlap** — an amber `⇄` badge on a row means that name is redundant with
@@ -945,11 +1064,11 @@ learned by using it.
   and current holdings.
 - **Per-ticker** — a scrubbable chart (drag across it and the header figures
   follow your finger), every window's return, σ and ratio at once, a link to
-  the name's peer family, and swipe left/right to move through the list you
-  came from in the order you were looking at it.
-- **Per-family** — the same page for a family index, plus its holdings ranked
-  over the window on screen and, when you have collected more than one family,
-  the comparison overlay.
+  the name's correlation group, and swipe left/right to move through the list
+  you came from in the order you were looking at it.
+- **Per-group** — the same page for a group index, plus its members ranked by
+  how well they fit the group and, when you have collected more than one
+  group, the comparison overlay.
 
 ### The chart
 

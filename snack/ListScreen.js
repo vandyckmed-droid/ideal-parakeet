@@ -7,7 +7,7 @@ import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { ROW_HEIGHT, TickerRow } from './ui';
 import { ListHeader } from './chrome';
 import { WindowPicker } from './WindowPicker';
-import { SectorPicker } from './SectorPicker';
+import { OptionSheet } from './OptionSheet';
 import { useTheme, space, type } from './theme';
 import { computeWindowStats, metricValue, slice, withSkip } from './stats';
 
@@ -212,12 +212,15 @@ export function ListScreen({
         onApply={setCustomWindow}
       />
 
-      <SectorPicker
+      <OptionSheet
         visible={sectorPickerOpen}
-        sectors={sectors}
-        sector={sector}
+        title="Sector"
+        options={[{ key: '', label: 'All sectors' }].concat(
+          sectors.map((x) => ({ key: x, label: x }))
+        )}
+        selected={sector || ''}
         onClose={() => setSectorPickerOpen(false)}
-        onSelect={setSector}
+        onSelect={(x) => setSector(x === '' ? null : x)}
       />
     </View>
   );

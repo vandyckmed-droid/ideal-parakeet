@@ -7,33 +7,36 @@ import { radius, space, type } from '../theme/theme';
 
 const ROW_HEIGHT = 48;
 
+export type Option = { key: string; label: string; caption?: string };
+
 /**
- * The sector filter, as a single-select sheet rather than a row of pills.
+ * One single-select sheet, used by every "pick one of a short list" control
+ * in the header - the sector filter and the number of groups.
  *
- * Eleven sectors plus "All" made the old horizontal chip rail a wide strip of
- * mostly-off-screen buttons - the very thing the whole rest of the header had
- * already moved away from. One tap opens this, one more tap picks a sector and
- * closes it; there is no separate Apply, because unlike the window picker
- * there is nothing here that needs two coordinated choices before either one
- * is meaningful.
+ * One tap opens it, one more picks and closes; there is no separate Apply,
+ * because unlike the window picker nothing here needs two coordinated choices
+ * before either one is meaningful.
  */
-export function SectorPicker({
+export function OptionSheet({
   visible,
-  sectors,
-  sector,
+  title,
+  options,
+  selected,
+  footnote,
   onClose,
   onSelect,
 }: {
   visible: boolean;
-  sectors: string[];
-  /** null means "All sectors". */
-  sector: string | null;
+  title: string;
+  options: Option[];
+  selected: string;
+  /** Optional line under the title, for stating what the choice actually does. */
+  footnote?: string;
   onClose: () => void;
-  onSelect: (sector: string | null) => void;
+  onSelect: (key: string) => void;
 }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const options: (string | null)[] = [null, ...sectors];
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -49,33 +52,40 @@ export function SectorPicker({
         ]}
       >
         <View style={[styles.grabber, { backgroundColor: colors.border }]} />
-        <Text style={[type.title, { color: colors.text, marginBottom: space(3) }]}>Sector</Text>
+        <Text style={[type.title, { color: colors.text }]}>{title}</Text>
+        {footnote ? (
+          <Text style={[type.caption, { color: colors.textMuted, marginTop: space(1) }]}>
+            {footnote}
+          </Text>
+        ) : null}
 
-        <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
+        <ScrollView style={[styles.list, { marginTop: space(3) }]} showsVerticalScrollIndicator={false}>
           {options.map((opt) => {
-            const chosen = opt === sector;
+            const chosen = opt.key === selected;
             return (
               <Pressable
-                key={opt ?? 'all'}
+                key={opt.key}
                 onPress={() => {
-                  onSelect(opt);
+                  onSelect(opt.key);
                   onClose();
                 }}
-                style={[
-                  styles.row,
-                  { backgroundColor: chosen ? colors.accentMuted : 'transparent' },
-                ]}
+                style={[styles.row, { backgroundColor: chosen ? colors.accentMuted : 'transparent' }]}
                 accessibilityRole="button"
                 accessibilityState={{ selected: chosen }}
               >
-                <Text
-                  style={[
-                    type.body,
-                    { color: chosen ? colors.accent : colors.text, fontWeight: chosen ? '700' : '400' },
-                  ]}
-                >
-                  {opt ?? 'All sectors'}
-                </Text>
+                <View style={styles.rowText}>
+                  <Text
+                    style={[
+                      type.body,
+                      { color: chosen ? colors.accent : colors.text, fontWeight: chosen ? '700' : '400' },
+                    ]}
+                  >
+                    {opt.label}
+                  </Text>
+                  {opt.caption ? (
+                    <Text style={[type.micro, { color: colors.textFaint }]}>{opt.caption}</Text>
+                  ) : null}
+                </View>
                 {chosen && <Text style={{ color: colors.accent, fontSize: 16 }}>✓</Text>}
               </Pressable>
             );
@@ -103,11 +113,13 @@ const styles = StyleSheet.create({
   grabber: { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: space(3) },
   list: { flexGrow: 0 },
   row: {
-    height: ROW_HEIGHT,
+    minHeight: ROW_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: space(3),
+    paddingVertical: space(1.5),
     borderRadius: radius.sm,
   },
+  rowText: { flex: 1, gap: 1 },
 });
