@@ -2,28 +2,26 @@
 // .tsx file is the one that is wrong.
 //
 // The Market tab's family body: the 38 industry families as rows that behave
-// like stocks. The families are ticker-shaped, so the shared window, Skip and
-// metric state - and the same computeWindowStats, skip clamp and residual
-// regression - apply unchanged; under the metric sort the rows rank
-// best-first exactly like the card view.
-//
-// Tap toggles a family onto the comparison chart, the same gesture that
-// toggles a stock onto the watchlist. Up to four, oldest rolls off, never
-// below one. The chart draws the measured stretch indexed to 100 at the
-// window start, because the families opened their $10,000 on different dates
-// and raw levels would compare start dates rather than performance.
+// like stocks - the same look, the same maths, and the same gesture pair as
+// the card view. Tap collects a family into the compare set (the family
+// analogue of the watchlist; its dot takes the comparison colour). Press and
+// hold opens the family's own page - chart, every window's numbers, and its
+// holdings - which is also where the compare set gets drawn.
 
 import React, { useMemo } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
 
-import { CompareChart, Sparkline } from './ui';
+import { Sparkline, haptic } from './ui';
 import { useTheme, mono, space, type } from './theme';
 import { computeWindowStats, formatMetric, metricValue, slice, withSkip } from './stats';
 
 /**
  * Family series re-aligned onto the app's master calendar by date,
  * forward-filling any master session the research calendar lacks - the same
- * tolerance stage 3 applies to a missing print.
+ * tolerance stage 3 applies to a missing print. Carries the current holdings
+ * when the payload has them; a payload from before `members` existed falls
+ * back to the formation-time count.
  */
 export function alignFamilies(research, dates) {
   if (!research || !Array.isArray(research.families) || !research.familyDates) return [];
@@ -42,9 +40,18 @@ export function alignFamilies(research, dates) {
         if (v != null) last = v;
         p[i - offset] = last;
       }
-      return { s: f.key, o: offset, p, members: f.n, mc: f.n, adv: f.n };
+      const holdings = f.members || [];
+      const count = holdings.length || f.n;
+      return { s: f.key, o: offset, p, members: count, holdings, mc: count, adv: count };
     })
     .filter(Boolean);
+}
+
+/** Reverse lookup map: which family a stock belongs to, if any. */
+export function familyBySymbol(families) {
+  const m = new Map();
+  for (const f of families) for (const sym of f.holdings) m.set(sym, f.s);
+  return m;
 }
 
 /** The one filter predicate, shared with the header's live family count. */
@@ -55,7 +62,11 @@ export function filterFamilies(families, query) {
 
 export function FamilyBody({
   families, dates, win, metric, skipEnabled, sessionsStale,
-  query, sortKey, descending, selected, onToggle,
+  query, sortKey, descending,
+  // Defaulted so a missing prop degrades to "nothing collected" rather than
+  // throwing inside a render and blanking the whole app - which is exactly
+  // what an unpassed familyCompare did once.
+  familyCompare = [], toggleFamilyCompare, onOpenFamily,
 }) {
   const { colors } = useTheme();
 
@@ -83,25 +94,6 @@ export function FamilyBody({
     return scored;
   }, [families, query, range, metric, sortKey, descending]);
 
-  const chart = useMemo(
-    () =>
-      selected
-        .map((key, slot) => {
-          const f = families.find((x) => x.s === key);
-          if (!f) return null;
-          const vals = slice(f, range.startIndex, range.endIndex);
-          if (vals.length < 2) return null;
-          const base = vals[0];
-          return {
-            key,
-            color: colors.chart[slot % colors.chart.length],
-            values: vals.map((v) => (v / base) * 100),
-          };
-        })
-        .filter(Boolean),
-    [selected, families, range, colors]
-  );
-
   if (!families.length) {
     return (
       <View style={s.empty}>
@@ -117,19 +109,34 @@ export function FamilyBody({
     const f = item.family;
     const v = metricValue(item.stats, metric);
     const tone = v === null ? colors.flat : v >= 0 ? colors.up : colors.down;
-    const slot = selected.indexOf(f.s);
+    const slot = familyCompare.indexOf(f.s);
     const activeHue = slot >= 0 ? colors.chart[slot % colors.chart.length] : null;
     const spark = slice(f, range.startIndex, range.endIndex);
     return (
       <Pressable
-        onPress={() => onToggle(f.s)}
+        onPress={() => {
+          const adding = !familyCompare.includes(f.s);
+          haptic(() =>
+            Haptics.impactAsync(
+              adding ? Haptics.ImpactFeedbackStyle.Light : Haptics.ImpactFeedbackStyle.Medium
+            )
+          );
+          toggleFamilyCompare(f.s);
+        }}
+        onLongPress={() => {
+          haptic(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success));
+          // Publish the visible order so the detail pager swipes through the
+          // same list the finger just left.
+          onOpenFamily(f.s, rows.map((r) => r.family.s));
+        }}
+        delayLongPress={280}
         style={({ pressed }) => [
           s.row,
           { backgroundColor: pressed ? colors.surface : 'transparent', borderBottomColor: colors.hairline },
         ]}
         accessibilityRole="button"
         accessibilityState={{ selected: slot >= 0 }}
-        accessibilityHint="Tap to toggle this family on the comparison chart"
+        accessibilityHint="Tap to add to the compare set, press and hold to open"
       >
         {/* Rank only under the metric sort, matching the card view: under
             Size or A–Z the position is not a rank and must not read as one. */}
@@ -150,37 +157,32 @@ export function FamilyBody({
   };
 
   return (
-    <View style={s.root}>
-      <View style={s.chartBlock}>
-        <CompareChart lines={chart} height={160} baseline={100} />
-        <Text style={[type.micro, { color: colors.textFaint }]}>
-          Tap a family to chart it · up to four, oldest rolls off · indexed to 100 at the
-          window start
-        </Text>
-      </View>
-
-      <FlatList
-        data={rows}
-        keyExtractor={(r) => r.family.s}
-        renderItem={renderRow}
-        initialNumToRender={16}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingBottom: space(6) }}
-        ListEmptyComponent={
-          <View style={s.empty}>
-            <Text style={[type.body, { color: colors.textMuted }]}>
-              Nothing matches those filters.
-            </Text>
-          </View>
-        }
-      />
-    </View>
+    <FlatList
+      data={rows}
+      keyExtractor={(r) => r.family.s}
+      renderItem={renderRow}
+      initialNumToRender={16}
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={{ paddingBottom: space(6) }}
+      ListEmptyComponent={
+        <View style={s.empty}>
+          <Text style={[type.body, { color: colors.textMuted }]}>
+            Nothing matches those filters.
+          </Text>
+        </View>
+      }
+      ListFooterComponent={
+        rows.length > 0 ? (
+          <Text style={[type.caption, s.hint, { color: colors.textFaint }]}>
+            Tap a row to compare it · press and hold to open it
+          </Text>
+        ) : null
+      }
+    />
   );
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1 },
-  chartBlock: { paddingHorizontal: space(4), paddingBottom: space(2), gap: space(2) },
   row: {
     flexDirection: 'row', alignItems: 'center', gap: space(3),
     paddingHorizontal: space(4), paddingVertical: space(2.5),
@@ -192,4 +194,5 @@ const s = StyleSheet.create({
   value: { minWidth: 84, textAlign: 'right' },
   empty: { padding: space(10), alignItems: 'center' },
   emptyText: { textAlign: 'center', maxWidth: 300 },
+  hint: { textAlign: 'center', paddingVertical: space(5) },
 });

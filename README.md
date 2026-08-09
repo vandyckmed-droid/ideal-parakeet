@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/uv0j6oV4B0q6bVd9zWcap), so it can be opened in
+Snack](https://snack.expo.dev/HlSQfJtf797omuIwXdn-K), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.7MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -816,11 +816,29 @@ stocks use. Under the default metric sort the rows rank best first — the list
 doubles as a league table for whatever window and metric are on screen — and
 Size (member count) and A–Z are a chip away, exactly like the stock list.
 
-Tap a row to draw that family on the comparison chart — the same gesture that
-puts a stock on the watchlist. Up to four lines share one axis, the oldest
-rolls off, and each line is indexed to 100 at the window's start, because the
-families opened their $10,000 on different dates and raw levels would compare
-start dates rather than performance.
+The gestures match the stock list too: **tap collects, press and hold opens.**
+A tap adds the family to the compare set — the family analogue of the
+watchlist, and the reason its row shows a coloured dot. Press and hold opens
+the family's own page.
+
+**A family page is a ticker page.** Same headline (the index's dollar value,
+the window's return under it), same scrubbable chart with the figures
+following your finger, same *performance by window* table at every horizon,
+same swipe left/right to move through the list you came from. Two things a
+ticker page cannot have:
+
+- **Companions.** When the compare set holds other families, the chart
+  switches to a shared axis and draws them together, each line indexed to 100
+  at the window's start — the families opened their $10,000 on different
+  dates, so raw levels would compare start dates rather than performance. Up
+  to four, oldest rolls off.
+- **Holdings.** A family *is* a small ETF, so the page lists its current
+  constituents, ranked by the same window the page is set to. Those rows keep
+  the app's one gesture pair: tap watchlists a stock, press and hold opens it.
+
+The link runs both ways. A stock's own page names its family under *About*
+and opens it in a tap, so you can go from one name to its peer group and back
+without losing your place.
 
 The taxonomy behind the families is in `tools/lib/families.mjs`, derived by
 correlating each industry's market-residual returns: industries merged when
@@ -848,7 +866,8 @@ learned by using it.
 
 - **Market** — three views inside one fixed frame. *Card* is the list of all
   500; *Table* ranks every name at 3M / 6M / 9M / 12M as a heatmap; *Families*
-  ranks the 38 industry-family indices (see *Industry families* above). The
+  ranks the 38 industry-family indices, each with its own ticker-style page
+  and holdings list (see *Industry families* above). The
   header never moves when you switch: one search box, one window control, one
   metric control and one Skip toggle span all three, and what you type or pick
   survives the switch. In the table the window control picks which column
@@ -868,9 +887,12 @@ learned by using it.
 - **Research** — the $10,000 top-50 momentum backtest above, with its rules
   and current holdings.
 - **Per-ticker** — a scrubbable chart (drag across it and the header figures
-  follow your finger), every window's return, σ and ratio at once, and
-  swipe left/right to move through the list you came from in the order you
-  were looking at it.
+  follow your finger), every window's return, σ and ratio at once, a link to
+  the name's peer family, and swipe left/right to move through the list you
+  came from in the order you were looking at it.
+- **Per-family** — the same page for a family index, plus its holdings ranked
+  over the window on screen and, when you have collected more than one family,
+  the comparison overlay.
 
 ### The chart
 

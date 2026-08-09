@@ -35,6 +35,7 @@ export function MarketScreen({
   data, research, win, setPreset, setCustomWindow,
   metric, setMetric, skipEnabled, setSkipEnabled, sessionsStale,
   isWatched, toggleWatch, onOpenDetail, onOrder, overlap, overlapCaption, tab,
+  familyCompare, toggleFamilyCompare, onOpenFamily,
 }) {
   const { colors } = useTheme();
   const { dates, tickers, sectors } = data;
@@ -51,9 +52,6 @@ export function MarketScreen({
   const [famSort, setFamSort] = useState('metric');
   const [famDescending, setFamDescending] = useState(true);
   const [bestFirst, setBestFirst] = useState(true);
-  // Null until first touched: the default depends on the research payload,
-  // which arrives after mount.
-  const [famSelected, setFamSelected] = useState(null);
 
   const lastIndex = dates.length - 1;
   const range = useMemo(
@@ -62,19 +60,6 @@ export function MarketScreen({
   );
 
   const families = useMemo(() => alignFamilies(research, dates), [research, dates]);
-  const selected = famSelected || families.slice(0, 2).map((f) => f.s);
-
-  const toggleFamily = useCallback(
-    (key) => {
-      setFamSelected(() => {
-        const prev = selected;
-        if (prev.includes(key)) return prev.length > 1 ? prev.filter((k) => k !== key) : prev;
-        const next = [...prev, key];
-        return next.length > 4 ? next.slice(1) : next;
-      });
-    },
-    [selected]
-  );
 
   // The table's sorted column IS the shared window, resolved to the nearest
   // horizon; tapping a column that is already leading flips the direction,
@@ -257,8 +242,9 @@ export function MarketScreen({
           query={query}
           sortKey={famSort}
           descending={famDescending}
-          selected={selected}
-          onToggle={toggleFamily}
+          familyCompare={familyCompare}
+          toggleFamilyCompare={toggleFamilyCompare}
+          onOpenFamily={onOpenFamily}
         />
       )}
 

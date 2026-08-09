@@ -16,3 +16,14 @@ export function setOrderedSymbols(symbols: string[]) {
 export function getOrderedSymbols(): string[] {
   return orderedSymbols;
 }
+
+/** Same contract for the family detail's pager. */
+let orderedFamilies: string[] = [];
+
+export function setOrderedFamilies(keys: string[]) {
+  orderedFamilies = keys;
+}
+
+export function getOrderedFamilies(): string[] {
+  return orderedFamilies;
+}

@@ -9,7 +9,7 @@ import {
   formatPercentPlain, formatPrice, formatRatio, slice, windowForPreset, withSkip, VOL_FLOOR,
 } from './stats';
 
-function Page({ ticker, dates, initialPreset, width, skipEnabled, sessionsStale, onScrubbingChange }) {
+function Page({ ticker, dates, initialPreset, width, skipEnabled, sessionsStale, familyOf, onOpenFamily, onScrubbingChange }) {
   const colors = useColors();
   const [preset, setPreset] = useState(initialPreset === 'CUSTOM' ? '1Y' : initialPreset);
   const [scrub, setScrub] = useState(null);
@@ -158,6 +158,21 @@ function Page({ ticker, dates, initialPreset, width, skipEnabled, sessionsStale,
       <View style={s.section}>
         <Text style={[type.micro, { color: colors.textFaint, marginBottom: space(2) }]}>ABOUT</Text>
         <View style={[s.facts, { backgroundColor: colors.surface }]}>
+          {/* The stock's peer family, when it has one - the bridge from a
+              single name to the group it trades with. */}
+          {familyOf && familyOf.get(ticker.s) ? (
+            <Pressable
+              onPress={() => onOpenFamily && onOpenFamily(familyOf.get(ticker.s))}
+              style={s.factRow}
+              accessibilityRole="button"
+              accessibilityLabel={`Open the ${familyOf.get(ticker.s)} family`}
+            >
+              <Text style={[type.caption, { color: colors.textMuted }]}>Family</Text>
+              <Text style={[type.caption, { color: colors.accent }]} numberOfLines={1}>
+                {familyOf.get(ticker.s)} ›
+              </Text>
+            </Pressable>
+          ) : null}
           {[
             ['Sector', ticker.se],
             ['Industry', ticker.in],
@@ -180,7 +195,7 @@ function Page({ ticker, dates, initialPreset, width, skipEnabled, sessionsStale,
   );
 }
 
-export function DetailScreen({ symbols, bySymbol, dates, initialSymbol, preset, skipEnabled, sessionsStale, isWatched, toggleWatch, onBack }) {
+export function DetailScreen({ symbols, bySymbol, dates, initialSymbol, preset, skipEnabled, sessionsStale, isWatched, toggleWatch, familyOf, onOpenFamily, onBack }) {
   const colors = useColors();
   const { width } = useWindowDimensions();
   const initialIndex = Math.max(0, symbols.indexOf(initialSymbol));
@@ -240,7 +255,7 @@ export function DetailScreen({ symbols, bySymbol, dates, initialSymbol, preset, 
         data={symbols}
         keyExtractor={(x) => x}
         renderItem={({ item }) => (
-          <Page ticker={bySymbol.get(item)} dates={dates} initialPreset={preset} width={width} skipEnabled={skipEnabled} sessionsStale={sessionsStale} onScrubbingChange={setScrubbing} />
+          <Page ticker={bySymbol.get(item)} dates={dates} initialPreset={preset} width={width} skipEnabled={skipEnabled} sessionsStale={sessionsStale} familyOf={familyOf} onOpenFamily={onOpenFamily} onScrubbingChange={setScrubbing} />
         )}
         horizontal
         pagingEnabled

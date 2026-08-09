@@ -20,6 +20,8 @@ import { ListScreen } from './ListScreen';
 import { MarketScreen } from './Market';
 import { ResearchScreen } from './Research';
 import { DetailScreen } from './DetailScreen';
+import { FamilyDetailScreen } from './FamilyDetail';
+import { alignFamilies, familyBySymbol } from './FamilyScreen';
 
 // Main first; the working branch second so a payload shape that has not
 // merged yet still reaches the phone. Once main carries it the first URL
@@ -44,8 +46,35 @@ function Shell() {
   const [attempt, setAttempt] = useState(0);
 
   const [tab, setTab] = useState('market');
-  const [detail, setDetail] = useState(null);
   const [order, setOrder] = useState([]);
+
+  // Detail navigation is a stack: family pages open tickers and ticker pages
+  // open families, and back has to walk home through whatever path the user
+  // actually took.
+  const [stack, setStack] = useState([]);
+  const pushTicker = useCallback(
+    (s) => setStack((st) => [...st, { kind: 'ticker', key: s }]),
+    []
+  );
+  const pushFamily = useCallback(
+    (key, famOrder) => setStack((st) => [...st, { kind: 'family', key, order: famOrder || null }]),
+    []
+  );
+  const popDetail = useCallback(() => setStack((st) => st.slice(0, -1)), []);
+
+  // The families picked for comparison - the family analogue of the
+  // watchlist. Session-local on purpose: a comparison is a question being
+  // asked now, not a portfolio being kept.
+  const [familyCompare, setFamilyCompare] = useState([]);
+  const toggleFamilyCompare = useCallback((key) => {
+    setFamilyCompare((prev) => {
+      if (prev.includes(key)) return prev.filter((k) => k !== key);
+      const next = [...prev, key];
+      // Four lines is where a comparison chart stops being readable; the
+      // oldest pick rolls off.
+      return next.length > 4 ? next.slice(1) : next;
+    });
+  }, []);
 
   const [win, setWin] = useState(null);
   const [metric, setMetric] = useState('return');
@@ -146,6 +175,13 @@ function Shell() {
     (p) => setWin(windowForPreset(p, data.dates)),
     [data]
   );
+
+  // Above the early returns: hooks must run in the same order every render.
+  const families = useMemo(
+    () => (data && research ? alignFamilies(research, data.dates) : []),
+    [data, research]
+  );
+  const famOf = useMemo(() => familyBySymbol(families), [families]);
   const setCustomWindow = useCallback(
     (a, b) => setWin({ startIndex: Math.min(a, b), endIndex: Math.max(a, b), preset: 'CUSTOM' }),
     []
@@ -177,7 +213,8 @@ function Shell() {
     );
   }
 
-  if (detail) {
+  const top = stack.length ? stack[stack.length - 1] : null;
+  if (top && top.kind === 'ticker') {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
         <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} />
@@ -185,13 +222,38 @@ function Shell() {
           symbols={order.length ? order : data.tickers.map((t) => t.s)}
           bySymbol={data.bySymbol}
           dates={data.dates}
-          initialSymbol={detail}
+          initialSymbol={top.key}
           preset={win.preset}
           skipEnabled={skipEnabled}
           sessionsStale={sessionsStale}
           isWatched={isWatched}
           toggleWatch={toggleWatch}
-          onBack={() => setDetail(null)}
+          familyOf={famOf}
+          onOpenFamily={(fam) => pushFamily(fam, null)}
+          onBack={popDetail}
+        />
+      </SafeAreaView>
+    );
+  }
+  if (top && top.kind === 'family') {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
+        <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} />
+        <FamilyDetailScreen
+          families={families}
+          bySymbol={data.bySymbol}
+          dates={data.dates}
+          initialKey={top.key}
+          order={top.order}
+          preset={win.preset}
+          skipEnabled={skipEnabled}
+          sessionsStale={sessionsStale}
+          familyCompare={familyCompare}
+          toggleFamilyCompare={toggleFamilyCompare}
+          isWatched={isWatched}
+          toggleWatch={toggleWatch}
+          onOpenTicker={pushTicker}
+          onBack={popDetail}
         />
       </SafeAreaView>
     );
@@ -268,11 +330,14 @@ function Shell() {
           sessionsStale={sessionsStale}
           isWatched={isWatched}
           toggleWatch={toggleWatch}
-          onOpenDetail={setDetail}
+          onOpenDetail={pushTicker}
           onOrder={setOrder}
           overlap={overlap}
           overlapCaption={overlapCaption}
           tab={tabBar}
+          familyCompare={familyCompare}
+          toggleFamilyCompare={toggleFamilyCompare}
+          onOpenFamily={pushFamily}
         />
       </SafeAreaView>
     );
@@ -296,7 +361,7 @@ function Shell() {
         sessionsStale={sessionsStale}
         isWatched={isWatched}
         toggleWatch={toggleWatch}
-        onOpenDetail={setDetail}
+        onOpenDetail={pushTicker}
         onOrder={setOrder}
         tab={tabBar}
         overlap={overlap}
