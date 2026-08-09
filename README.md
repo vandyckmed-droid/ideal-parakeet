@@ -21,7 +21,7 @@ but not the target: the gestures are built for a touchscreen.
 ### Without a computer
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/pZ6M8-WmmmFLeAvvmkNkN), so it can be opened in
+Snack](https://snack.expo.dev/-DdDIaMv2S9nrrhUECVrz), so it can be opened in
 Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
 file sizes well below the 1.9MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
@@ -930,6 +930,13 @@ Everything that depends on **K** stays in the app, because K is a control:
   members it costs least to move, then local improvement by single moves and
   pairwise swaps that keep every group inside its bounds, then medoid update —
   repeated to convergence.
+- **Swaps by group pair, not by stock pair.** The gain from exchanging two
+  stocks separates into one term per stock, so the best swap between two
+  groups is just the best candidate on each side — one linear scan each,
+  rather than testing all 124,251 pairs of stocks. This is what makes the
+  whole thing run on a phone: sweeping stock pairs cost ~17 million
+  comparisons per solve, which is seconds of frozen screen on a phone's
+  interpreter and was exactly that in the first version shipped.
 - **Medoids, not centroids**, per the algorithm: a group is represented by an
   actual member stock. There is no average stock to point at, and a name is
   something you can go read about.
@@ -999,15 +1006,21 @@ sector:
 
 | K | 6 | 8 | 10 | 12 | 16 | 20 | 24 | 30 | 40 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Sector purity | 38% | 45% | 52% | 56% | 65% | 65% | 69% | 66% | 73% |
+| Sector purity | 38% | 45% | 52% | 56% | 64% | 63% | 68% | 69% | 71% |
 
 More telling than the number is what shows up in the gaps. From correlations
 alone the algorithm rebuilt both peer groups the old taxonomy could only
-assemble by hand — **Housing** (LOW, HD, PHM, NVR, LEN, DHI, BLDR: a retailer,
-four homebuilders and a distributor, spread across two sectors) and the
-**electrical/datacenter complex** (ETN, VRT, FIX, PWR, EME, GEV). Neither
-exists as an industry label. Both trade as one thing, and both land together
-at every K from 12 to 24.
+assemble by hand, and neither exists as an industry label anywhere:
+
+- The **electrical/datacenter complex** — ETN, VRT, FIX, PWR, EME, GEV —
+  comes out as a single group at **every K on offer**, 6 through 40.
+- **Housing** — LOW, HD, SHW, PHM, NVR, LEN, DHI, BLDR: a retailer, a paint
+  maker, four homebuilders and a distributor, spread across two sectors —
+  is whole at K = 6, 8, 10, 12, 24 and 30, and seven of the eight at K = 40.
+  At 16 and 20 the balance constraint splits a tail off, which is precisely
+  what the weak-fit flag exists to say out loud.
+
+Nobody put either group there.
 
 The dominant sector is shown on each row purely as a human-readable handle, at
 the share it actually holds ("Technology 91%"). It labels the group; it never
