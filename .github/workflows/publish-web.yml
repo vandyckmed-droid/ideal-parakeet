@@ -37,10 +37,14 @@ on:
     types: [completed]
   workflow_dispatch:
 
+# Deploying by pushing a `gh-pages` branch rather than through
+# actions/deploy-pages. The artifact route needs the Pages site to exist
+# first, and actions/configure-pages could not create it — the workflow token
+# is refused ("Resource not accessible by integration"), because creating a
+# Pages site is an admin action no GITHUB_TOKEN carries. A `gh-pages` branch
+# needs nothing but write access to the repository.
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 # One deployment at a time, newest wins: an older build finishing late must
 # not overwrite a newer one.
@@ -90,20 +94,21 @@ jobs:
           test -n "$(find dist/_expo -name '*.js' -print -quit)"
           grep -q '/ideal-parakeet/_expo/' dist/index.html
 
-      - uses: actions/configure-pages@v5
-        with:
-          enablement: true
-
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      # Pages runs Jekyll over a branch unless told not to, and Jekyll drops
+      # every path beginning with an underscore - which is the entire
+      # `_expo/static/js/` tree. Without this file the page loads and the
+      # bundle 404s.
+      - name: Publish to the gh-pages branch
+        run: |
+          touch dist/.nojekyll
+          cd dist
+          git init -q
+          git checkout -q -b gh-pages
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -q -m "Deploy ${GITHUB_SHA}"
+          git push -q -f \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -30,7 +30,13 @@ signal.
 
 It redeploys on every push to `main` that touches the app or the data, and
 again after each nightly refresh — the data is compiled in, so fresh prices
-need a rebuild rather than just a commit.
+need a rebuild rather than just a commit. The build is pushed to a `gh-pages`
+branch rather than uploaded as a Pages artifact: the artifact route needs the
+Pages site to exist already, and no workflow token is allowed to create one
+(`configure-pages` gets "Resource not accessible by integration"), whereas a
+branch needs nothing but write access. The branch carries a `.nojekyll` file,
+without which Pages runs Jekyll over it and silently drops every path starting
+with an underscore — which is the whole `_expo/static/js/` tree.
 
 The reason this exists rather than Snack alone: Snack needs Expo Go installed
 and current, the Snack runtime released for the SDK in use, and a live
