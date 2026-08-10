@@ -1,0 +1,109 @@
+# Builds the app for the web and publishes it to GitHub Pages.
+#
+# Why this exists. The Snack build was the only way onto a phone, and it
+# depends on a chain of things this repository does not control: Expo Go
+# installed and current, the Snack runtime released for the SDK in use, and a
+# websocket session between the phone and Expo's servers. When any link in
+# that chain breaks, the phone shows "Connecting..." forever and there is
+# nothing in the app's own code to fix.
+#
+# A web build has none of those links. It is a URL in Safari, it holds still,
+# and it is the same `src/` code the native build runs - the same one the
+# headless verification drives. Add it to the home screen and it opens like an
+# app. The Snack build stays; this is the path that does not go through
+# anybody else's runtime.
+#
+# The dataset is bundled at build time rather than fetched, so a refresh needs
+# a rebuild - hence the workflow_run trigger below.
+name: Publish web app
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'app/**'
+      - 'assets/**'
+      - 'app.json'
+      - 'app.config.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/publish-web.yml'
+  # A push made with GITHUB_TOKEN does not start another workflow, so the
+  # nightly data commit would never reach the phone on the `push` trigger
+  # alone. Chain off that job finishing instead.
+  workflow_run:
+    workflows: ['Refresh market data']
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time, newest wins: an older build finishing late must
+# not overwrite a newer one.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # On the chained trigger, only publish a data refresh that actually
+    # succeeded - stage 4 failing means the snapshot was rejected and the last
+    # good file is still in place, so there is nothing new to ship.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # Pages serves this repository at /ideal-parakeet/, not at a domain
+      # root. app.config.js turns that into experiments.baseUrl so the export
+      # writes matching asset paths; without it every script tag 404s and the
+      # page is blank.
+      - name: Export the web build
+        run: npx expo export --platform web --output-dir dist
+        env:
+          PARAKEET_BASE_URL: /ideal-parakeet
+
+      # expo-router's "single" web output is one HTML file plus client-side
+      # routing. Reloading a deep link asks Pages for a path that does not
+      # exist on disk, and Pages answers 404 with its own page - so hand it
+      # the app instead and let the router sort the URL out.
+      - name: Serve the app for unknown paths too
+        run: cp dist/index.html dist/404.html
+
+      - name: Fail if the export is empty
+        run: |
+          test -f dist/index.html
+          test -n "$(find dist/_expo -name '*.js' -print -quit)"
+          grep -q '/ideal-parakeet/_expo/' dist/index.html
+
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

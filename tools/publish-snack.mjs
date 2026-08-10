@@ -41,10 +41,14 @@ async function main() {
     dependencies: DEPENDENCIES,
   };
 
-  // Snack ids are random and may end in `_` or `-`. A trailing one of those is
-  // routinely swallowed when the link is auto-linked in a message or chat app,
-  // and the shortened id 404s with "we couldn't find the Snack". Publishing is
-  // cheap, so keep drawing until the id ends in something safe to paste.
+  // Snack ids are random and may start or end with `_` or `-`. A trailing one
+  // is routinely swallowed when the link is auto-linked in a message or chat
+  // app, and the shortened id 404s with "we couldn't find the Snack". A
+  // *leading* one is worse: the client builds the experience name by joining
+  // the sdk version to the id with a hyphen, so `-Abc` becomes
+  // `sdk.57.0.0--Abc` and the double separator is one more thing between the
+  // link and the app. Publishing is cheap, so keep drawing until both ends of
+  // the id are alphanumeric.
   let hashId;
   for (let attempt = 1; ; attempt++) {
     const res = await fetch('https://exp.host/--/api/v2/snack/save', {
@@ -56,8 +60,8 @@ async function main() {
       throw new Error(`Snack save failed: HTTP ${res.status} ${await res.text()}`);
     }
     ({ hashId } = await res.json());
-    if (/[A-Za-z0-9]$/.test(hashId)) break;
-    console.log(`  id "${hashId}" ends in punctuation; republishing`);
+    if (/^[A-Za-z0-9].*[A-Za-z0-9]$/.test(hashId)) break;
+    console.log(`  id "${hashId}" starts or ends in punctuation; republishing`);
     if (attempt >= 10) throw new Error('could not get a paste-safe snack id');
   }
 
