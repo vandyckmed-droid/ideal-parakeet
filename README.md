@@ -38,6 +38,16 @@ branch needs nothing but write access. The branch carries a `.nojekyll` file,
 without which Pages runs Jekyll over it and silently drops every path starting
 with an underscore — which is the whole `_expo/static/js/` tree.
 
+**One-time setup, and the only step here that cannot be automated.** Pages has
+to be switched on by hand once, under *Settings → Pages → Build and deployment
+→ Source: **Deploy from a branch**, Branch: **gh-pages** / **/ (root)***. It is
+an account-level permission: no `GITHUB_TOKEN` may create a Pages site, and
+GitHub stopped auto-publishing `gh-pages` branches, so the workflow can build
+and push the site but cannot make the switch. Once flipped it stays flipped —
+every deployment after that is automatic. Until then the workflow runs green
+and the URL 404s, which is exactly what "built, not yet switched on" looks
+like.
+
 The reason this exists rather than Snack alone: Snack needs Expo Go installed
 and current, the Snack runtime released for the SDK in use, and a live
 websocket between the phone and Expo's servers. When any of that breaks, the
