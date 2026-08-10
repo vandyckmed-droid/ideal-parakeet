@@ -18,11 +18,32 @@ npm start          # then scan the QR code with Expo Go
 `npm run web` opens the same app in a browser, which is handy for a quick look
 but not the target: the gestures are built for a touchscreen.
 
-### Without a computer
+### On a phone
+
+**<https://vandyckmed-droid.github.io/ideal-parakeet/>** — open it in Safari or
+Chrome and add it to the home screen. Nothing to install, no Expo Go, no
+account. This is the `src/` build, the same code the native app runs and the
+same one the headless verification drives, exported for the web by
+`.github/workflows/publish-web.yml` and served from GitHub Pages. The dataset
+is bundled into it, so it opens straight into the list and works with no
+signal.
+
+It redeploys on every push to `main` that touches the app or the data, and
+again after each nightly refresh — the data is compiled in, so fresh prices
+need a rebuild rather than just a commit.
+
+The reason this exists rather than Snack alone: Snack needs Expo Go installed
+and current, the Snack runtime released for the SDK in use, and a live
+websocket between the phone and Expo's servers. When any of that breaks, the
+phone sits on "Connecting…" and nothing in this repository can fix it. A URL
+has none of those moving parts.
+
+### Also without a computer: the Snack build
 
 `snack/` is a second build of the same app that runs on [Expo
-Snack](https://snack.expo.dev/-DdDIaMv2S9nrrhUECVrz), so it can be opened in
-Expo Go from a phone alone. Snack cannot host the app as it stands — it caps
+Snack](https://snack.expo.dev/uSStDueRJmeJ2UzaqhRSg), openable in Expo Go from
+a phone alone. It is the fallback now rather than the main route. Snack cannot
+host the app as it stands — it caps
 file sizes well below the 1.9MB bundled dataset, and it handles expo-router's
 file-based routing unevenly — so that build differs in exactly two ways:
 
@@ -930,13 +951,6 @@ Everything that depends on **K** stays in the app, because K is a control:
   members it costs least to move, then local improvement by single moves and
   pairwise swaps that keep every group inside its bounds, then medoid update —
   repeated to convergence.
-- **Swaps by group pair, not by stock pair.** The gain from exchanging two
-  stocks separates into one term per stock, so the best swap between two
-  groups is just the best candidate on each side — one linear scan each,
-  rather than testing all 124,251 pairs of stocks. This is what makes the
-  whole thing run on a phone: sweeping stock pairs cost ~17 million
-  comparisons per solve, which is seconds of frozen screen on a phone's
-  interpreter and was exactly that in the first version shipped.
 - **Medoids, not centroids**, per the algorithm: a group is represented by an
   actual member stock. There is no average stock to point at, and a name is
   something you can go read about.
@@ -1006,7 +1020,7 @@ sector:
 
 | K | 6 | 8 | 10 | 12 | 16 | 20 | 24 | 30 | 40 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Sector purity | 38% | 45% | 52% | 56% | 64% | 63% | 68% | 69% | 71% |
+| Sector purity | 38% | 45% | 52% | 56% | 65% | 65% | 69% | 66% | 73% |
 
 More telling than the number is what shows up in the gaps. From correlations
 alone the algorithm rebuilt both peer groups the old taxonomy could only
@@ -1016,9 +1030,8 @@ assemble by hand, and neither exists as an industry label anywhere:
   comes out as a single group at **every K on offer**, 6 through 40.
 - **Housing** — LOW, HD, SHW, PHM, NVR, LEN, DHI, BLDR: a retailer, a paint
   maker, four homebuilders and a distributor, spread across two sectors —
-  is whole at K = 6, 8, 10, 12, 24 and 30, and seven of the eight at K = 40.
-  At 16 and 20 the balance constraint splits a tail off, which is precisely
-  what the weak-fit flag exists to say out loud.
+  holds together across **all nine** as well, splitting off into its own
+  group as K rises rather than dissolving.
 
 Nobody put either group there.
 

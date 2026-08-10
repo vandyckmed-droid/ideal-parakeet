@@ -169,39 +169,14 @@ function constrainedAssign(n, medoids, lower, upper, d) {
         size[from]--; assign[i] = pick; size[pick]++; improved = true;
       }
     }
-    // Swaps never change a size, so they are always legal. The gain of
-    // exchanging i (in group a) with j (in group b) separates into one term
-    // per point - (d[i,a] - d[i,b]) + (d[j,b] - d[j,a]) - so the best swap
-    // between two groups is the best point on each side, found in one linear
-    // scan of each. Sweeping every pair of *points* instead cost 4.2M
-    // comparisons a pass on 499 names, ~17M over a full solve, and that alone
-    // was seconds of blocked JS on a phone. By group pair it is ~9.5k.
-    const members = Array.from({ length: k }, () => []);
-    for (let i = 0; i < n; i++) members[assign[i]].push(i);
-    for (let a = 0; a < k; a++) {
-      for (let b = a + 1; b < k; b++) {
-        // Ties break on the lower index, so neither answer depends on the
-        // order the member lists happen to be in after an earlier swap.
-        let bi = -1;
-        let gi = -Infinity;
-        for (const i of members[a]) {
-          const g = dist[i * k + a] - dist[i * k + b];
-          if (g > gi || (g === gi && i < bi)) { gi = g; bi = i; }
-        }
-        let bj = -1;
-        let gj = -Infinity;
-        for (const j of members[b]) {
-          const g = dist[j * k + b] - dist[j * k + a];
-          if (g > gj || (g === gj && j < bj)) { gj = g; bj = j; }
-        }
-        if (bi < 0 || bj < 0 || gi + gj <= 1e-12) continue;
-        assign[bi] = b;
-        assign[bj] = a;
-        // Exactly one point crosses each way, so the two member lists stay
-        // the right size; patch them in place rather than rebuilding.
-        members[a][members[a].indexOf(bi)] = bj;
-        members[b][members[b].indexOf(bj)] = bi;
-        improved = true;
+    for (let i = 0; i < n; i++) {
+      const a = assign[i];
+      for (let j = i + 1; j < n; j++) {
+        const b = assign[j];
+        if (a === b) continue;
+        const gain =
+          dist[i * k + a] + dist[j * k + b] - dist[i * k + b] - dist[j * k + a];
+        if (gain > 1e-12) { assign[i] = b; assign[j] = a; improved = true; break; }
       }
     }
     if (!improved) break;
